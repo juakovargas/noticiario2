@@ -12,6 +12,10 @@ interface NavItem {
     icon: JSX.Element;
 }
 
+function hasPermission(permissions: string[] | undefined, permission: string): boolean {
+    return !!permissions?.includes(permission);
+}
+
 export default function AdminLayout({ children }: PropsWithChildren): JSX.Element {
     const [open, setOpen] = useState(false);
     const page = usePage<PageProps>();
@@ -101,11 +105,19 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                                 <p className="text-slate-500">{user?.email}</p>
                             </div>
 
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={route('logout')} method="post" as="button">
-                                    Logout
-                                </Link>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                {hasPermission(user?.permissions, 'editor.access') && (
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href={route('editor.dashboard')}>Go to editor panel</Link>
+                                    </Button>
+                                )}
+
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={route('logout')} method="post" as="button">
+                                        Logout
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
                     </header>
 

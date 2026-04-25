@@ -40,7 +40,9 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return redirect()->intended(route(AuthRedirect::routeNameFor($user), absolute: false));
+        $request->session()->forget('url.intended');
+
+        return redirect()->route(AuthRedirect::routeNameFor($user));
     }
 
     /**

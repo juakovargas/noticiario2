@@ -8,8 +8,16 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): Response
+    public function index(): Response
     {
-        return Inertia::render('Editor/Dashboard');
+        return Inertia::render('Editor/Dashboard', [
+            'stats' => [
+                'editions' => 0,
+                'newsItems' => 0,
+                'scripts' => 0,
+                'sources' => 0,
+                'media' => 0,
+            ],
+        ]);
     }
 }

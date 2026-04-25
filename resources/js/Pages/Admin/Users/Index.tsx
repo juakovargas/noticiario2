@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/Components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { PageProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useTranslations } from '@/i18n/useTranslations';
 
 interface UserItem {
     id: number;
@@ -25,11 +26,12 @@ interface UsersIndexProps {
 
 export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
     const page = usePage<PageProps>();
+    const { t } = useTranslations();
     const currentUser = page.props.auth.user;
     const canImpersonate = currentUser?.permissions?.includes('admin.access') ?? false;
 
     const destroyUser = (id: number): void => {
-        if (!window.confirm('Delete this user?')) {
+        if (!window.confirm(t('Delete this user?'))) {
             return;
         }
 
@@ -42,12 +44,12 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
 
     return (
         <AdminLayout>
-            <Head title="Users" />
+            <Head title={t('Users')} />
 
             <AdminPageHeader
-                title="Users"
-                description="Manage platform users, access state, and assignments."
-                actionLabel="Create user"
+                title={t('Users')}
+                description={t('System administration')}
+                actionLabel={t('Create')}
                 actionHref={route('admin.users.create')}
             />
 
@@ -56,12 +58,12 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                     <table className="w-full min-w-[760px] text-left text-sm">
                         <thead>
                             <tr className="border-b border-slate-200 text-slate-500">
-                                <th className="px-2 pb-3">Name</th>
-                                <th className="px-2 pb-3">Email</th>
-                                <th className="px-2 pb-3">Status</th>
-                                <th className="px-2 pb-3">Roles</th>
-                                <th className="px-2 pb-3">Created</th>
-                                <th className="px-2 pb-3 text-right">Actions</th>
+                                <th className="px-2 pb-3">{t('Name')}</th>
+                                <th className="px-2 pb-3">{t('Email')}</th>
+                                <th className="px-2 pb-3">{t('Status')}</th>
+                                <th className="px-2 pb-3">{t('Roles')}</th>
+                                <th className="px-2 pb-3">{t('Created at')}</th>
+                                <th className="px-2 pb-3 text-right">{t('Actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -71,20 +73,20 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                     <td className="px-2 py-3 text-slate-600">{user.email}</td>
                                     <td className="px-2 py-3">
                                         <Badge variant={user.is_active ? 'success' : 'danger'}>
-                                            {user.is_active ? 'Active' : 'Inactive'}
+                                            {user.is_active ? t('Active') : t('Inactive')}
                                         </Badge>
                                     </td>
                                     <td className="px-2 py-3 text-slate-600">
-                                        {user.roles.length ? user.roles.join(', ') : 'No roles'}
+                                        {user.roles.length ? user.roles.join(', ') : t('No roles')}
                                     </td>
                                     <td className="px-2 py-3 text-slate-600">{user.created_at}</td>
                                     <td className="px-2 py-3">
                                         <div className="flex justify-end gap-2">
                                             <Button asChild size="sm" variant="outline">
-                                                <Link href={route('admin.users.show', user.id)}>View</Link>
+                                                <Link href={route('admin.users.show', user.id)}>{t('View')}</Link>
                                             </Button>
                                             <Button asChild size="sm" variant="secondary">
-                                                <Link href={route('admin.users.edit', user.id)}>Edit</Link>
+                                                <Link href={route('admin.users.edit', user.id)}>{t('Edit')}</Link>
                                             </Button>
                                             {canImpersonate && currentUser?.id !== user.id && (
                                                 <Button
@@ -92,16 +94,14 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                                     variant="outline"
                                                     onClick={() => impersonateUser(user.id)}
                                                 >
-                                                    Login as user
+                                                    {t('Login as user')}
                                                 </Button>
                                             )}
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
                                                 onClick={() => destroyUser(user.id)}
-                                            >
-                                                Delete
-                                            </Button>
+                                            >{t('Delete')}</Button>
                                         </div>
                                     </td>
                                 </tr>

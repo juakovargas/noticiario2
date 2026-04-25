@@ -20,17 +20,19 @@ class NewsItemController extends Controller
 
     public function index(): Response
     {
+        $locale = app()->getLocale();
+
         return Inertia::render('Editor/NewsItems/Index', [
             'newsItems' => NewsItem::query()
-                ->with(['source:id,name', 'category:id,name', 'location:id,name'])
+                ->with(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code'])
                 ->latest('published_at')
                 ->paginate(10)
                 ->through(fn (NewsItem $newsItem) => [
                     'id' => $newsItem->id,
                     'title' => $newsItem->title,
                     'source' => $newsItem->source?->name,
-                    'category' => $newsItem->category?->name,
-                    'location' => $newsItem->location?->name,
+                    'category' => $newsItem->category?->displayName($locale),
+                    'location' => $newsItem->location,
                     'status' => $newsItem->status,
                     'published_at' => $newsItem->published_at?->toDateTimeString(),
                     'editorial_priority' => $newsItem->editorial_priority,
@@ -57,7 +59,8 @@ class NewsItemController extends Controller
 
     public function show(NewsItem $newsItem): Response
     {
-        $newsItem->load(['source:id,name', 'category:id,name', 'location:id,name']);
+        $locale = app()->getLocale();
+        $newsItem->load(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code']);
 
         return Inertia::render('Editor/NewsItems/Show', [
             'newsItem' => [
@@ -66,8 +69,8 @@ class NewsItemController extends Controller
                 'summary' => $newsItem->summary,
                 'body' => $newsItem->body,
                 'source' => $newsItem->source?->name,
-                'category' => $newsItem->category?->name,
-                'location' => $newsItem->location?->name,
+                'category' => $newsItem->category?->displayName($locale),
+                'location' => $newsItem->location,
                 'source_url' => $newsItem->source_url,
                 'status' => $newsItem->status,
                 'published_at' => $newsItem->published_at?->toDateTimeString(),

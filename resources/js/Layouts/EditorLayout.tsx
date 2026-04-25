@@ -135,10 +135,10 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                     {impersonation.active && (
                         <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-sm text-amber-900 md:px-8">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="font-medium">You are impersonating {impersonation.current_user_name}</p>
+                                <p className="font-medium">{t('You are impersonating')} {impersonation.current_user_name}</p>
                                 <Button asChild size="sm" variant="secondary">
                                     <Link href={route('admin.impersonation.stop')} method="post" as="button">
-                                        Return to admin
+                                        {t('Return to admin')}
                                     </Link>
                                 </Button>
                             </div>

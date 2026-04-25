@@ -8,13 +8,13 @@ export interface User {
 }
 
 export interface AvailableLocale {
-    code: 'en' | 'es';
-    label: string;
+    code: string;
+    name?: string;
+    native_name?: string | null;
+    flag_emoji?: string | null;
 }
 
-export type PageProps<
-    T extends Record<string, unknown> = Record<string, unknown>,
-> = T & {
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: User | null;
     };
@@ -25,7 +25,7 @@ export type PageProps<
         current_user_name: string | null;
     };
     i18n: {
-        locale: 'en' | 'es';
+        locale: string;
         availableLocales: AvailableLocale[];
     };
     flash: {

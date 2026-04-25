@@ -22,6 +22,8 @@ class StoreNewsCategoryRequest extends FormRequest
             'icon' => ['nullable', 'string', 'max:80'],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'name_es' => ['nullable', 'string', 'max:255'],
+            'description_es' => ['nullable', 'string'],
         ];
     }
 }

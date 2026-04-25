@@ -81,6 +81,10 @@ class PermissionController extends Controller
             'permissions.delete',
             'dashboard.view',
             'admin.access',
+            'editor.access',
+            'editor.dashboard.view',
+            'viewer.access',
+            'viewer.dashboard.view',
         ];
 
         if (in_array($permission->name, $systemPermissions, true)) {

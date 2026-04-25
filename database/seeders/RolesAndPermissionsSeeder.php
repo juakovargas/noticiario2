@@ -31,6 +31,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'permissions.delete',
             'dashboard.view',
             'admin.access',
+            'editor.access',
+            'editor.dashboard.view',
+            'viewer.access',
+            'viewer.dashboard.view',
         ];
 
         foreach ($permissions as $permission) {
@@ -45,21 +49,29 @@ class RolesAndPermissionsSeeder extends Seeder
         $allPermissionNames = Permission::query()->pluck('name')->all();
 
         $superAdminRole->syncPermissions($allPermissionNames);
-        $adminRole->syncPermissions($allPermissionNames);
-        $editorRole->syncPermissions([
+        $adminRole->syncPermissions([
             'admin.access',
             'dashboard.view',
             'users.view',
+            'users.create',
             'users.update',
+            'users.delete',
             'roles.view',
+            'roles.create',
+            'roles.update',
+            'roles.delete',
             'permissions.view',
+            'permissions.create',
+            'permissions.update',
+            'permissions.delete',
+        ]);
+        $editorRole->syncPermissions([
+            'editor.access',
+            'editor.dashboard.view',
         ]);
         $viewerRole->syncPermissions([
-            'admin.access',
-            'dashboard.view',
-            'users.view',
-            'roles.view',
-            'permissions.view',
+            'viewer.access',
+            'viewer.dashboard.view',
         ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

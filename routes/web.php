@@ -1,10 +1,14 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
+use App\Http\Controllers\Editor\PlaceholderPageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Viewer\DashboardController as ViewerDashboardController;
+use App\Http\Controllers\Viewer\PublishedContentController;
 use App\Support\AuthRedirect;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -47,7 +51,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
-        Route::get('/dashboard', [DashboardController::class, 'index'])
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->middleware('permission:dashboard.view')
             ->name('dashboard');
 
@@ -91,34 +95,27 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('editor.dashboard'));
 
-        Route::get('/dashboard', fn () => Inertia::render('Editor/Dashboard'))
-            ->middleware('permission:editor.dashboard.view')
-            ->name('dashboard');
+        Route::get('/dashboard', EditorDashboardController::class)->name('dashboard');
 
-        Route::get('/editions', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Editions',
-            'description' => 'Editions module will be implemented in the next phase.',
-        ]))->name('editions');
+        Route::controller(PlaceholderPageController::class)->group(function () {
+            Route::get('/news-items', 'newsItems')->name('news-items.index');
+            Route::get('/news-sources', 'newsSources')->name('news-sources.index');
+            Route::get('/news-categories', 'newsCategories')->name('news-categories.index');
+            Route::get('/locations', 'locations')->name('locations.index');
 
-        Route::get('/news-items', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'News Items',
-            'description' => 'News Items module will be implemented in the next phase.',
-        ]))->name('news-items');
+            Route::get('/editions', 'editions')->name('editions.index');
+            Route::get('/scripts', 'scripts')->name('scripts.index');
 
-        Route::get('/scripts', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Scripts',
-            'description' => 'Scripts module will be implemented in the next phase.',
-        ]))->name('scripts');
+            Route::get('/audio', 'audio')->name('audio.index');
+            Route::get('/video', 'video')->name('video.index');
+            Route::get('/media-renders', 'mediaRenders')->name('media-renders.index');
 
-        Route::get('/sources', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Sources',
-            'description' => 'Sources module will be implemented in the next phase.',
-        ]))->name('sources');
+            Route::get('/publications', 'publications')->name('publications.index');
+            Route::get('/social-channels', 'socialChannels')->name('social-channels.index');
 
-        Route::get('/media', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Media',
-            'description' => 'Media module will be implemented in the next phase.',
-        ]))->name('media');
+            Route::get('/editorial-templates', 'editorialTemplates')->name('editorial-templates.index');
+            Route::get('/ai-prompt-templates', 'aiPromptTemplates')->name('ai-prompt-templates.index');
+        });
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])
@@ -127,12 +124,8 @@ Route::middleware(['auth', 'verified', 'permission:viewer.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('viewer.dashboard'));
 
-        Route::get('/dashboard', fn () => Inertia::render('Viewer/Dashboard'))
-            ->middleware('permission:viewer.dashboard.view')
-            ->name('dashboard');
-
-        Route::get('/published-content', fn () => Inertia::render('Viewer/PublishedContent'))
-            ->name('published-content');
+        Route::get('/dashboard', ViewerDashboardController::class)->name('dashboard');
+        Route::get('/published-content', PublishedContentController::class)->name('published-content.index');
     });
 
 require __DIR__.'/auth.php';

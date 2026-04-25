@@ -1,33 +1,50 @@
-import AdminPageHeader from '@/Components/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { Head, Link } from '@inertiajs/react';
 
-const modules = [
+const sectionCards = [
     {
-        title: 'Editions',
-        description: 'Plan and manage edition cycles.',
-        href: 'editor.editions',
+        title: 'News Desk',
+        description: 'News collection and organization workflow.',
+        links: [
+            { label: 'News Items', routeName: 'editor.news-items.index' },
+            { label: 'News Sources', routeName: 'editor.news-sources.index' },
+            { label: 'News Categories', routeName: 'editor.news-categories.index' },
+            { label: 'Locations', routeName: 'editor.locations.index' },
+        ],
     },
     {
-        title: 'News Items',
-        description: 'Editorial news workflow will be added here.',
-        href: 'editor.news-items',
+        title: 'Edition Workflow',
+        description: 'Plan and produce noticiario editions and scripts.',
+        links: [
+            { label: 'Editions', routeName: 'editor.editions.index' },
+            { label: 'Scripts', routeName: 'editor.scripts.index' },
+        ],
     },
     {
-        title: 'Scripts',
-        description: 'Script generation and review pipeline entry point.',
-        href: 'editor.scripts',
+        title: 'Production',
+        description: 'Future generation pipelines for audio and video.',
+        links: [
+            { label: 'Audio', routeName: 'editor.audio.index' },
+            { label: 'Video', routeName: 'editor.video.index' },
+            { label: 'Media Renders', routeName: 'editor.media-renders.index' },
+        ],
     },
     {
-        title: 'Sources',
-        description: 'Source curation and validation will live in this section.',
-        href: 'editor.sources',
+        title: 'Publishing',
+        description: 'Prepare publications and social distribution workflows.',
+        links: [
+            { label: 'Publications', routeName: 'editor.publications.index' },
+            { label: 'Social Channels', routeName: 'editor.social-channels.index' },
+        ],
     },
     {
-        title: 'Media',
-        description: 'Media assets and future rendering operations.',
-        href: 'editor.media',
+        title: 'Settings',
+        description: 'Editorial and AI template configuration placeholders.',
+        links: [
+            { label: 'Editorial Templates', routeName: 'editor.editorial-templates.index' },
+            { label: 'AI Prompt Templates', routeName: 'editor.ai-prompt-templates.index' },
+        ],
     },
 ];
 
@@ -36,24 +53,32 @@ export default function Dashboard(): JSX.Element {
         <EditorLayout>
             <Head title="Editor Dashboard" />
 
-            <AdminPageHeader
-                title="Editor Dashboard"
-                description="Main editorial workspace foundation for upcoming modules."
-            />
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-900">Editor Dashboard</h1>
+                <p className="text-sm text-slate-600">
+                    Main workspace for the Noticiario editorial team. Use the sections below to navigate the planned workflow.
+                </p>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {modules.map((module) => (
-                    <Link key={module.title} href={route(module.href)}>
-                        <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
-                            <CardHeader>
-                                <CardTitle>{module.title}</CardTitle>
-                                <CardDescription>{module.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="text-xs text-slate-500">
-                                Open placeholder
-                            </CardContent>
-                        </Card>
-                    </Link>
+                {sectionCards.map((section) => (
+                    <Card key={section.title}>
+                        <CardHeader>
+                            <CardTitle>{section.title}</CardTitle>
+                            <CardDescription>{section.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            {section.links.map((link) => (
+                                <Link
+                                    key={link.routeName}
+                                    href={route(link.routeName)}
+                                    className="block text-sm font-medium text-cyan-700 hover:text-cyan-900"
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </CardContent>
+                    </Card>
                 ))}
             </div>
         </EditorLayout>

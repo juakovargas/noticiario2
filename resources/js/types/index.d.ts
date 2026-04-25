@@ -18,6 +18,12 @@ export type PageProps<
     auth: {
         user: User | null;
     };
+    impersonation: {
+        active: boolean;
+        impersonator_id: number | null;
+        impersonator_name: string | null;
+        current_user_name: string | null;
+    };
     i18n: {
         locale: 'en' | 'es';
         availableLocales: AvailableLocale[];

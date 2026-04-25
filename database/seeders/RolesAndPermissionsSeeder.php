@@ -9,9 +9,6 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -37,20 +34,25 @@ class RolesAndPermissionsSeeder extends Seeder
             'viewer.dashboard.view',
         ];
 
-        foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
+        foreach ($permissions as $permissionName) {
+            Permission::query()->updateOrCreate(
+                ['name' => $permissionName, 'guard_name' => 'web'],
+                [],
+            );
         }
 
-        $superAdminRole = Role::findOrCreate('super-admin', 'web');
-        $adminRole = Role::findOrCreate('admin', 'web');
-        $editorRole = Role::findOrCreate('editor', 'web');
-        $viewerRole = Role::findOrCreate('viewer', 'web');
+        $superAdminRole = Role::query()->updateOrCreate(['name' => 'super-admin', 'guard_name' => 'web'], []);
+        $adminRole = Role::query()->updateOrCreate(['name' => 'admin', 'guard_name' => 'web'], []);
+        $editorRole = Role::query()->updateOrCreate(['name' => 'editor', 'guard_name' => 'web'], []);
+        $viewerRole = Role::query()->updateOrCreate(['name' => 'viewer', 'guard_name' => 'web'], []);
 
         $allPermissionNames = Permission::query()->pluck('name')->all();
 
         $superAdminRole->syncPermissions($allPermissionNames);
         $adminRole->syncPermissions([
             'admin.access',
+            'editor.access',
+            'viewer.access',
             'dashboard.view',
             'users.view',
             'users.create',

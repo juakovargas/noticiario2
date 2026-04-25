@@ -4,7 +4,8 @@ import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { PageProps } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 interface UserItem {
     id: number;
@@ -23,12 +24,20 @@ interface UsersIndexProps {
 }
 
 export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
+    const page = usePage<PageProps>();
+    const currentUser = page.props.auth.user;
+    const canImpersonate = currentUser?.permissions?.includes('admin.access') ?? false;
+
     const destroyUser = (id: number): void => {
         if (!window.confirm('Delete this user?')) {
             return;
         }
 
         router.delete(route('admin.users.destroy', id));
+    };
+
+    const impersonateUser = (id: number): void => {
+        router.post(route('admin.users.impersonate', id));
     };
 
     return (
@@ -77,6 +86,15 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                             <Button asChild size="sm" variant="secondary">
                                                 <Link href={route('admin.users.edit', user.id)}>Edit</Link>
                                             </Button>
+                                            {canImpersonate && currentUser?.id !== user.id && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => impersonateUser(user.id)}
+                                                >
+                                                    Login as user
+                                                </Button>
+                                            )}
                                             <Button
                                                 size="sm"
                                                 variant="destructive"

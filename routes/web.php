@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -15,7 +16,6 @@ use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Support\AuthRedirect;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,8 +23,6 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
     ]);
 });
 
@@ -46,6 +44,8 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
+Route::middleware('auth')->post('/admin/impersonation/stop', [ImpersonationController::class, 'stop'])->name('admin.impersonation.stop');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -61,6 +61,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->middleware('permission:dashboard.view')
             ->name('dashboard');
+
+        Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
 
         Route::resource('users', UserController::class)
             ->middleware([

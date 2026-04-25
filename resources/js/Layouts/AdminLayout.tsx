@@ -18,6 +18,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
     const [open, setOpen] = useState(false);
     const page = usePage<PageProps>();
     const user = page.props.auth.user;
+    const impersonation = page.props.impersonation;
     const { t } = useTranslations();
 
     const navItems = useMemo<NavItem[]>(
@@ -114,6 +115,19 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                             </div>
                         </div>
                     </header>
+
+                    {impersonation.active && (
+                        <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-sm text-amber-900 md:px-8">
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="font-medium">You are impersonating {impersonation.current_user_name}</p>
+                                <Button asChild size="sm" variant="secondary">
+                                    <Link href={route('admin.impersonation.stop')} method="post" as="button">
+                                        Return to admin
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     <main className="flex-1 px-4 py-6 md:px-8">
                         <div className="mb-4">

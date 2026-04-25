@@ -10,10 +10,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
-            SuperAdminSeeder::class,
-            LocationSeeder::class,
-            NewsCategorySeeder::class,
-            NewsSourceSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call([
+                DemoUsersSeeder::class,
+                DemoEditorialSeeder::class,
+            ]);
+        }
     }
 }

@@ -15,7 +15,7 @@ class UpdateScriptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'edition_id' => ['required', 'exists:editions,id'],
+            'edition_id' => ['sometimes', 'exists:editions,id'],
             'title' => ['required', 'string', 'max:255'],
             'status' => ['required', 'string', 'max:50', Rule::in(['draft', 'review', 'approved', 'rejected', 'archived'])],
             'language' => ['nullable', 'string', 'max:10'],

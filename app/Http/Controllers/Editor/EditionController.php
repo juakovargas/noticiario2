@@ -7,6 +7,7 @@ use App\Http\Requests\Editor\StoreEditionRequest;
 use App\Http\Requests\Editor\UpdateEditionRequest;
 use App\Models\Edition;
 use App\Models\Location;
+use App\Models\NewsItem;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -53,7 +54,15 @@ class EditionController extends Controller
 
     public function show(Edition $edition): Response
     {
-        $edition->load(['location:id,name', 'newsItems:id,title']);
+        $edition->load([
+            'location:id,name',
+            'newsItems' => fn ($query) => $query
+                ->with(['source:id,name', 'category:id,name', 'location:id,name'])
+                ->orderBy('edition_news_item.sort_order'),
+            'scripts:id,edition_id,title,status,language,estimated_duration_seconds,approved_at,approved_by',
+        ]);
+
+        $selectedNewsItemIds = $edition->newsItems->pluck('id');
 
         return Inertia::render('Editor/Editions/Show', [
             'edition' => [
@@ -67,9 +76,27 @@ class EditionController extends Controller
                 'target_duration_seconds' => $edition->target_duration_seconds,
                 'description' => $edition->description,
             ],
-            'newsItems' => $edition->newsItems->map(fn ($item) => [
+            'newsItems' => $edition->newsItems->map(fn (NewsItem $item) => [
                 'id' => $item->id,
                 'title' => $item->title,
+                'source' => $item->source?->name,
+                'category' => $item->category?->name,
+                'location' => $item->location?->name,
+                'status' => $item->status,
+                'sort_order' => $item->pivot->sort_order,
+                'editorial_angle' => $item->pivot->editorial_angle,
+                'included_in_script' => (bool) $item->pivot->included_in_script,
+            ])->values(),
+            'availableNewsItems' => NewsItem::query()
+                ->whereNotIn('id', $selectedNewsItemIds)
+                ->orderBy('title')
+                ->get(['id', 'title']),
+            'scripts' => $edition->scripts->map(fn ($script) => [
+                'id' => $script->id,
+                'title' => $script->title,
+                'status' => $script->status,
+                'language' => $script->language,
+                'estimated_duration_seconds' => $script->estimated_duration_seconds,
             ])->values(),
         ]);
     }

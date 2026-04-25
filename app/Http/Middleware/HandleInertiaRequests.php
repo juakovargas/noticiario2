@@ -38,10 +38,16 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'is_active' => $user->is_active,
                     'roles' => $user->getRoleNames(),
                     'permissions' => $user->getAllPermissions()->pluck('name'),
                 ] : null,
+            ],
+            'i18n' => [
+                'locale' => app()->getLocale(),
+                'availableLocales' => [
+                    ['code' => 'en', 'label' => 'English'],
+                    ['code' => 'es', 'label' => 'Español'],
+                ],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

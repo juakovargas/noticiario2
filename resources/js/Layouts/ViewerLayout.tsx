@@ -1,5 +1,7 @@
 import FlashMessage from '@/Components/FlashMessage';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { Button } from '@/Components/ui/button';
+import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
 import { Eye, LayoutGrid } from 'lucide-react';
 import { PropsWithChildren } from 'react';
@@ -11,14 +13,17 @@ interface ViewerLayoutProps extends PropsWithChildren {
 
 export default function ViewerLayout({ children, title }: ViewerLayoutProps): JSX.Element {
     const page = usePage<PageProps>();
+    const { t } = useTranslations();
 
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#dcfce7,_transparent_45%),linear-gradient(135deg,_#f8fafc_30%,_#e2e8f0_100%)] text-slate-800">
             <header className="border-b border-slate-200/70 bg-white/80 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
+                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
                     <div>
-                        <p className="text-lg font-bold tracking-tight text-emerald-900">Noticiario Viewer</p>
-                        <p className="text-xs text-slate-500">Read-only area</p>
+                        <p className="text-lg font-bold tracking-tight text-emerald-900">
+                            {t('Noticiario')} {t('Viewer Panel')}
+                        </p>
+                        <p className="text-xs text-slate-500">{t('Read-only area')}</p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -32,7 +37,7 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                         >
                             <span className="inline-flex items-center gap-1">
                                 <LayoutGrid className="h-4 w-4" />
-                                Dashboard
+                                {t('Dashboard')}
                             </span>
                         </Link>
 
@@ -46,16 +51,17 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                         >
                             <span className="inline-flex items-center gap-1">
                                 <Eye className="h-4 w-4" />
-                                Published Content
+                                {t('Published Content')}
                             </span>
                         </Link>
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                         <p className="hidden text-sm text-slate-600 md:block">{page.props.auth.user?.name}</p>
                         <Button asChild variant="outline" size="sm">
                             <Link href={route('logout')} method="post" as="button">
-                                Logout
+                                {t('Logout')}
                             </Link>
                         </Button>
                     </div>

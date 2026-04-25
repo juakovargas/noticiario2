@@ -1,5 +1,7 @@
 import FlashMessage from '@/Components/FlashMessage';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { Button } from '@/Components/ui/button';
+import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
 import { LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
 import { PropsWithChildren, useMemo, useState } from 'react';
@@ -16,35 +18,36 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
     const [open, setOpen] = useState(false);
     const page = usePage<PageProps>();
     const user = page.props.auth.user;
+    const { t } = useTranslations();
 
     const navItems = useMemo<NavItem[]>(
         () => [
             {
-                label: 'Dashboard',
+                label: t('Dashboard'),
                 href: route('admin.dashboard'),
                 routeName: 'admin.dashboard',
                 icon: <LayoutGrid className="h-4 w-4" />,
             },
             {
-                label: 'Users',
+                label: t('Users'),
                 href: route('admin.users.index'),
                 routeName: 'admin.users.*',
                 icon: <Users className="h-4 w-4" />,
             },
             {
-                label: 'Roles',
+                label: t('Roles'),
                 href: route('admin.roles.index'),
                 routeName: 'admin.roles.*',
                 icon: <ShieldCheck className="h-4 w-4" />,
             },
             {
-                label: 'Permissions',
+                label: t('Permissions'),
                 href: route('admin.permissions.index'),
                 routeName: 'admin.permissions.*',
                 icon: <LockKeyhole className="h-4 w-4" />,
             },
         ],
-        [],
+        [t],
     );
 
     return (
@@ -57,7 +60,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 >
                     <div className="mb-8 flex items-center justify-between">
                         <Link href={route('admin.dashboard')} className="text-lg font-extrabold tracking-tight text-slate-900">
-                            Noticiario Admin
+                            {t('Noticiario')} {t('Admin Panel')}
                         </Link>
                         <button onClick={() => setOpen(false)} className="md:hidden">
                             <X className="h-5 w-5" />
@@ -88,7 +91,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
 
                 <div className="flex w-full flex-1 flex-col">
                     <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/70 backdrop-blur">
-                        <div className="flex h-16 items-center justify-between px-4 md:px-8">
+                        <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-8">
                             <button
                                 className="inline-flex items-center justify-center rounded-md border border-slate-300 p-2 md:hidden"
                                 onClick={() => setOpen(true)}
@@ -101,11 +104,14 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                                 <p className="text-slate-500">{user?.email}</p>
                             </div>
 
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={route('logout')} method="post" as="button">
-                                    Logout
-                                </Link>
-                            </Button>
+                            <div className="ml-auto flex items-center gap-2">
+                                <LanguageSwitcher />
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={route('logout')} method="post" as="button">
+                                        {t('Logout')}
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
                     </header>
 

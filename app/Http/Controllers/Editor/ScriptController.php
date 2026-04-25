@@ -8,6 +8,7 @@ use App\Http\Requests\Editor\UpdateScriptRequest;
 use App\Models\Edition;
 use App\Models\Script;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,9 +33,12 @@ class ScriptController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Editor/Scripts/Create', $this->formOptions());
+        return Inertia::render('Editor/Scripts/Create', [
+            ...$this->formOptions(),
+            'selectedEditionId' => $request->query('edition_id'),
+        ]);
     }
 
     public function store(StoreScriptRequest $request): RedirectResponse
@@ -52,7 +56,7 @@ class ScriptController extends Controller
             'script' => [
                 'id' => $script->id,
                 'title' => $script->title,
-                'edition' => $script->edition?->title,
+                'edition' => $script->edition ? ['id' => $script->edition->id, 'title' => $script->edition->title] : null,
                 'status' => $script->status,
                 'language' => $script->language,
                 'intro' => $script->intro,

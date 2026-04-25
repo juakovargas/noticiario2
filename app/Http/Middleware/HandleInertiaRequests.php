@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Language;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -15,24 +17,41 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'app';
 
-    /**
-     * Determine the current asset version.
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
         $user = $request->user();
         $impersonatorId = $request->session()->get('impersonator_id');
         $impersonator = $impersonatorId ? User::query()->find($impersonatorId) : null;
+
+        $availableLocales = [
+            ['code' => 'en', 'name' => 'English', 'native_name' => 'English', 'flag_emoji' => '🇬🇧'],
+            ['code' => 'es', 'name' => 'Spanish', 'native_name' => 'Español', 'flag_emoji' => '🇪🇸'],
+        ];
+
+        if (Schema::hasTable('languages')) {
+            $dbLocales = Language::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['code', 'name', 'native_name', 'flag_emoji'])
+                ->map(fn (Language $language) => [
+                    'code' => $language->code,
+                    'name' => $language->name,
+                    'native_name' => $language->native_name,
+                    'flag_emoji' => $language->flag_emoji,
+                ])
+                ->values()
+                ->all();
+
+            if (! empty($dbLocales)) {
+                $availableLocales = $dbLocales;
+            }
+        }
 
         return [
             ...parent::share($request),
@@ -53,10 +72,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'i18n' => [
                 'locale' => app()->getLocale(),
-                'availableLocales' => [
-                    ['code' => 'en', 'label' => 'English'],
-                    ['code' => 'es', 'label' => 'Español'],
-                ],
+                'availableLocales' => $availableLocales,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

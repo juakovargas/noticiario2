@@ -72,6 +72,8 @@ class DemoSeedersTest extends TestCase
             $this->assertDatabaseHas('news_categories', ['slug' => $slug]);
         }
 
+        $this->assertDatabaseHas('news_category_translations', ['language_code' => 'es', 'name' => 'Política']);
+
         foreach (['morning-briefing-spain', 'madrid-local-midday-update', 'evening-global-recap', 'sports-weekend-preview'] as $slug) {
             $this->assertDatabaseHas('editions', ['slug' => $slug]);
         }

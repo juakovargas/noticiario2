@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\NewsItem;
 use App\Models\NewsSource;
+use App\Models\NewsCategoryTranslation;
 use App\Models\Script;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -147,8 +148,10 @@ class DemoEditorialSeeder extends Seeder
         $categories = [];
 
         foreach ($definitions as $definition) {
-            $categories[Str::slug($definition['name'])] = NewsCategory::query()->updateOrCreate(
-                ['slug' => Str::slug($definition['name'])],
+            $slug = Str::slug($definition['name']);
+
+            $categories[$slug] = NewsCategory::query()->updateOrCreate(
+                ['slug' => $slug],
                 [
                     'name' => $definition['name'],
                     'description' => $definition['description'],
@@ -156,6 +159,34 @@ class DemoEditorialSeeder extends Seeder
                     'icon' => $definition['icon'],
                     'is_active' => true,
                     'sort_order' => $definition['sort_order'],
+                ],
+            );
+        }
+
+        $spanishNames = [
+            'general' => 'General',
+            'politics' => 'Política',
+            'economy' => 'Economía',
+            'sports' => 'Deportes',
+            'culture' => 'Cultura',
+            'science' => 'Ciencia',
+            'technology' => 'Tecnología',
+            'esports' => 'Esports',
+            'society' => 'Sociedad',
+            'health' => 'Salud',
+            'climate' => 'Clima',
+            'international' => 'Internacional',
+        ];
+
+        foreach ($categories as $slug => $category) {
+            NewsCategoryTranslation::query()->updateOrCreate(
+                [
+                    'news_category_id' => $category->id,
+                    'language_code' => 'es',
+                ],
+                [
+                    'name' => $spanishNames[$slug] ?? $category->name,
+                    'description' => 'Descripción en español para '.$category->name.'.',
                 ],
             );
         }

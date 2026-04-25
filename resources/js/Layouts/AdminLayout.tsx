@@ -3,7 +3,7 @@ import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
+import { Globe, LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
 import { PropsWithChildren, useMemo, useState } from 'react';
 import { PageProps } from '@/types';
 
@@ -46,6 +46,12 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 href: route('admin.permissions.index'),
                 routeName: 'admin.permissions.*',
                 icon: <LockKeyhole className="h-4 w-4" />,
+            },
+            {
+                label: t('Languages'),
+                href: route('admin.languages.index'),
+                routeName: 'admin.languages.*',
+                icon: <Globe className="h-4 w-4" />,
             },
         ],
         [t],
@@ -119,10 +125,10 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                     {impersonation.active && (
                         <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-sm text-amber-900 md:px-8">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="font-medium">You are impersonating {impersonation.current_user_name}</p>
+                                <p className="font-medium">{t('You are impersonating')} {impersonation.current_user_name}</p>
                                 <Button asChild size="sm" variant="secondary">
                                     <Link href={route('admin.impersonation.stop')} method="post" as="button">
-                                        Return to admin
+                                        {t('Return to admin')}
                                     </Link>
                                 </Button>
                             </div>

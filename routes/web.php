@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Editor\DashboardController as EditorDashboardController
 use App\Http\Controllers\Editor\EditionController;
 use App\Http\Controllers\Editor\EditionNewsItemController;
 use App\Http\Controllers\Editor\LocationController;
+use App\Http\Controllers\Editor\ScriptBuilderController;
 use App\Http\Controllers\Editor\NewsCategoryController;
 use App\Http\Controllers\Editor\NewsItemController;
 use App\Http\Controllers\Editor\NewsSourceController;
@@ -96,6 +98,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
                 'update' => 'permission:permissions.update',
                 'destroy' => 'permission:permissions.delete',
             ]);
+
+        Route::resource('languages', LanguageController::class)->except('show');
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])
@@ -118,6 +122,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::put('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'update'])->name('editions.news-items.update');
         Route::delete('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'destroy'])->name('editions.news-items.destroy');
         Route::resource('scripts', ScriptController::class);
+        Route::get('/editions/{edition}/script-builder', [ScriptBuilderController::class, 'create'])->name('editions.script-builder');
+        Route::post('/editions/{edition}/script-builder', [ScriptBuilderController::class, 'store'])->name('editions.script-builder.store');
 
         Route::get('/audio', fn () => Inertia::render('Editor/Placeholder', [
             'title' => 'Audio',

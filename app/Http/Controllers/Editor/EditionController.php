@@ -21,14 +21,14 @@ class EditionController extends Controller
     {
         return Inertia::render('Editor/Editions/Index', [
             'editions' => Edition::query()
-                ->with('location:id,name')
+                ->with('location:id,name,country_code')
                 ->latest('scheduled_for')
                 ->paginate(10)
                 ->through(fn (Edition $edition) => [
                     'id' => $edition->id,
                     'title' => $edition->title,
                     'edition_type' => $edition->edition_type,
-                    'location' => $edition->location?->name,
+                    'location' => $edition->location,
                     'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
                     'language' => $edition->language,
                     'status' => $edition->status,
@@ -54,10 +54,12 @@ class EditionController extends Controller
 
     public function show(Edition $edition): Response
     {
+        $locale = app()->getLocale();
+
         $edition->load([
-            'location:id,name',
+            'location:id,name,country_code',
             'newsItems' => fn ($query) => $query
-                ->with(['source:id,name', 'category:id,name', 'location:id,name'])
+                ->with(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code'])
                 ->orderBy('edition_news_item.sort_order'),
             'scripts:id,edition_id,title,status,language,estimated_duration_seconds,approved_at,approved_by',
         ]);
@@ -69,7 +71,7 @@ class EditionController extends Controller
                 'id' => $edition->id,
                 'title' => $edition->title,
                 'edition_type' => $edition->edition_type,
-                'location' => $edition->location?->name,
+                'location' => $edition->location,
                 'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
                 'language' => $edition->language,
                 'status' => $edition->status,
@@ -79,9 +81,10 @@ class EditionController extends Controller
             'newsItems' => $edition->newsItems->map(fn (NewsItem $item) => [
                 'id' => $item->id,
                 'title' => $item->title,
+                'summary' => $item->summary,
                 'source' => $item->source?->name,
-                'category' => $item->category?->name,
-                'location' => $item->location?->name,
+                'category' => $item->category?->displayName($locale),
+                'location' => $item->location,
                 'status' => $item->status,
                 'sort_order' => $item->pivot->sort_order,
                 'editorial_angle' => $item->pivot->editorial_angle,

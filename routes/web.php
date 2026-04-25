@@ -5,6 +5,12 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
+use App\Http\Controllers\Editor\EditionController;
+use App\Http\Controllers\Editor\LocationController;
+use App\Http\Controllers\Editor\NewsCategoryController;
+use App\Http\Controllers\Editor\NewsItemController;
+use App\Http\Controllers\Editor\NewsSourceController;
+use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\ProfileController;
 use App\Support\AuthRedirect;
 use Illuminate\Foundation\Application;
@@ -96,30 +102,47 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
             ->middleware('permission:editor.dashboard.view')
             ->name('dashboard');
 
-        Route::get('/editions', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Editions',
-            'description' => 'Editions module will be implemented in the next phase.',
-        ]))->name('editions');
+        Route::resource('locations', LocationController::class)->except('show');
+        Route::resource('news-categories', NewsCategoryController::class)->except('show');
+        Route::resource('news-sources', NewsSourceController::class)->except('show');
+        Route::resource('news-items', NewsItemController::class);
+        Route::resource('editions', EditionController::class);
+        Route::resource('scripts', ScriptController::class);
 
-        Route::get('/news-items', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'News Items',
-            'description' => 'News Items module will be implemented in the next phase.',
-        ]))->name('news-items');
+        Route::get('/audio', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Audio',
+            'description' => 'Audio module will be implemented in a future phase.',
+        ]))->name('audio');
 
-        Route::get('/scripts', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Scripts',
-            'description' => 'Scripts module will be implemented in the next phase.',
-        ]))->name('scripts');
+        Route::get('/video', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Video',
+            'description' => 'Video module will be implemented in a future phase.',
+        ]))->name('video');
 
-        Route::get('/sources', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Sources',
-            'description' => 'Sources module will be implemented in the next phase.',
-        ]))->name('sources');
+        Route::get('/media-renders', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Media Renders',
+            'description' => 'Media renders module will be implemented in a future phase.',
+        ]))->name('media-renders');
 
-        Route::get('/media', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Media',
-            'description' => 'Media module will be implemented in the next phase.',
-        ]))->name('media');
+        Route::get('/publications', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Publications',
+            'description' => 'Publications module will be implemented in a future phase.',
+        ]))->name('publications');
+
+        Route::get('/social-channels', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Social Channels',
+            'description' => 'Social channels module will be implemented in a future phase.',
+        ]))->name('social-channels');
+
+        Route::get('/editorial-templates', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'Editorial Templates',
+            'description' => 'Editorial templates module will be implemented in a future phase.',
+        ]))->name('editorial-templates');
+
+        Route::get('/ai-prompt-templates', fn () => Inertia::render('Editor/Placeholder', [
+            'title' => 'AI Prompt Templates',
+            'description' => 'AI prompt templates module will be implemented in a future phase.',
+        ]))->name('ai-prompt-templates');
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])

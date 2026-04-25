@@ -1,0 +1,14 @@
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import EditorLayout from '@/Layouts/EditorLayout';
+import { Head, Link, useForm } from '@inertiajs/react';
+interface Option { id:number; name:string; }
+interface Props { locations:Option[]; types:string[]; statuses:string[]; }
+export default function Create({ locations, types, statuses }: Props): JSX.Element {
+ const { data, setData, post, processing } = useForm({ location_id:'', title:'', slug:'', edition_type:'morning', scheduled_for:'', language:'', status:'draft', target_duration_seconds:'', description:'' });
+ const submit=(e:any)=>{e.preventDefault();post(route('editor.editions.store'));};
+ return <EditorLayout><Head title="Create Edition" /><AdminPageHeader title="Create Edition" description="Create a new edition plan." /><Card><CardContent className="pt-6"><form onSubmit={submit} className="space-y-4"><div><Label>Title</Label><Input value={data.title} onChange={(e)=>setData('title', e.target.value)} /></div><div><Label>Slug</Label><Input value={data.slug} onChange={(e)=>setData('slug', e.target.value)} /></div><div className="grid gap-4 md:grid-cols-3"><div><Label>Type</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.edition_type} onChange={(e)=>setData('edition_type', e.target.value)}>{types.map((v)=><option key={v} value={v}>{v}</option>)}</select></div><div><Label>Location</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.location_id} onChange={(e)=>setData('location_id', e.target.value)}><option value="">None</option>{locations.map((v)=><option key={v.id} value={v.id}>{v.name}</option>)}</select></div><div><Label>Status</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.status} onChange={(e)=>setData('status', e.target.value)}>{statuses.map((v)=><option key={v} value={v}>{v}</option>)}</select></div></div><div className="grid gap-4 md:grid-cols-2"><div><Label>Scheduled for</Label><Input type="datetime-local" value={data.scheduled_for} onChange={(e)=>setData('scheduled_for', e.target.value)} /></div><div><Label>Target duration seconds</Label><Input type="number" value={data.target_duration_seconds} onChange={(e)=>setData('target_duration_seconds', e.target.value)} /></div></div><div><Label>Description</Label><textarea className="w-full rounded-md border border-slate-300 px-3 py-2" rows={4} value={data.description} onChange={(e)=>setData('description', e.target.value)} /></div><div className="flex gap-2"><Button type="submit" disabled={processing}>Save</Button><Button asChild variant="secondary"><Link href={route('editor.editions.index')}>Cancel</Link></Button></div></form></CardContent></Card></EditorLayout>;
+}

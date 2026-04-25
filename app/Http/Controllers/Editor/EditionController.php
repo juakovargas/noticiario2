@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Editor\StoreEditionRequest;
 use App\Http\Requests\Editor\UpdateEditionRequest;
 use App\Models\Edition;
+use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsItem;
 use App\Support\GeneratesUniqueSlug;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,23 +20,67 @@ class EditionController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'search' => (string) $request->query('search', ''),
+            'status' => (string) $request->query('status', ''),
+            'edition_type' => (string) $request->query('edition_type', ''),
+            'location_id' => (string) $request->query('location_id', ''),
+            'language' => (string) $request->query('language', ''),
+            'scheduled_from' => (string) $request->query('scheduled_from', ''),
+            'scheduled_to' => (string) $request->query('scheduled_to', ''),
+            'sort' => (string) $request->query('sort', 'scheduled_for'),
+            'direction' => (string) $request->query('direction', 'desc'),
+        ];
+
+        $allowedSorts = ['title', 'status', 'edition_type', 'scheduled_for', 'target_duration_seconds', 'created_at'];
+        $sort = in_array($filters['sort'], $allowedSorts, true) ? $filters['sort'] : 'scheduled_for';
+        $direction = in_array($filters['direction'], ['asc', 'desc'], true) ? $filters['direction'] : 'desc';
+
+        $editions = Edition::query()
+            ->with('location:id,name,country_code,type')
+            ->withCount(['newsItems', 'scripts'])
+            ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
+                $search = $filters['search'];
+                $query->where(function (Builder $subQuery) use ($search): void {
+                    $subQuery
+                        ->where('title', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['status'] !== '', fn (Builder $query) => $query->where('status', $filters['status']))
+            ->when($filters['edition_type'] !== '', fn (Builder $query) => $query->where('edition_type', $filters['edition_type']))
+            ->when($filters['location_id'] !== '', fn (Builder $query) => $query->where('location_id', $filters['location_id']))
+            ->when($filters['language'] !== '', fn (Builder $query) => $query->where('language', $filters['language']))
+            ->when($filters['scheduled_from'] !== '', fn (Builder $query) => $query->whereDate('scheduled_for', '>=', $filters['scheduled_from']))
+            ->when($filters['scheduled_to'] !== '', fn (Builder $query) => $query->whereDate('scheduled_for', '<=', $filters['scheduled_to']))
+            ->orderByRaw($sort === 'scheduled_for' ? 'scheduled_for is null asc' : '0 asc')
+            ->orderBy($sort, $direction)
+            ->orderByDesc('created_at')
+            ->paginate(15)
+            ->withQueryString()
+            ->through(fn (Edition $edition) => [
+                'id' => $edition->id,
+                'title' => $edition->title,
+                'edition_type' => $edition->edition_type,
+                'location' => $edition->location,
+                'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
+                'language' => $edition->language,
+                'status' => $edition->status,
+                'target_duration_seconds' => $edition->target_duration_seconds,
+                'news_items_count' => $edition->news_items_count,
+                'scripts_count' => $edition->scripts_count,
+            ]);
+
         return Inertia::render('Editor/Editions/Index', [
-            'editions' => Edition::query()
-                ->with('location:id,name,country_code')
-                ->latest('scheduled_for')
-                ->paginate(10)
-                ->through(fn (Edition $edition) => [
-                    'id' => $edition->id,
-                    'title' => $edition->title,
-                    'edition_type' => $edition->edition_type,
-                    'location' => $edition->location,
-                    'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
-                    'language' => $edition->language,
-                    'status' => $edition->status,
-                    'target_duration_seconds' => $edition->target_duration_seconds,
-                ]),
+            'editions' => $editions,
+            'filters' => $filters,
+            'statuses' => ['draft', 'planning', 'scripting', 'approved', 'archived'],
+            'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
+            'languages' => Language::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('code'),
+            'locations' => Location::query()->orderBy('name')->get(['id', 'name', 'country_code', 'type']),
         ]);
     }
 

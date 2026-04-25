@@ -1,0 +1,14 @@
+El proyecto será una plataforma automatizada de creación de noticiarios digitales capaz de generar contenidos informativos en formato breve, adaptados a distintas temáticas y ubicaciones.
+
+La aplicación permitirá recopilar noticias, seleccionarlas, ordenarlas y transformarlas en guiones editoriales preparados para su publicación. Estos guiones podrán ser generales, locales o temáticos: noticias de España, Madrid, Francia o cualquier otra zona; y contenidos de política, deportes, cultura, ciencia, tecnología, esports, economía o actualidad general.
+
+En una segunda fase, el sistema convertirá esos guiones en audio mediante voces sintéticas y posteriormente en vídeos listos para publicar, con presentadores virtuales, imágenes, subtítulos y formatos adaptados a redes sociales.
+
+El público objetivo son medios digitales, creadores de contenido, cuentas informativas locales, empresas de comunicación, ayuntamientos, asociaciones, canales temáticos y proyectos que necesiten publicar noticias de forma constante sin depender de grandes equipos de redacción o producción audiovisual.
+
+Las redes objetivo serán principalmente TikTok, YouTube Shorts, Instagram Reels, Facebook, X/Twitter y YouTube, priorizando formatos breves, frecuentes y fácilmente escalables.
+
+La viabilidad del proyecto se basa en reducir drásticamente el coste y el tiempo de producción: una noticia puede pasar de fuente informativa a guion, audio y vídeo en un flujo semiautomático o automático. El modelo es escalable porque permite reutilizar la misma tecnología para distintos territorios, idiomas, temáticas y clientes, abriendo la puerta a suscripciones, licencias para medios locales, canales verticales propios y servicios de generación de contenido informativo bajo demanda.
+
+
+

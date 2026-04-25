@@ -1,0 +1,99 @@
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import Pagination from '@/Components/Pagination';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { Head, Link, router } from '@inertiajs/react';
+
+interface UserItem {
+    id: number;
+    name: string;
+    email: string;
+    is_active: boolean;
+    created_at: string;
+    roles: string[];
+}
+
+interface UsersIndexProps {
+    users: {
+        data: UserItem[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+    };
+}
+
+export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
+    const destroyUser = (id: number): void => {
+        if (!window.confirm('Delete this user?')) {
+            return;
+        }
+
+        router.delete(route('admin.users.destroy', id));
+    };
+
+    return (
+        <AdminLayout>
+            <Head title="Users" />
+
+            <AdminPageHeader
+                title="Users"
+                description="Manage platform users, access state, and assignments."
+                actionLabel="Create user"
+                actionHref={route('admin.users.create')}
+            />
+
+            <Card>
+                <CardContent className="overflow-x-auto pt-6">
+                    <table className="w-full min-w-[760px] text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-slate-200 text-slate-500">
+                                <th className="px-2 pb-3">Name</th>
+                                <th className="px-2 pb-3">Email</th>
+                                <th className="px-2 pb-3">Status</th>
+                                <th className="px-2 pb-3">Roles</th>
+                                <th className="px-2 pb-3">Created</th>
+                                <th className="px-2 pb-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.data.map((user) => (
+                                <tr key={user.id} className="border-b border-slate-100">
+                                    <td className="px-2 py-3 font-medium text-slate-900">{user.name}</td>
+                                    <td className="px-2 py-3 text-slate-600">{user.email}</td>
+                                    <td className="px-2 py-3">
+                                        <Badge variant={user.is_active ? 'success' : 'danger'}>
+                                            {user.is_active ? 'Active' : 'Inactive'}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-2 py-3 text-slate-600">
+                                        {user.roles.length ? user.roles.join(', ') : 'No roles'}
+                                    </td>
+                                    <td className="px-2 py-3 text-slate-600">{user.created_at}</td>
+                                    <td className="px-2 py-3">
+                                        <div className="flex justify-end gap-2">
+                                            <Button asChild size="sm" variant="outline">
+                                                <Link href={route('admin.users.show', user.id)}>View</Link>
+                                            </Button>
+                                            <Button asChild size="sm" variant="secondary">
+                                                <Link href={route('admin.users.edit', user.id)}>Edit</Link>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={() => destroyUser(user.id)}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <Pagination links={users.links} />
+                </CardContent>
+            </Card>
+        </AdminLayout>
+    );
+}

@@ -3,9 +3,13 @@ export interface User {
     name: string;
     email: string;
     email_verified_at?: string;
-    is_active?: boolean;
     roles?: string[];
     permissions?: string[];
+}
+
+export interface AvailableLocale {
+    code: 'en' | 'es';
+    label: string;
 }
 
 export type PageProps<
@@ -13,6 +17,10 @@ export type PageProps<
 > = T & {
     auth: {
         user: User | null;
+    };
+    i18n: {
+        locale: 'en' | 'es';
+        availableLocales: AvailableLocale[];
     };
     flash: {
         success?: string;

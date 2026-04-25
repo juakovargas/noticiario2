@@ -6,11 +6,13 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\EditionController;
+use App\Http\Controllers\Editor\EditionNewsItemController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\NewsCategoryController;
 use App\Http\Controllers\Editor\NewsItemController;
 use App\Http\Controllers\Editor\NewsSourceController;
 use App\Http\Controllers\Editor\ScriptController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Support\AuthRedirect;
 use Illuminate\Foundation\Application;
@@ -41,6 +43,8 @@ Route::get('/dashboard', function () {
 
     return redirect()->route($routeName);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -107,6 +111,10 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('news-sources', NewsSourceController::class)->except('show');
         Route::resource('news-items', NewsItemController::class);
         Route::resource('editions', EditionController::class);
+        Route::get('/editions/{edition}/news-items', [EditionNewsItemController::class, 'index'])->name('editions.news-items.index');
+        Route::post('/editions/{edition}/news-items', [EditionNewsItemController::class, 'store'])->name('editions.news-items.store');
+        Route::put('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'update'])->name('editions.news-items.update');
+        Route::delete('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'destroy'])->name('editions.news-items.destroy');
         Route::resource('scripts', ScriptController::class);
 
         Route::get('/audio', fn () => Inertia::render('Editor/Placeholder', [

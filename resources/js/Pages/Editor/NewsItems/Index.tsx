@@ -1,0 +1,13 @@
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import Pagination from '@/Components/Pagination';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import EditorLayout from '@/Layouts/EditorLayout';
+import { Head, Link, router } from '@inertiajs/react';
+interface Item { id:number; title:string; source:string|null; category:string|null; location:string|null; status:string; published_at:string|null; editorial_priority:number; }
+interface Props { newsItems:{data:Item[]; links:Array<{url:string|null; label:string; active:boolean}>}; }
+export default function Index({ newsItems }: Props): JSX.Element {
+ const destroy=(id:number)=>{if(window.confirm('Delete this news item?')) router.delete(route('editor.news-items.destroy', id));};
+ return <EditorLayout><Head title="News Items" /><AdminPageHeader title="News Items" description="Manage collected and manual news." actionLabel="Create news item" actionHref={route('editor.news-items.create')} />
+ <Card><CardContent className="overflow-x-auto pt-6"><table className="w-full min-w-[900px] text-sm"><thead><tr className="border-b border-slate-200 text-slate-500"><th className="px-2 pb-3">Title</th><th className="px-2 pb-3">Source</th><th className="px-2 pb-3">Category</th><th className="px-2 pb-3">Location</th><th className="px-2 pb-3">Status</th><th className="px-2 pb-3">Published at</th><th className="px-2 pb-3">Priority</th><th className="px-2 pb-3 text-right">Actions</th></tr></thead><tbody>{newsItems.data.length ? newsItems.data.map((item)=><tr key={item.id} className="border-b border-slate-100"><td className="px-2 py-3 font-medium">{item.title}</td><td className="px-2 py-3">{item.source || '-'}</td><td className="px-2 py-3">{item.category || '-'}</td><td className="px-2 py-3">{item.location || '-'}</td><td className="px-2 py-3">{item.status}</td><td className="px-2 py-3">{item.published_at || '-'}</td><td className="px-2 py-3">{item.editorial_priority}</td><td className="px-2 py-3"><div className="flex justify-end gap-2"><Button asChild size="sm" variant="outline"><Link href={route('editor.news-items.show', item.id)}>View</Link></Button><Button asChild size="sm" variant="secondary"><Link href={route('editor.news-items.edit', item.id)}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={()=>destroy(item.id)}>Delete</Button></div></td></tr>) : <tr><td colSpan={8} className="px-2 py-6 text-center text-slate-500">No news items yet.</td></tr>}</tbody></table><Pagination links={newsItems.links} /></CardContent></Card></EditorLayout>;
+}

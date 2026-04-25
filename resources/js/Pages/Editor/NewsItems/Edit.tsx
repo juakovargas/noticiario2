@@ -1,0 +1,21 @@
+import EditorLayout from '@/Layouts/EditorLayout';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+interface Option { id:number; name:string; }
+interface NewsItem { id:number; news_source_id:number|null; news_category_id:number|null; location_id:number|null; title:string; slug:string; summary:string|null; body:string|null; source_url:string|null; author:string|null; language:string|null; published_at:string|null; collected_at:string|null; status:string; editorial_priority:number; is_evergreen:boolean; }
+interface Props { newsItem:NewsItem; sources:Option[]; categories:Option[]; locations:Option[]; statuses:string[]; }
+export default function Edit({ newsItem, sources, categories, locations, statuses }: Props): JSX.Element {
+ const { data, setData, put, processing } = useForm({ news_source_id:newsItem.news_source_id?.toString() || '', news_category_id:newsItem.news_category_id?.toString() || '', location_id:newsItem.location_id?.toString() || '', title:newsItem.title, slug:newsItem.slug, summary:newsItem.summary || '', body:newsItem.body || '', source_url:newsItem.source_url || '', author:newsItem.author || '', language:newsItem.language || '', published_at:newsItem.published_at || '', collected_at:newsItem.collected_at || '', status:newsItem.status, editorial_priority:newsItem.editorial_priority, is_evergreen:newsItem.is_evergreen });
+ const submit=(e:any)=>{e.preventDefault();put(route('editor.news-items.update', newsItem.id));};
+ return <EditorLayout><Head title="Edit News Item" /><AdminPageHeader title="Edit News Item" description="Update news item details." /><Card><CardContent className="pt-6"><form onSubmit={submit} className="space-y-4">
+ <div><Label>Title</Label><Input value={data.title} onChange={(e)=>setData('title', e.target.value)} /></div><div><Label>Slug</Label><Input value={data.slug} onChange={(e)=>setData('slug', e.target.value)} /></div>
+ <div className="grid gap-4 md:grid-cols-3"><div><Label>Source</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.news_source_id} onChange={(e)=>setData('news_source_id', e.target.value)}><option value="">None</option>{sources.map((o)=><option key={o.id} value={o.id}>{o.name}</option>)}</select></div><div><Label>Category</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.news_category_id} onChange={(e)=>setData('news_category_id', e.target.value)}><option value="">None</option>{categories.map((o)=><option key={o.id} value={o.id}>{o.name}</option>)}</select></div><div><Label>Location</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.location_id} onChange={(e)=>setData('location_id', e.target.value)}><option value="">None</option>{locations.map((o)=><option key={o.id} value={o.id}>{o.name}</option>)}</select></div></div>
+ <div><Label>Summary</Label><textarea className="w-full rounded-md border border-slate-300 px-3 py-2" rows={3} value={data.summary} onChange={(e)=>setData('summary', e.target.value)} /></div><div><Label>Body</Label><textarea className="w-full rounded-md border border-slate-300 px-3 py-2" rows={8} value={data.body} onChange={(e)=>setData('body', e.target.value)} /></div>
+ <div className="grid gap-4 md:grid-cols-3"><div><Label>Status</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={data.status} onChange={(e)=>setData('status', e.target.value)}>{statuses.map((s)=><option key={s} value={s}>{s}</option>)}</select></div><div><Label>Published at</Label><Input type="datetime-local" value={data.published_at} onChange={(e)=>setData('published_at', e.target.value)} /></div><div><Label>Priority</Label><Input type="number" min={1} max={5} value={data.editorial_priority} onChange={(e)=>setData('editorial_priority', Number(e.target.value))} /></div></div>
+ <div className="flex gap-2"><Button type="submit" disabled={processing}>Save</Button><Button asChild variant="secondary"><Link href={route('editor.news-items.index')}>Cancel</Link></Button></div>
+ </form></CardContent></Card></EditorLayout>;
+}

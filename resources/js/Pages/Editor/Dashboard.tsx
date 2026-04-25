@@ -3,54 +3,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Com
 import EditorLayout from '@/Layouts/EditorLayout';
 import { Head, Link } from '@inertiajs/react';
 
-const modules = [
-    {
-        title: 'Editions',
-        description: 'Plan and manage edition cycles.',
-        href: 'editor.editions',
-    },
-    {
-        title: 'News Items',
-        description: 'Editorial news workflow will be added here.',
-        href: 'editor.news-items',
-    },
-    {
-        title: 'Scripts',
-        description: 'Script generation and review pipeline entry point.',
-        href: 'editor.scripts',
-    },
-    {
-        title: 'Sources',
-        description: 'Source curation and validation will live in this section.',
-        href: 'editor.sources',
-    },
-    {
-        title: 'Media',
-        description: 'Media assets and future rendering operations.',
-        href: 'editor.media',
-    },
+interface Props { stats: { editions:number; newsItems:number; scripts:number; sources:number; }; }
+interface ModuleCard { title: string; href: string; stat?: keyof Props['stats']; }
+
+const modules: ModuleCard[] = [
+    { title: 'News Items', href: 'editor.news-items.index', stat: 'newsItems' },
+    { title: 'News Sources', href: 'editor.news-sources.index', stat: 'sources' },
+    { title: 'News Categories', href: 'editor.news-categories.index' },
+    { title: 'Locations', href: 'editor.locations.index' },
+    { title: 'Editions', href: 'editor.editions.index', stat: 'editions' },
+    { title: 'Scripts', href: 'editor.scripts.index', stat: 'scripts' },
 ];
 
-export default function Dashboard(): JSX.Element {
+export default function Dashboard({ stats }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title="Editor Dashboard" />
-
-            <AdminPageHeader
-                title="Editor Dashboard"
-                description="Main editorial workspace foundation for upcoming modules."
-            />
-
+            <AdminPageHeader title="Editor Dashboard" description="Main editorial workspace foundation for content operations." />
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {modules.map((module) => (
                     <Link key={module.title} href={route(module.href)}>
                         <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
                             <CardHeader>
                                 <CardTitle>{module.title}</CardTitle>
-                                <CardDescription>{module.description}</CardDescription>
+                                <CardDescription>Open module</CardDescription>
                             </CardHeader>
                             <CardContent className="text-xs text-slate-500">
-                                Open placeholder
+                                {module.stat ? `Records: ${stats[module.stat]}` : 'Module ready'}
                             </CardContent>
                         </Card>
                     </Link>

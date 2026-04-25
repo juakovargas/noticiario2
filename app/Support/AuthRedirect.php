@@ -8,15 +8,19 @@ class AuthRedirect
 {
     public static function routeNameFor(User $user): string
     {
-        if ($user->can('admin.access')) {
+        if ($user->hasRole('super-admin')) {
             return 'admin.dashboard';
         }
 
-        if ($user->can('editor.access') || $user->hasRole('editor')) {
+        if ($user->hasRole('admin')) {
+            return 'admin.dashboard';
+        }
+
+        if ($user->hasRole('editor')) {
             return 'editor.dashboard';
         }
 
-        if ($user->can('viewer.access') || $user->hasRole('viewer')) {
+        if ($user->hasRole('viewer')) {
             return 'viewer.dashboard';
         }
 

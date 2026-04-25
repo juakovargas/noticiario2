@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Support\AuthRedirect;
 use Illuminate\Foundation\Application;
@@ -47,7 +48,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
-        Route::get('/dashboard', [DashboardController::class, 'index'])
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->middleware('permission:dashboard.view')
             ->name('dashboard');
 
@@ -91,7 +92,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('editor.dashboard'));
 
-        Route::get('/dashboard', fn () => Inertia::render('Editor/Dashboard'))
+        Route::get('/dashboard', [EditorDashboardController::class, 'index'])
             ->middleware('permission:editor.dashboard.view')
             ->name('dashboard');
 

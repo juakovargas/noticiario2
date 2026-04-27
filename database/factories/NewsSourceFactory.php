@@ -22,6 +22,7 @@ class NewsSourceFactory extends Factory
             'slug' => Str::slug($name),
             'type' => 'manual',
             'is_active' => true,
+            'is_demo' => false,
             'trust_level' => 3,
             'language' => 'en',
         ];

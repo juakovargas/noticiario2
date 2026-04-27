@@ -21,6 +21,8 @@ class NewsItem extends Model
         'summary',
         'body',
         'source_url',
+        'external_id',
+        'imported_hash',
         'author',
         'language',
         'published_at',

@@ -3,6 +3,8 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useTranslations } from '@/i18n/useTranslations';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 
 interface Script {
     title: string;
@@ -22,6 +24,9 @@ interface Props {
 }
 
 export default function Show({ script }: Props): JSX.Element {
+    const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
+
     return (
         <EditorLayout>
             <Head title={script.title} />
@@ -29,34 +34,34 @@ export default function Show({ script }: Props): JSX.Element {
             <Card>
                 <CardContent className="space-y-3 pt-6 text-sm">
                     <p>
-                        <strong>Edition:</strong> {script.edition?.title || '-'}
+                        <strong>{t('Editions')}:</strong> {script.edition?.title || '-'}
                     </p>
                     <p>
-                        <strong>Status:</strong> {script.status}
+                        <strong>{t('Status')}:</strong> {script.status}
                     </p>
                     <p>
-                        <strong>Language:</strong> {script.language || '-'}
+                        <strong>{t('Language')}:</strong> {script.language || '-'}
                     </p>
                     <p>
-                        <strong>Intro:</strong> {script.intro || '-'}
+                        <strong>{t('Intro')}:</strong> {script.intro || '-'}
                     </p>
                     <p>
-                        <strong>Body:</strong> {script.body || '-'}
+                        <strong>{t('Body')}:</strong> {script.body || '-'}
                     </p>
                     <p>
-                        <strong>Outro:</strong> {script.outro || '-'}
+                        <strong>{t('Outro')}:</strong> {script.outro || '-'}
                     </p>
                     <p>
-                        <strong>Estimated duration:</strong> {script.estimated_duration_seconds || '-'} seconds
+                        <strong>{t('Estimated Duration')}:</strong> {script.estimated_duration_seconds || '-'} seconds
                     </p>
                     <p>
-                        <strong>Approved at:</strong> {script.approved_at || '-'}
+                        <strong>{t('Approved at')}:</strong> {formatDateTime(script.approved_at)}
                     </p>
                     <p>
                         <strong>Approved by:</strong> {script.approved_by || '-'}
                     </p>
                     <Button asChild variant="secondary">
-                        <Link href={route('editor.scripts.index')}>Back</Link>
+                        <Link href={route('editor.scripts.index')}>{t('Back')}</Link>
                     </Button>
                 </CardContent>
             </Card>

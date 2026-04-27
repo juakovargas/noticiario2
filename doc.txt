@@ -1,0 +1,172 @@
+PROJECT: NOTICIARIO
+
+IMPORTANT:
+Keep this file updated after every major branch or feature.
+
+Goal:
+Noticiario is a Laravel 12 + Inertia + React + TypeScript application for creating short digital news bulletins. The platform helps editors collect and organize news by location/topic, prepare editions, and build scripts. Future phases may include AI-assisted planning, audio/video generation, and publishing automation.
+
+Architecture:
+- Laravel 12
+- Inertia
+- React
+- TypeScript
+- Tailwind
+- MySQL
+- Spatie Laravel Permission
+- No Blade application pages
+- resources/views/app.blade.php is only the Inertia root view
+- React pages live in resources/js/Pages
+- React layouts live in resources/js/Layouts
+
+Panels:
+Admin:
+- URL: /admin
+- Permission: admin.access
+- Purpose: technical/system administration
+- Modules:
+  - Dashboard
+  - Users
+  - Roles
+  - Permissions
+  - Languages
+  - AI Providers (implemented)
+  - Impersonation/Login as user
+
+Editor:
+- URL: /editor
+- Permission: editor.access
+- Purpose: main editorial workspace
+- Modules:
+  - Dashboard
+  - News Items
+  - News Sources
+  - News Categories
+  - Locations
+  - Editions
+  - Scripts
+  - Script Builder
+  - Editorial Templates
+  - AI Prompt Templates
+  - Editorial Requests
+  - Audio/Video/Publishing placeholders for future phases
+
+Viewer:
+- URL: /viewer
+- Permission: viewer.access
+- Purpose: read-only area
+- Modules:
+  - Dashboard
+  - Published Content
+
+Auth and permissions:
+- Login redirects by permission:
+  - admin.access -> /admin
+  - editor.access -> /editor
+  - viewer.access -> /viewer
+- Editors must not access /admin
+- Viewers must not access /admin or /editor
+- Admin impersonation exists for support/testing
+- Impersonation is only for admin.access users
+
+Demo users:
+- admin@example.com / password
+- editor@example.com / password
+- viewer@example.com / password
+
+Important commands:
+- php artisan migrate
+- php artisan db:seed
+- php artisan db:seed --class=DemoEditorialSeeder
+- php artisan test
+- npm run build
+- php artisan route:list --name=admin
+- php artisan route:list --name=editor
+- php artisan route:list --name=viewer
+- php artisan route:list --name=locale
+
+Current main entities:
+- users
+- roles
+- permissions
+- languages
+- locations
+- news_categories
+- news_category_translations
+- news_sources
+- news_items
+- editions
+- edition_news_item
+- scripts
+- editorial_templates
+- ai_providers
+- ai_prompt_templates
+- editorial_requests
+- editorial_request_candidates
+
+Languages:
+- languages table configures available languages
+- UI locale and editorial language are related but different
+- UI locale controls app interface language
+- Editorial language controls content language
+- Locations can have a default editorial language
+- Dates should be displayed with localized formatting
+- Do not show seconds in normal editorial UI
+
+Current development decisions:
+- Inertia + React app only (no Blade app pages)
+- Preserve existing auth/permission rules and panel access
+- Preserve admin/editor CRUD behavior and impersonation
+- Keep RSS support optional/secondary; not strategic core
+- No external API calls in this branch
+- No queue/scheduler/audio/video/publishing automation in this branch
+
+What has been done (feature/ui-date-formatting-project-doc):
+- Added centralized frontend date helpers in resources/js/lib/dates.ts:
+  - formatDate(value, locale?)
+  - formatDateTime(value, locale?)
+  - formatTime(value, locale?)
+  - locale map: en->en-GB, es->es-ES, fr->fr-FR
+  - safe fallback for null/invalid values
+  - no seconds in default listings
+- Added useDateFormatter hook in resources/js/lib/useDateFormatter.ts to read page.props.i18n.locale
+- Applied localized datetime display across key Admin/Editor listing & detail pages
+- Added datetime-local normalization helper (toDateTimeLocalInputValue) and used it in edit forms where backend timestamps may include seconds/space format
+- Updated frontend translation keys for date-time labels
+- Added this root context file: doc.txt
+
+In progress:
+- Keep date formatting adoption consistent for newly added pages/modules.
+
+What should be done next:
+1. Continue applying centralized formatter to any new pages that display raw timestamps.
+2. Keep doc.txt updated on each major branch.
+3. Continue/complete AI editorial planning workflow hardening (without storing real API keys in DB).
+4. Add source verification/fact-checking before any automated script generation.
+5. Only add audio/video/publishing automation after editorial workflow is stable.
+
+Strategic decision:
+RSS is not the main product direction.
+RSS may remain optional/secondary, but main value should be AI-assisted editorial planning and automatic noticiario creation.
+
+Main target workflow:
+Editorial Request
+-> AI/Web Research Brief
+-> Candidate News Items
+-> Edition
+-> Script Builder / AI Script Draft
+-> Human Review
+-> Audio
+-> Video
+-> Publishing
+
+Conventions and restrictions:
+- Do not create Blade application pages.
+- Do not use migrate:fresh on development DB.
+- Do not wipe/truncate developer data.
+- Do not expose API keys.
+- Do not store real API keys in database.
+- Use TypeScript/React pages for app UI.
+- Use Tailwind for styling.
+- Use centralized helpers for common formatting.
+- Preserve existing routes unless strictly necessary.

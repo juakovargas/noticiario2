@@ -7,6 +7,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { PageProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useTranslations } from '@/i18n/useTranslations';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 
 interface UserItem {
     id: number;
@@ -27,6 +28,7 @@ interface UsersIndexProps {
 export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
     const page = usePage<PageProps>();
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
     const currentUser = page.props.auth.user;
     const canImpersonate = currentUser?.permissions?.includes('admin.access') ?? false;
 
@@ -79,7 +81,7 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                     <td className="px-2 py-3 text-slate-600">
                                         {user.roles.length ? user.roles.join(', ') : t('No roles')}
                                     </td>
-                                    <td className="px-2 py-3 text-slate-600">{user.created_at}</td>
+                                    <td className="px-2 py-3 text-slate-600">{formatDateTime(user.created_at)}</td>
                                     <td className="px-2 py-3">
                                         <div className="flex justify-end gap-2">
                                             <Button asChild size="sm" variant="outline">

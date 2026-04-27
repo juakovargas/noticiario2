@@ -6,6 +6,7 @@ import { Label } from '@/Components/ui/label';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { countryCodeToFlagEmoji } from '@/lib/flags';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
@@ -16,6 +17,7 @@ interface Props { edition:Edition; newsItems:NewsItemPivot[]; availableNewsItems
 export default function Show({ edition, newsItems, availableNewsItems, scripts }: Props): JSX.Element {
     const [editingItemId, setEditingItemId] = useState<number | null>(null);
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
 
     const addForm = useForm({ news_item_id: availableNewsItems[0]?.id?.toString() ?? '', sort_order: '0', editorial_angle: '', included_in_script: true });
     const editForm = useForm({ sort_order: '0', editorial_angle: '', included_in_script: true });
@@ -28,7 +30,7 @@ export default function Show({ edition, newsItems, availableNewsItems, scripts }
         <Card><CardContent className="space-y-3 pt-6 text-sm">
           <p><strong>{t('Type')}:</strong> {edition.edition_type}</p>
           <p><strong>{t('Location')}:</strong> {countryCodeToFlagEmoji(edition.location?.country_code)} {edition.location?.name || '-'}</p>
-          <p><strong>{t('Date')}:</strong> {edition.scheduled_for || '-'}</p>
+          <p><strong>{t('Date')}:</strong> {formatDateTime(edition.scheduled_for)}</p>
           <p><strong>{t('Language')}:</strong> {edition.language || '-'}</p>
           <p><strong>{t('Status')}:</strong> {edition.status}</p>
           <p><strong>{t('Estimated Duration')}:</strong> {edition.target_duration_seconds || '-'} seconds</p>

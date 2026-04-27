@@ -4,6 +4,7 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
 
 interface Item {
@@ -31,6 +32,7 @@ interface Props {
 
 export default function Index({ newsSources }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
 
     const destroy = (id: number): void => {
         if (window.confirm('Delete this source?')) {
@@ -69,8 +71,8 @@ export default function Index({ newsSources }: Props): JSX.Element {
                                     <td className="px-2 py-3">{item.default_category || '-'}</td>
                                     <td className="px-2 py-3">{item.default_location || '-'}</td>
                                     <td className="px-2 py-3">{item.language || '-'}</td>
-                                    <td className="px-2 py-3">{item.last_checked_at || '-'}</td>
-                                    <td className="px-2 py-3">{item.last_imported_at || '-'}</td>
+                                    <td className="px-2 py-3">{formatDateTime(item.last_checked_at)}</td>
+                                    <td className="px-2 py-3">{formatDateTime(item.last_imported_at)}</td>
                                     <td className="px-2 py-3">
                                         <div className="flex justify-end gap-2">
                                             {canImport(item) ? <Button asChild size="sm" variant="outline"><Link href={route('editor.news-sources.import', item.id)}>{t('Import News')}</Link></Button> : null}

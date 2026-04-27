@@ -3,6 +3,7 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
@@ -37,6 +38,7 @@ interface Props {
 
 export default function Import({ source, items }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
     const initial = useMemo(() => items.filter((item) => !item.is_duplicate).map((item) => item.key), [items]);
     const [selectedKeys, setSelectedKeys] = useState<string[]>(initial);
 
@@ -62,8 +64,8 @@ export default function Import({ source, items }: Props): JSX.Element {
                     <p><strong>{t('Default category')}:</strong> {source.default_category || '-'}</p>
                     <p><strong>{t('Default location')}:</strong> {source.default_location || '-'}</p>
                     <p><strong>{t('Source language')}:</strong> {source.language || '-'}</p>
-                    <p><strong>{t('Last checked at')}:</strong> {source.last_checked_at || '-'}</p>
-                    <p><strong>{t('Last imported at')}:</strong> {source.last_imported_at || '-'}</p>
+                    <p><strong>{t('Last checked at')}:</strong> {formatDateTime(source.last_checked_at)}</p>
+                    <p><strong>{t('Last imported at')}:</strong> {formatDateTime(source.last_imported_at)}</p>
                     <div className="pt-2">
                         <Button asChild variant="secondary"><Link href={route('editor.news-sources.index')}>{t('Back')}</Link></Button>
                     </div>
@@ -107,7 +109,7 @@ export default function Import({ source, items }: Props): JSX.Element {
                                                     <td className="px-2 py-3">{item.summary || '-'}</td>
                                                     <td className="px-2 py-3">{item.source_url ? <a href={item.source_url} className="text-blue-600 underline" target="_blank" rel="noreferrer">{t('Open original')}</a> : '-'}</td>
                                                     <td className="px-2 py-3">{item.author || '-'}</td>
-                                                    <td className="px-2 py-3">{item.published_at || '-'}</td>
+                                                    <td className="px-2 py-3">{formatDateTime(item.published_at)}</td>
                                                     <td className="px-2 py-3">
                                                         {item.is_duplicate ? <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">{t('Duplicate')} ({item.duplicate_reason || t('Skipped duplicate')})</span> : <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">{t('New item')}</span>}
                                                     </td>

@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Edition;
 use App\Models\EditorialRequest;
+use App\Models\EditorialSchedule;
+use App\Models\EditorialScheduleRun;
 use App\Models\AiPromptTemplate;
 use App\Models\AiProvider;
 use App\Models\EditorialTemplate;
@@ -34,6 +36,7 @@ class DemoEditorialSeeder extends Seeder
         $this->seedScripts($editions);
         $this->seedEditorialTemplates($locations);
         $this->seedEditorialRequests($locations, $categories, $aiProviders, $aiPromptTemplates);
+        $this->seedEditorialSchedules($locations, $categories);
     }
 
     /**
@@ -656,6 +659,41 @@ class DemoEditorialSeeder extends Seeder
                 'editorial_instructions' => 'Focus on practical city impact and keep the pace concise.',
             ],
         );
+    }
+
+    /**
+     * @param  array<string, Location>  $locations
+     * @param  array<string, NewsCategory>  $categories
+     */
+    private function seedEditorialSchedules(array $locations, array $categories): void
+    {
+        $languages = Language::query()->whereIn('code', ['es', 'en'])->get()->keyBy('code');
+
+        $definitions = [
+            ['name' => 'Spain Morning Briefing', 'slug' => 'spain-morning-briefing', 'location_id' => $locations['spain']->id, 'news_category_id' => $categories['general']->id, 'language_id' => $languages['es']?->id, 'edition_type' => 'morning', 'frequency_type' => 'daily', 'scheduled_time' => '08:00', 'timezone' => 'Europe/Madrid', 'target_duration_seconds' => 90, 'tone' => 'professional and concise', 'is_active' => true],
+            ['name' => 'Spain Afternoon Briefing', 'slug' => 'spain-afternoon-briefing', 'location_id' => $locations['spain']->id, 'news_category_id' => $categories['general']->id, 'language_id' => $languages['es']?->id, 'edition_type' => 'afternoon', 'frequency_type' => 'daily', 'scheduled_time' => '15:00', 'timezone' => 'Europe/Madrid', 'target_duration_seconds' => 90, 'is_active' => true],
+            ['name' => 'Spain Night Recap', 'slug' => 'spain-night-recap', 'location_id' => $locations['spain']->id, 'news_category_id' => $categories['general']->id, 'language_id' => $languages['es']?->id, 'edition_type' => 'night', 'frequency_type' => 'daily', 'scheduled_time' => '21:00', 'timezone' => 'Europe/Madrid', 'target_duration_seconds' => 120, 'is_active' => true],
+            ['name' => 'Madrid Local Morning', 'slug' => 'madrid-local-morning', 'location_id' => $locations['madrid']->id, 'news_category_id' => $categories['general']->id, 'language_id' => $languages['es']?->id, 'edition_type' => 'morning', 'frequency_type' => 'weekdays', 'scheduled_time' => '09:00', 'timezone' => 'Europe/Madrid', 'target_duration_seconds' => 75, 'weekdays' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'is_active' => true],
+            ['name' => 'Spain Sports Evening', 'slug' => 'spain-sports-evening', 'location_id' => $locations['spain']->id, 'news_category_id' => $categories['sports']->id, 'language_id' => $languages['es']?->id, 'edition_type' => 'special', 'frequency_type' => 'daily', 'scheduled_time' => '20:00', 'timezone' => 'Europe/Madrid', 'target_duration_seconds' => 75, 'is_active' => true],
+            ['name' => 'Super Bowl Special Demo', 'slug' => 'super-bowl-special-demo', 'location_id' => $locations['us']->id, 'news_category_id' => $categories['sports']->id, 'language_id' => $languages['en']?->id, 'edition_type' => 'special', 'frequency_type' => 'once', 'scheduled_date' => now()->addMonths(2)->toDateString(), 'scheduled_time' => '18:00', 'timezone' => 'America/New_York', 'target_duration_seconds' => 120, 'is_active' => true],
+        ];
+
+        foreach ($definitions as $item) {
+            EditorialSchedule::query()->updateOrCreate(
+                ['slug' => $item['slug']],
+                array_merge(['manual_ai_mode' => true], $item),
+            );
+        }
+
+        if (app()->environment(['local', 'testing'])) {
+            $schedule = EditorialSchedule::query()->where('slug', 'spain-morning-briefing')->first();
+            if ($schedule) {
+                EditorialScheduleRun::query()->updateOrCreate(
+                    ['editorial_schedule_id' => $schedule->id, 'scheduled_for' => now()->startOfDay()->addHours(8)],
+                    ['status' => 'pending'],
+                );
+            }
+        }
     }
 
 }

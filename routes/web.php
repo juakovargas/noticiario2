@@ -11,7 +11,10 @@ use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\EditionController;
 use App\Http\Controllers\Editor\EditionNewsItemController;
+use App\Http\Controllers\Editor\EditorialDeskController;
 use App\Http\Controllers\Editor\EditorialRequestController;
+use App\Http\Controllers\Editor\EditorialScheduleController;
+use App\Http\Controllers\Editor\EditorialScheduleRunController;
 use App\Http\Controllers\Editor\EditorialTemplateController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\ScriptBuilderController;
@@ -164,6 +167,14 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/editorial-requests/{editorialRequest}/run', [EditorialRequestController::class, 'run'])->name('editorial-requests.run');
         Route::post('/editorial-requests/{editorialRequest}/create-news-items', [EditorialRequestController::class, 'createNewsItems'])->name('editorial-requests.create-news-items');
         Route::post('/editorial-requests/{editorialRequest}/convert-to-edition', [EditorialRequestController::class, 'convertToEdition'])->name('editorial-requests.convert-to-edition');
+        Route::get('/editorial-desk', [EditorialDeskController::class, 'index'])->name('editorial-desk.index');
+        Route::resource('editorial-schedules', EditorialScheduleController::class);
+        Route::resource('editorial-schedule-runs', EditorialScheduleRunController::class)->only(['index', 'show']);
+        Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/receive-response', [EditorialScheduleRunController::class, 'receiveResponse'])->name('editorial-schedule-runs.receive-response');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/create-script', [EditorialScheduleRunController::class, 'createScript'])->name('editorial-schedule-runs.create-script');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/complete', [EditorialScheduleRunController::class, 'complete'])->name('editorial-schedule-runs.complete');
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])

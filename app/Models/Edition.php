@@ -50,4 +50,9 @@ class Edition extends Model
     {
         return $this->hasMany(Script::class);
     }
+
+    public function editorialScheduleRuns(): HasMany
+    {
+        return $this->hasMany(EditorialScheduleRun::class);
+    }
 }

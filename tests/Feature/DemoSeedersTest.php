@@ -7,6 +7,8 @@ use App\Models\AiPromptTemplate;
 use App\Models\AiProvider;
 use App\Models\EditorialTemplate;
 use App\Models\EditorialRequest;
+use App\Models\EditorialSchedule;
+use App\Models\EditorialScheduleRun;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
@@ -59,6 +61,8 @@ class DemoSeedersTest extends TestCase
         $templatesCount = EditorialTemplate::query()->count();
         $providersCount = AiProvider::query()->count();
         $promptTemplatesCount = AiPromptTemplate::query()->count();
+        $schedulesCount = EditorialSchedule::query()->count();
+        $scheduleRunsCount = EditorialScheduleRun::query()->count();
 
         $this->seed(DemoEditorialSeeder::class);
 
@@ -69,6 +73,8 @@ class DemoSeedersTest extends TestCase
         $this->assertSame($templatesCount, EditorialTemplate::query()->count());
         $this->assertSame($providersCount, AiProvider::query()->count());
         $this->assertSame($promptTemplatesCount, AiPromptTemplate::query()->count());
+        $this->assertSame($schedulesCount, EditorialSchedule::query()->count());
+        $this->assertSame($scheduleRunsCount, EditorialScheduleRun::query()->count());
     }
 
     public function test_expected_demo_editorial_records_exist(): void
@@ -102,6 +108,12 @@ class DemoSeedersTest extends TestCase
         $this->assertDatabaseHas('ai_prompt_templates', ['slug' => 'short-script-generation', 'type' => 'script_generation']);
         $this->assertDatabaseHas('editorial_requests', ['title' => 'Demo Madrid Afternoon Briefing', 'status' => 'draft']);
         $this->assertDatabaseHas('scripts', ['title' => 'Review script for Madrid Local Midday Update']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'spain-morning-briefing', 'frequency_type' => 'daily']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'spain-afternoon-briefing', 'scheduled_time' => '15:00:00']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'spain-night-recap', 'scheduled_time' => '21:00:00']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'madrid-local-morning', 'frequency_type' => 'weekdays']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'spain-sports-evening']);
+        $this->assertDatabaseHas('editorial_schedules', ['slug' => 'super-bowl-special-demo', 'frequency_type' => 'once']);
 
         $this->assertTrue(
             Edition::query()->whereHas('newsItems')->exists(),

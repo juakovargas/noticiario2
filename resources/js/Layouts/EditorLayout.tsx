@@ -59,7 +59,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
         {
             title: t('Settings'),
             items: [
-                { label: t('Editorial Templates'), routeName: 'editor.editorial-templates' },
+                { label: t('Editorial Templates'), routeName: 'editor.editorial-templates.index' },
                 { label: t('AI Prompt Templates'), routeName: 'editor.ai-prompt-templates' },
             ],
         },

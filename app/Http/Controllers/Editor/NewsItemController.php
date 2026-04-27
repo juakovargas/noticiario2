@@ -10,6 +10,7 @@ use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\NewsItem;
 use App\Models\NewsSource;
+use App\Support\EditorialLanguage;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -21,9 +22,14 @@ class NewsItemController extends Controller
 {
     use GeneratesUniqueSlug;
 
+    public function __construct(private readonly EditorialLanguage $editorialLanguage)
+    {
+    }
+
     public function index(Request $request): Response
     {
         $locale = app()->getLocale();
+        $activeLanguages = $this->editorialLanguage->activeLanguageOptions();
 
         $filters = [
             'search' => (string) $request->query('search', ''),
@@ -42,6 +48,8 @@ class NewsItemController extends Controller
         $allowedSorts = ['title', 'status', 'editorial_priority', 'published_at', 'collected_at', 'created_at'];
         $sort = in_array($filters['sort'], $allowedSorts, true) ? $filters['sort'] : 'published_at';
         $direction = in_array($filters['direction'], ['asc', 'desc'], true) ? $filters['direction'] : 'desc';
+
+        $languageDisplayMap = $activeLanguages->keyBy('code');
 
         $newsItems = NewsItem::query()
             ->with([
@@ -83,6 +91,8 @@ class NewsItemController extends Controller
                 'category_id' => $newsItem->news_category_id,
                 'category_color' => $newsItem->category?->color,
                 'location' => $newsItem->location,
+                'language' => $newsItem->language,
+                'language_display' => $languageDisplayMap->get($newsItem->language),
                 'status' => $newsItem->status,
                 'published_at' => $newsItem->published_at?->toDateTimeString(),
                 'editorial_priority' => $newsItem->editorial_priority,
@@ -93,7 +103,7 @@ class NewsItemController extends Controller
             'filters' => $filters,
             'statuses' => ['draft', 'collected', 'selected', 'rejected', 'archived'],
             'priorities' => [1, 2, 3, 4, 5],
-            'languages' => Language::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('code'),
+            'languages' => $activeLanguages->values(),
             'sources' => NewsSource::query()->orderBy('name')->get(['id', 'name', 'type']),
             'categories' => NewsCategory::query()
                 ->with('translations:id,news_category_id,language_code,name')
@@ -105,7 +115,17 @@ class NewsItemController extends Controller
                     'name' => $category->name,
                     'color' => $category->color,
                 ]),
-            'locations' => Location::query()->orderBy('name')->get(['id', 'name', 'country_code', 'type']),
+            'locations' => Location::query()
+                ->with('defaultLanguage:id,code,name,native_name,flag_emoji')
+                ->orderBy('name')
+                ->get(['id', 'name', 'country_code', 'type', 'default_language_id'])
+                ->map(fn (Location $location) => [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'country_code' => $location->country_code,
+                    'type' => $location->type,
+                    'default_language_code' => $location->defaultLanguage?->code,
+                ]),
         ]);
     }
 
@@ -121,6 +141,9 @@ class NewsItemController extends Controller
         $data['is_evergreen'] = $request->boolean('is_evergreen', false);
         $data['editorial_priority'] = $data['editorial_priority'] ?? 3;
 
+        $location = ! empty($data['location_id']) ? Location::query()->with('defaultLanguage')->find($data['location_id']) : null;
+        $data['language'] = $this->editorialLanguage->resolveCode($location, $data['language'] ?? null);
+
         NewsItem::query()->create($data);
 
         return to_route('editor.news-items.index')->with('success', 'News item created successfully.');
@@ -131,6 +154,8 @@ class NewsItemController extends Controller
         $locale = app()->getLocale();
         $newsItem->load(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code']);
 
+        $languageDisplay = Language::query()->where('code', $newsItem->language)->first(['code', 'name', 'native_name', 'flag_emoji']);
+
         return Inertia::render('Editor/NewsItems/Show', [
             'newsItem' => [
                 'id' => $newsItem->id,
@@ -140,6 +165,8 @@ class NewsItemController extends Controller
                 'source' => $newsItem->source?->name,
                 'category' => $newsItem->category?->displayName($locale),
                 'location' => $newsItem->location,
+                'language' => $newsItem->language,
+                'language_display' => $languageDisplay,
                 'source_url' => $newsItem->source_url,
                 'status' => $newsItem->status,
                 'published_at' => $newsItem->published_at?->toDateTimeString(),
@@ -163,6 +190,9 @@ class NewsItemController extends Controller
         $data['is_evergreen'] = $request->boolean('is_evergreen', false);
         $data['editorial_priority'] = $data['editorial_priority'] ?? 3;
 
+        $location = ! empty($data['location_id']) ? Location::query()->with('defaultLanguage')->find($data['location_id']) : null;
+        $data['language'] = $this->editorialLanguage->resolveCode($location, $data['language'] ?? null);
+
         $newsItem->update($data);
 
         return to_route('editor.news-items.index')->with('success', 'News item updated successfully.');
@@ -180,8 +210,17 @@ class NewsItemController extends Controller
         return [
             'sources' => NewsSource::query()->orderBy('name')->get(['id', 'name']),
             'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
-            'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'locations' => Location::query()
+                ->with('defaultLanguage:id,code')
+                ->orderBy('name')
+                ->get(['id', 'name', 'default_language_id'])
+                ->map(fn (Location $location) => [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'default_language_code' => $location->defaultLanguage?->code,
+                ]),
             'statuses' => ['draft', 'collected', 'selected', 'rejected', 'archived'],
+            'languages' => $this->editorialLanguage->activeLanguageOptions()->values(),
         ];
     }
 }

@@ -16,6 +16,7 @@ interface Item {
     location: { name: string; country_code: string | null } | null;
     scheduled_for: string | null;
     language: string | null;
+    language_display?: { code:string; name:string; native_name:string | null; flag_emoji:string | null } | null;
     status: string;
     target_duration_seconds: number | null;
     news_items_count: number;
@@ -27,7 +28,7 @@ interface Props {
     filters: Record<string, string>;
     statuses: string[];
     editionTypes: string[];
-    languages: string[];
+    languages: Array<{ id:number; code:string; name:string; native_name:string | null; flag_emoji:string | null }>;
     locations: Array<{ id: number; name: string }>;
 }
 
@@ -134,7 +135,7 @@ export default function Index({ editions, filters, statuses, editionTypes, langu
                         <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}>
                             <option value="">{t('All languages')}</option>
                             {languages.map((language) => (
-                                <option key={language} value={language}>{language}</option>
+                                <option key={language.id} value={language.code}>{language.flag_emoji} {language.native_name || language.name} ({language.code})</option>
                             ))}
                         </select>
 
@@ -188,7 +189,7 @@ export default function Index({ editions, filters, statuses, editionTypes, langu
                                         <td className="px-2 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeClasses[item.edition_type] || 'bg-slate-100 text-slate-700'}`}>{item.edition_type}</span></td>
                                         <td className="px-2 py-3">{countryCodeToFlagEmoji(item.location?.country_code)} {item.location?.name || '-'}</td>
                                         <td className="px-2 py-3">{item.scheduled_for || '-'}</td>
-                                        <td className="px-2 py-3">{item.language || '-'}</td>
+                                        <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClasses[item.status] || 'bg-slate-100 text-slate-700'}`}>{item.status}</span></td>
                                         <td className="px-2 py-3">{item.target_duration_seconds || '-'}</td>
                                         <td className="px-2 py-3">{item.news_items_count}</td>

@@ -23,6 +23,7 @@ class LocationFactory extends Factory
             'type' => 'city',
             'country_code' => 'US',
             'timezone' => 'America/New_York',
+            'default_language_id' => null,
             'is_active' => true,
             'sort_order' => 0,
         ];

@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Editor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Editor\StoreEditionRequest;
 use App\Http\Requests\Editor\UpdateEditionRequest;
-use App\Models\Edition;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsItem;
+use App\Models\Edition;
+use App\Support\EditorialLanguage;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -20,8 +21,15 @@ class EditionController extends Controller
 {
     use GeneratesUniqueSlug;
 
+    public function __construct(private readonly EditorialLanguage $editorialLanguage)
+    {
+    }
+
     public function index(Request $request): Response
     {
+        $activeLanguages = $this->editorialLanguage->activeLanguageOptions();
+        $languageDisplayMap = $activeLanguages->keyBy('code');
+
         $filters = [
             'search' => (string) $request->query('search', ''),
             'status' => (string) $request->query('status', ''),
@@ -68,6 +76,7 @@ class EditionController extends Controller
                 'location' => $edition->location,
                 'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
                 'language' => $edition->language,
+                'language_display' => $languageDisplayMap->get($edition->language),
                 'status' => $edition->status,
                 'target_duration_seconds' => $edition->target_duration_seconds,
                 'news_items_count' => $edition->news_items_count,
@@ -79,7 +88,7 @@ class EditionController extends Controller
             'filters' => $filters,
             'statuses' => ['draft', 'planning', 'scripting', 'approved', 'archived'],
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
-            'languages' => Language::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('code'),
+            'languages' => $activeLanguages->values(),
             'locations' => Location::query()->orderBy('name')->get(['id', 'name', 'country_code', 'type']),
         ]);
     }
@@ -93,6 +102,9 @@ class EditionController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = $this->uniqueSlug(Edition::class, $data['slug'] ?: $data['title']);
+
+        $location = ! empty($data['location_id']) ? Location::query()->with('defaultLanguage')->find($data['location_id']) : null;
+        $data['language'] = $this->editorialLanguage->resolveCode($location, $data['language'] ?? null);
 
         Edition::query()->create($data);
 
@@ -112,6 +124,7 @@ class EditionController extends Controller
         ]);
 
         $selectedNewsItemIds = $edition->newsItems->pluck('id');
+        $languageDisplay = Language::query()->where('code', $edition->language)->first(['code', 'name', 'native_name', 'flag_emoji']);
 
         return Inertia::render('Editor/Editions/Show', [
             'edition' => [
@@ -121,6 +134,7 @@ class EditionController extends Controller
                 'location' => $edition->location,
                 'scheduled_for' => $edition->scheduled_for?->toDateTimeString(),
                 'language' => $edition->language,
+                'language_display' => $languageDisplay,
                 'status' => $edition->status,
                 'target_duration_seconds' => $edition->target_duration_seconds,
                 'description' => $edition->description,
@@ -146,6 +160,7 @@ class EditionController extends Controller
                 'title' => $script->title,
                 'status' => $script->status,
                 'language' => $script->language,
+                'language_display' => Language::query()->where('code', $script->language)->first(['code', 'name', 'native_name', 'flag_emoji']),
                 'estimated_duration_seconds' => $script->estimated_duration_seconds,
             ])->values(),
         ]);
@@ -164,6 +179,10 @@ class EditionController extends Controller
         $data = $request->validated();
         $data['slug'] = $this->uniqueSlug(Edition::class, $data['slug'] ?: $data['title'], $edition->id);
 
+        $locationId = $data['location_id'] ?? $edition->location_id;
+        $location = $locationId ? Location::query()->with('defaultLanguage')->find($locationId) : null;
+        $data['language'] = $this->editorialLanguage->resolveCode($location, $data['language'] ?? null);
+
         $edition->update($data);
 
         return to_route('editor.editions.index')->with('success', 'Edition updated successfully.');
@@ -179,9 +198,18 @@ class EditionController extends Controller
     private function formOptions(): array
     {
         return [
-            'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'locations' => Location::query()
+                ->with('defaultLanguage:id,code')
+                ->orderBy('name')
+                ->get(['id', 'name', 'default_language_id'])
+                ->map(fn (Location $location) => [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'default_language_code' => $location->defaultLanguage?->code,
+                ]),
             'types' => ['morning', 'afternoon', 'night', 'special'],
             'statuses' => ['draft', 'planning', 'scripting', 'approved', 'archived'],
+            'languages' => $this->editorialLanguage->activeLanguageOptions()->values(),
         ];
     }
 }

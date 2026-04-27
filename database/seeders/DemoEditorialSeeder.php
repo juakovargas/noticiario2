@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Edition;
+use App\Models\EditorialTemplate;
+use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\NewsItem;
@@ -25,6 +27,7 @@ class DemoEditorialSeeder extends Seeder
 
         $this->attachNewsItemsToEditions($editions, $newsItems);
         $this->seedScripts($editions);
+        $this->seedEditorialTemplates($locations);
     }
 
     /**
@@ -32,11 +35,13 @@ class DemoEditorialSeeder extends Seeder
      */
     private function seedLocations(): array
     {
+        $languages = Language::query()->whereIn('code', ['en', 'es', 'fr'])->get()->keyBy('code');
         $global = $this->upsertLocation('Global', [
             'type' => 'global',
             'country_code' => null,
             'timezone' => 'UTC',
             'sort_order' => 0,
+            'default_language_id' => $languages->get('en')?->id,
         ]);
 
         $spain = $this->upsertLocation('Spain', [
@@ -45,6 +50,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'ES',
             'timezone' => 'Europe/Madrid',
             'sort_order' => 10,
+            'default_language_id' => $languages->get('es')?->id,
         ]);
 
         $france = $this->upsertLocation('France', [
@@ -53,6 +59,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'FR',
             'timezone' => 'Europe/Paris',
             'sort_order' => 20,
+            'default_language_id' => $languages->get('fr')?->id,
         ]);
 
         $us = $this->upsertLocation('United States', [
@@ -61,6 +68,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'US',
             'timezone' => 'America/New_York',
             'sort_order' => 30,
+            'default_language_id' => $languages->get('en')?->id,
         ]);
 
         $madrid = $this->upsertLocation('Madrid', [
@@ -69,6 +77,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'ES',
             'timezone' => 'Europe/Madrid',
             'sort_order' => 11,
+            'default_language_id' => $languages->get('es')?->id,
         ]);
 
         $barcelona = $this->upsertLocation('Barcelona', [
@@ -77,6 +86,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'ES',
             'timezone' => 'Europe/Madrid',
             'sort_order' => 12,
+            'default_language_id' => $languages->get('es')?->id,
         ]);
 
         $valencia = $this->upsertLocation('Valencia', [
@@ -85,6 +95,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'ES',
             'timezone' => 'Europe/Madrid',
             'sort_order' => 13,
+            'default_language_id' => $languages->get('es')?->id,
         ]);
 
         $sevilla = $this->upsertLocation('Sevilla', [
@@ -93,6 +104,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'ES',
             'timezone' => 'Europe/Madrid',
             'sort_order' => 14,
+            'default_language_id' => $languages->get('es')?->id,
         ]);
 
         $paris = $this->upsertLocation('Paris', [
@@ -101,6 +113,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'FR',
             'timezone' => 'Europe/Paris',
             'sort_order' => 21,
+            'default_language_id' => $languages->get('fr')?->id,
         ]);
 
         $lyon = $this->upsertLocation('Lyon', [
@@ -109,6 +122,7 @@ class DemoEditorialSeeder extends Seeder
             'country_code' => 'FR',
             'timezone' => 'Europe/Paris',
             'sort_order' => 22,
+            'default_language_id' => $languages->get('fr')?->id,
         ]);
 
         return compact('global', 'spain', 'france', 'us', 'madrid', 'barcelona', 'valencia', 'sevilla', 'paris', 'lyon');
@@ -310,7 +324,7 @@ class DemoEditorialSeeder extends Seeder
                     'body' => 'Demo body for editorial testing about: '.$definition['title'].'. This record exists to exercise collection, selection, and scripting workflows.',
                     'source_url' => 'https://example.com/news/'.$slug,
                     'author' => 'Noticiario Demo Desk',
-                    'language' => 'en',
+                    'language' => $locations[$definition['location']]->defaultLanguage?->code ?? 'en',
                     'published_at' => $publishedAt,
                     'collected_at' => (clone $publishedAt)->subHour(),
                     'status' => $definition['status'],
@@ -334,10 +348,10 @@ class DemoEditorialSeeder extends Seeder
     private function seedEditions(array $locations): array
     {
         $definitions = [
-            ['title' => 'Morning Briefing Spain', 'edition_type' => 'morning', 'location' => 'spain', 'language' => 'en', 'status' => 'planning', 'duration' => 90, 'scheduled_offset' => 0],
-            ['title' => 'Madrid Local Midday Update', 'edition_type' => 'afternoon', 'location' => 'madrid', 'language' => 'en', 'status' => 'scripting', 'duration' => 75, 'scheduled_offset' => 0],
+            ['title' => 'Morning Briefing Spain', 'edition_type' => 'morning', 'location' => 'spain', 'language' => 'es', 'status' => 'planning', 'duration' => 90, 'scheduled_offset' => 0],
+            ['title' => 'Madrid Local Midday Update', 'edition_type' => 'afternoon', 'location' => 'madrid', 'language' => 'es', 'status' => 'scripting', 'duration' => 75, 'scheduled_offset' => 0],
             ['title' => 'Evening Global Recap', 'edition_type' => 'night', 'location' => 'global', 'language' => 'en', 'status' => 'draft', 'duration' => 120, 'scheduled_offset' => 0],
-            ['title' => 'Sports Weekend Preview', 'edition_type' => 'special', 'location' => 'spain', 'language' => 'en', 'status' => 'planning', 'duration' => 60, 'scheduled_offset' => 1],
+            ['title' => 'Sports Weekend Preview', 'edition_type' => 'special', 'location' => 'spain', 'language' => 'es', 'status' => 'planning', 'duration' => 60, 'scheduled_offset' => 1],
         ];
 
         $editions = [];
@@ -430,7 +444,7 @@ class DemoEditorialSeeder extends Seeder
                 ],
                 [
                     'status' => $definition['status'],
-                    'language' => 'en',
+                    'language' => $edition->language ?? 'en',
                     'intro' => 'Welcome to this demo editorial script.',
                     'body' => 'We open with the key update, then move to context, impact, and what to watch next in the next 24 hours.',
                     'outro' => 'That concludes this Noticiario briefing.',
@@ -443,4 +457,35 @@ class DemoEditorialSeeder extends Seeder
             );
         }
     }
+
+    /**
+     * @param  array<string, Location>  $locations
+     */
+    private function seedEditorialTemplates(array $locations): void
+    {
+        $languages = Language::query()->whereIn('code', ['en', 'es', 'fr'])->get()->keyBy('code');
+
+        $definitions = [
+            ['name' => 'Morning Briefing', 'slug' => 'morning-briefing', 'language_id' => $languages->get('en')?->id, 'location_id' => $locations['global']->id, 'edition_type' => 'morning', 'target_duration_seconds' => 90],
+            ['name' => 'Spanish Morning Briefing', 'slug' => 'spanish-morning-briefing', 'language_id' => $languages->get('es')?->id, 'location_id' => $locations['spain']->id, 'edition_type' => 'morning', 'target_duration_seconds' => 90],
+            ['name' => 'Madrid Local Update', 'slug' => 'madrid-local-update', 'language_id' => $languages->get('es')?->id, 'location_id' => $locations['madrid']->id, 'edition_type' => 'afternoon', 'target_duration_seconds' => 75],
+            ['name' => 'Evening Global Recap', 'slug' => 'evening-global-recap-template', 'language_id' => $languages->get('en')?->id, 'location_id' => $locations['global']->id, 'edition_type' => 'night', 'target_duration_seconds' => 120],
+            ['name' => 'Sports Preview', 'slug' => 'sports-preview-template', 'language_id' => $languages->get('es')?->id ?? $languages->get('en')?->id, 'location_id' => $locations['spain']->id, 'edition_type' => 'special', 'target_duration_seconds' => 60],
+        ];
+
+        foreach ($definitions as $definition) {
+            EditorialTemplate::query()->updateOrCreate(
+                ['slug' => $definition['slug']],
+                array_merge($definition, [
+                    'description' => 'Demo editorial template for '.$definition['name'],
+                    'intro_template' => 'Intro: {{edition_title}} ({{location_name}})',
+                    'body_template' => "{{news_items}}",
+                    'outro_template' => 'Outro for {{edition_title}} on {{date}}',
+                    'is_active' => true,
+                    'sort_order' => 0,
+                ]),
+            );
+        }
+    }
+
 }

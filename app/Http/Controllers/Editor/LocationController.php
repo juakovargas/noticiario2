@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Editor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Editor\StoreLocationRequest;
 use App\Http\Requests\Editor\UpdateLocationRequest;
+use App\Models\Language;
 use App\Models\Location;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +20,7 @@ class LocationController extends Controller
     {
         return Inertia::render('Editor/Locations/Index', [
             'locations' => Location::query()
-                ->with('parent:id,name')
+                ->with(['parent:id,name', 'defaultLanguage:id,code,name,native_name,flag_emoji'])
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->paginate(10)
@@ -31,6 +32,12 @@ class LocationController extends Controller
                     'country_code' => $location->country_code,
                     'is_active' => $location->is_active,
                     'sort_order' => $location->sort_order,
+                    'default_language' => $location->defaultLanguage ? [
+                        'code' => $location->defaultLanguage->code,
+                        'name' => $location->defaultLanguage->name,
+                        'native_name' => $location->defaultLanguage->native_name,
+                        'flag_emoji' => $location->defaultLanguage->flag_emoji,
+                    ] : null,
                 ]),
         ]);
     }
@@ -40,6 +47,7 @@ class LocationController extends Controller
         return Inertia::render('Editor/Locations/Create', [
             'parents' => Location::query()->orderBy('name')->get(['id', 'name']),
             'types' => ['global', 'country', 'region', 'city', 'custom'],
+            'languages' => $this->activeLanguages(),
         ]);
     }
 
@@ -61,6 +69,7 @@ class LocationController extends Controller
             'location' => $location,
             'parents' => Location::query()->whereKeyNot($location->id)->orderBy('name')->get(['id', 'name']),
             'types' => ['global', 'country', 'region', 'city', 'custom'],
+            'languages' => $this->activeLanguages(),
         ]);
     }
 
@@ -81,5 +90,14 @@ class LocationController extends Controller
         $location->delete();
 
         return to_route('editor.locations.index')->with('success', 'Location deleted successfully.');
+    }
+
+    private function activeLanguages()
+    {
+        return Language::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'code', 'name', 'native_name', 'flag_emoji']);
     }
 }

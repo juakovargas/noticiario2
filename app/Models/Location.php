@@ -19,6 +19,7 @@ class Location extends Model
         'type',
         'country_code',
         'timezone',
+        'default_language_id',
         'is_active',
         'sort_order',
     ];
@@ -38,6 +39,12 @@ class Location extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+
+    public function defaultLanguage(): BelongsTo
+    {
+        return $this->belongsTo(Language::class, 'default_language_id');
     }
 
     public function newsItems(): HasMany

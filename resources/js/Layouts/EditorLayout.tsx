@@ -50,6 +50,8 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                 { label: t('Source References'), routeName: 'editor.source-references.index' },
                 { label: t('Editorial Schedules'), routeName: 'editor.editorial-schedules.index' },
                 { label: t('Editorial Runs'), routeName: 'editor.editorial-schedule-runs.index' },
+                { label: t('Bulletin Types'), routeName: 'editor.bulletin-types.index' },
+                { label: t('Prompt Runs'), routeName: 'editor.bulletin-prompt-runs.index' },
             ],
         },
         {

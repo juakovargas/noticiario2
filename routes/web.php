@@ -7,9 +7,12 @@ use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeoSettingController;
+use App\Http\Controllers\Admin\PromptProfileController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
+use App\Http\Controllers\Editor\BulletinTypeController;
+use App\Http\Controllers\Editor\BulletinPromptRunController;
 use App\Http\Controllers\Editor\EditionController;
 use App\Http\Controllers\Editor\EditionNewsItemController;
 use App\Http\Controllers\Editor\EditorialDeskController;
@@ -113,6 +116,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
 
         Route::resource('languages', LanguageController::class)->except('show');
         Route::resource('ai-providers', AiProviderController::class);
+        Route::resource('prompt-profiles', PromptProfileController::class);
 
         Route::get('/seo-settings', [SeoSettingController::class, 'edit'])->name('seo-settings.edit');
         Route::put('/seo-settings', [SeoSettingController::class, 'update'])->name('seo-settings.update');
@@ -190,6 +194,12 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/editorial-requests/{editorialRequest}/convert-to-edition', [EditorialRequestController::class, 'convertToEdition'])->name('editorial-requests.convert-to-edition');
         Route::get('/editorial-desk', [EditorialDeskController::class, 'index'])->name('editorial-desk.index');
         Route::resource('editorial-schedules', EditorialScheduleController::class);
+        Route::resource('bulletin-types', BulletinTypeController::class);
+        Route::resource('bulletin-prompt-runs', BulletinPromptRunController::class)->only(['index', 'show']);
+        Route::post('/bulletin-types/{bulletinType}/prompt-runs', [BulletinPromptRunController::class, 'store'])->name('bulletin-types.prompt-runs.store');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
         Route::resource('editorial-schedule-runs', EditorialScheduleRunController::class)->only(['index', 'show']);
         Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');

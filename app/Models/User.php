@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -73,6 +74,11 @@ class User extends Authenticatable
         }
 
         return Storage::disk('public')->url($this->avatar_path);
+    }
+
+    public function bulletinPromptRuns(): HasMany
+    {
+        return $this->hasMany(BulletinPromptRun::class, 'created_by');
     }
 
     public function getInitialsAttribute(): string

@@ -75,6 +75,11 @@ class Script extends Model
         return $this->hasMany(EditorialScheduleRun::class);
     }
 
+    public function bulletinPromptRuns(): HasMany
+    {
+        return $this->hasMany(BulletinPromptRun::class);
+    }
+
     public function sourceReferences(): HasMany
     {
         return $this->hasMany(SourceReference::class);

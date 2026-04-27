@@ -61,6 +61,12 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 icon: <Bot className="h-4 w-4" />,
             },
             {
+                label: t('Prompt Profiles'),
+                href: route('admin.prompt-profiles.index'),
+                routeName: 'admin.prompt-profiles.*',
+                icon: <Bot className="h-4 w-4" />,
+            },
+            {
                 label: t('SEO & Tracking'),
                 href: route('admin.seo-settings.edit'),
                 routeName: 'admin.seo-settings.*',

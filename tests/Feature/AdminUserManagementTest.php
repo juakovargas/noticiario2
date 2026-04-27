@@ -154,7 +154,7 @@ class AdminUserManagementTest extends TestCase
         ])->assertRedirect(route('admin.users.index'));
 
         $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Updated Target']);
-        $this->assertNotNull($target->fresh()->avatar_path);
+        $this->assertNotNull($target->fresh()->profile_image_id);
     }
 
     public function test_roles_with_permissions_are_shared_to_edit_page(): void
@@ -283,4 +283,47 @@ class AdminUserManagementTest extends TestCase
 
         $this->assertTrue($admin->fresh()->hasRole('admin'));
     }
+
+
+    public function test_admin_users_index_includes_avatar_data(): void
+    {
+        $admin = $this->createUserWithPermissions(['admin.access', 'users.view']);
+        $target = User::factory()->create(['avatar_path' => 'avatars/users/legacy.png']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertInertia(fn ($page) => $page
+                ->has('users.data')
+                ->where('users.data.0.avatar_url', $target->fresh()->avatar_url)
+            );
+    }
+
+    public function test_admin_can_upload_avatar_for_another_user_and_sets_profile_image_id(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->createUserWithPermissions(['admin.access', 'users.update']);
+        $target = User::factory()->create();
+
+        $this->actingAs($admin)->post(route('admin.users.update', $target), [
+            '_method' => 'put',
+            'name' => $target->name,
+            'email' => $target->email,
+            'is_active' => true,
+            'roles' => ['viewer'],
+            'permissions' => [],
+            'preferred_locale' => 'en',
+            'timezone' => 'UTC',
+            'date_format' => 'locale_default',
+            'time_format' => '24h',
+            'avatar' => UploadedFile::fake()->image('new-avatar.png', 180, 180),
+        ])->assertRedirect(route('admin.users.index'));
+
+        $this->assertNotNull($target->fresh()->profile_image_id);
+        $this->assertDatabaseHas('media_files', [
+            'id' => $target->fresh()->profile_image_id,
+            'collection' => 'profile_images',
+        ]);
+    }
+
 }

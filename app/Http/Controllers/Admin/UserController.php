@@ -7,7 +7,7 @@ use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Language;
 use App\Models\User;
-use App\Services\UserAvatarService;
+use App\Services\Media\MediaFileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +18,7 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserAvatarService $avatarService)
+    public function __construct(private readonly MediaFileService $mediaFileService)
     {
     }
 
@@ -26,7 +26,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Index', [
             'users' => User::query()
-                ->with('roles:id,name')
+                ->with(['roles:id,name', 'profileImage'])
                 ->latest()
                 ->paginate(10)
                 ->through(fn (User $user) => [
@@ -72,9 +72,8 @@ class UserController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            $user->update([
-                'avatar_path' => $this->avatarService->storeAvatar($user, $request->file('avatar')),
-            ]);
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+            $user->update(['profile_image_id' => $mediaFile->id]);
         }
 
         $user->syncRoles($data['roles'] ?? []);
@@ -142,13 +141,14 @@ class UserController extends Controller
             return back()->with('error', 'Cannot remove last admin');
         }
 
-        if ($request->boolean('remove_avatar')) {
-            $this->avatarService->deleteAvatar($user);
-            $data['avatar_path'] = null;
+        if ($request->boolean('remove_avatar') && $user->profileImage) {
+            $this->mediaFileService->archiveMediaFile($user->profileImage);
+            $data['profile_image_id'] = null;
         }
 
         if ($request->hasFile('avatar')) {
-            $data['avatar_path'] = $this->avatarService->replaceAvatar($user, $request->file('avatar'));
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+            $data['profile_image_id'] = $mediaFile->id;
         }
 
         $payload = [
@@ -161,8 +161,8 @@ class UserController extends Controller
             'time_format' => $data['time_format'] ?? null,
         ];
 
-        if (array_key_exists('avatar_path', $data)) {
-            $payload['avatar_path'] = $data['avatar_path'];
+        if (array_key_exists('profile_image_id', $data)) {
+            $payload['profile_image_id'] = $data['profile_image_id'];
         }
 
         if (! empty($data['password'])) {

@@ -924,3 +924,53 @@ Current next priorities:
 5. Add real AI provider integration.
 6. Add AI logs and cost control.
 7. Add audio/video/publishing later.
+
+## MEDIA FILE SYSTEM
+
+- Added central `media_files` table to track uploaded files and metadata.
+- Added `users.profile_image_id` (nullable FK to `media_files.id`) for profile image associations.
+- Kept `users.avatar_path` for backward compatibility.
+- Avatar resolution now prefers:
+  1. `users.profile_image_id` media URL
+  2. legacy `avatar_path` URL fallback
+  3. initials fallback
+- Added `App\Models\MediaFile` with uploader relation, URL accessor, and helper methods.
+- Added `App\Services\Media\MediaFileService` for:
+  - storing uploaded files
+  - replacing user profile images
+  - archiving/deleting media records safely
+  - capturing metadata (mime, extension, size, checksum, width/height when possible)
+- Profile image upload flow now stores records in `media_files` and sets `users.profile_image_id`.
+- Admin user edit/create avatar upload flow now stores records in `media_files` and sets `users.profile_image_id`.
+- Added a simple Admin Media Library module:
+  - `/admin/media-files`
+  - list with filters and preview
+  - details page with metadata and safe editable fields
+- User avatar display was reinforced through the reusable `UserAvatar` React component.
+- Admin, Editor, and Viewer layout headers continue showing avatar/initials correctly.
+
+### Public disk setup
+- Public media URLs rely on Laravel public disk and the storage symlink.
+- Run `php artisan storage:link` in local/production.
+- If the symlink is missing, UI falls back to initials when image loading fails.
+
+### Allowed media types (current)
+- Images: jpg, jpeg, png, webp, gif
+- Documents: pdf, txt, doc, docx
+- Audio: mp3, wav, m4a, ogg
+- Video: mp4, mov, webm
+
+### Current limitations
+- no image cropping yet
+- no thumbnails/conversions yet
+- no media picker yet
+- no S3 yet
+- no audio/video processing yet
+
+Current next priorities:
+1. Confirm media/avatar uploads manually.
+2. Replace old avatar_path usage fully later.
+3. Add media picker for editor content later.
+4. Add source verification workflow if not complete.
+5. Add real AI provider integration.
+6. Add audio/video/publishing later.

@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -16,11 +17,6 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -30,15 +26,11 @@ class User extends Authenticatable
         'preferred_locale',
         'timezone',
         'avatar_path',
+        'profile_image_id',
         'date_format',
         'time_format',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -49,11 +41,6 @@ class User extends Authenticatable
         'initials',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -63,13 +50,23 @@ class User extends Authenticatable
         ];
     }
 
+    public function profileImage(): BelongsTo
+    {
+        return $this->belongsTo(MediaFile::class, 'profile_image_id');
+    }
+
+    public function uploadedMedia(): HasMany
+    {
+        return $this->hasMany(MediaFile::class, 'uploaded_by');
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
-        if (! $this->avatar_path) {
-            return null;
+        if ($this->profileImage) {
+            return $this->profileImage->public_url;
         }
 
-        if (! Storage::disk('public')->exists($this->avatar_path)) {
+        if (! $this->avatar_path) {
             return null;
         }
 

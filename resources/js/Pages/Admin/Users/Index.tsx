@@ -78,7 +78,7 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                         <tbody>
                             {users.data.map((user) => (
                                 <tr key={user.id} className="border-b border-slate-100">
-                                    <td className="px-2 py-3 font-medium text-slate-900"><div className="flex items-center gap-2"><UserAvatar name={user.name} avatarUrl={user.avatar_url} initials={user.initials} /><span>{user.name}</span></div></td>
+                                    <td className="px-2 py-3 font-medium text-slate-900"><div className="flex items-center gap-2"><UserAvatar user={user} size="sm" /><span>{user.name}</span></div></td>
                                     <td className="px-2 py-3 text-slate-600">{user.email}</td>
                                     <td className="px-2 py-3 text-slate-600">{user.preferred_locale ?? '-'}</td>
                                     <td className="px-2 py-3 text-slate-600">{user.timezone ?? '-'}</td>

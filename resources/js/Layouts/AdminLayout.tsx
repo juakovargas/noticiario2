@@ -120,7 +120,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                             </button>
 
                             <div className="flex items-center gap-2 text-sm">
-                                <UserAvatar name={user?.name} avatarUrl={user?.avatar_url} initials={user?.initials} />
+                                <UserAvatar user={user} size="sm" />
                                 <div>
                                     <p className="font-semibold text-slate-900">{user?.name}</p>
                                     <p className="text-slate-500">{user?.email}</p>
@@ -129,6 +129,9 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
 
                             <div className="ml-auto flex items-center gap-2">
                                 <LanguageSwitcher />
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={route('profile.edit')}>{t('My profile')}</Link>
+                                </Button>
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={route('logout')} method="post" as="button">
                                         {t('Logout')}

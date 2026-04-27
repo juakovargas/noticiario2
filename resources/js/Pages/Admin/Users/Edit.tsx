@@ -168,7 +168,7 @@ export default function UsersEdit({ user, roles, permissions, localeOptions, dat
                             <div className="md:col-span-2">
                                 <Label>{t('Current avatar')}</Label>
                                 <div className="mt-2 flex items-center gap-3">
-                                    <UserAvatar name={user.name} avatarUrl={user.avatar_url} initials={user.initials} />
+                                    <UserAvatar user={user} size="md" />
                                     <span className="text-sm text-slate-500">{user.avatar_url ?? t('Avatar')}</span>
                                 </div>
                             </div>

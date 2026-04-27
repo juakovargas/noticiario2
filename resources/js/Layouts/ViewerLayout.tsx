@@ -61,9 +61,12 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                     <div className="flex items-center gap-3">
                         <LanguageSwitcher />
                         <div className="hidden items-center gap-2 md:flex">
-                            <UserAvatar name={page.props.auth.user?.name} avatarUrl={page.props.auth.user?.avatar_url} initials={page.props.auth.user?.initials} />
+                            <UserAvatar user={page.props.auth.user} size="sm" />
                             <p className="text-sm text-slate-600">{page.props.auth.user?.name}</p>
                         </div>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={route('profile.edit')}>{t('My profile')}</Link>
+                        </Button>
                         <Button asChild variant="outline" size="sm">
                             <Link href={route('logout')} method="post" as="button">
                                 {t('Logout')}

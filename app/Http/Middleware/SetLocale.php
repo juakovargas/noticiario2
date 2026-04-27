@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Schema;
@@ -15,19 +16,24 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $defaultLocale = config('app.locale', 'en');
+        $configLocale = config('app.locale', 'en');
         $supportedLocales = ['en', 'es'];
+        $defaultActiveLanguage = null;
 
         if (Schema::hasTable('languages')) {
-            $codes = \App\Models\Language::query()
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->pluck('code')
-                ->values()
-                ->all();
+            try {
+                $activeLanguages = \App\Models\Language::query()
+                    ->where('is_active', true)
+                    ->orderByDesc('is_default')
+                    ->orderBy('sort_order')
+                    ->get(['code', 'is_default']);
 
-            if (! empty($codes)) {
-                $supportedLocales = $codes;
+                if ($activeLanguages->isNotEmpty()) {
+                    $supportedLocales = $activeLanguages->pluck('code')->values()->all();
+                    $defaultActiveLanguage = $activeLanguages->firstWhere('is_default', true)?->code ?? $activeLanguages->first()?->code;
+                }
+            } catch (QueryException) {
+                // Ignore transient migration states and fallback to static locales.
             }
         }
 
@@ -38,7 +44,8 @@ class SetLocale
         }
 
         if (! is_string($locale) || ! in_array($locale, $supportedLocales, true)) {
-            $locale = $defaultLocale;
+            $fallback = $defaultActiveLanguage ?? $configLocale ?? 'en';
+            $locale = in_array($fallback, $supportedLocales, true) ? $fallback : 'en';
         }
 
         App::setLocale($locale);

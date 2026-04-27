@@ -35,6 +35,22 @@ class UserPreferencesTest extends TestCase
         ]);
     }
 
+    public function test_admin_editor_and_viewer_can_access_profile_edit_page(): void
+    {
+        $admin = $this->createUserWithPermissions(['admin.access']);
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $viewer = $this->createUserWithPermissions(['viewer.access']);
+
+        $this->actingAs($admin)->get(route('profile.edit'))->assertOk();
+        $this->actingAs($editor)->get(route('profile.edit'))->assertOk();
+        $this->actingAs($viewer)->get(route('profile.edit'))->assertOk();
+    }
+
+    public function test_guest_cannot_access_profile_edit_page(): void
+    {
+        $this->get(route('profile.edit'))->assertRedirect(route('login'));
+    }
+
     public function test_changing_locale_persists_to_user_preferred_locale(): void
     {
         $user = User::factory()->create();
@@ -75,6 +91,21 @@ class UserPreferencesTest extends TestCase
             ])
             ->assertRedirect(route('profile.edit'))
             ->assertSessionHasErrors('avatar');
+    }
+
+    public function test_avatar_upload_accepts_valid_image_file(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->image('avatar.png'),
+        ])->assertRedirect(route('profile.edit'));
+
+        $this->assertNotNull($user->fresh()->avatar_path);
+        Storage::disk('public')->assertExists($user->fresh()->avatar_path);
     }
 
 

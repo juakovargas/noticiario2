@@ -65,7 +65,7 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                             <p className="text-sm text-slate-600">{page.props.auth.user?.name}</p>
                         </div>
                         <Button asChild variant="outline" size="sm">
-                            <Link href={route('profile.edit')}>{t('My profile')}</Link>
+                            <Link href={route('profile.edit', { panel: 'viewer' })}>{t('Preferences')}</Link>
                         </Button>
                         <Button asChild variant="outline" size="sm">
                             <Link href={route('logout')} method="post" as="button">

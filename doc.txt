@@ -770,3 +770,57 @@ Current next priorities:
 4. Add AI request logs and cost control.
 5. Add automatic schedule execution later.
 6. Add audio/video/publishing after editorial workflow is stable.
+
+PROFILE, AVATAR AND USER PREFERENCES
+
+- Profile editing flow was fixed for multipart submissions by using method spoofing (_method=patch) and forceFormData from Inertia so name/email are always submitted together with avatar uploads.
+- User preference fields supported and persisted:
+  - preferred_locale
+  - timezone
+  - avatar_path
+  - date_format
+  - time_format
+- Avatar storage now uses a centralized service:
+  - app/Services/UserAvatarService.php
+  - storage path: avatars/users/{user_id}/filename.ext on the public disk
+  - old avatar cleanup on replace is guarded to only delete inside the expected user avatar folder
+- User model exposes:
+  - avatar_url (public disk URL only when stored file exists)
+  - initials fallback from user name
+- Shared avatar rendering is standardized through:
+  - resources/js/Components/UserAvatar.tsx
+- Profile page is panel-aware and can render inside the corresponding panel shell:
+  - Admin link: profile.edit?panel=admin
+  - Editor link: profile.edit?panel=editor
+  - Viewer link: profile.edit?panel=viewer
+- Locale resolution priority:
+  1. session locale
+  2. authenticated user preferred_locale
+  3. default language from languages table
+  4. config app locale
+  5. en
+- Local development note:
+  - run php artisan storage:link for public avatar URLs.
+
+ADMIN USER MANAGEMENT
+
+- Admin user edit supports robust updates for name/email/roles/permissions/preferences and avatar file uploads.
+- Admin avatar upload uses UserAvatarService and persists users.avatar_path correctly.
+- Roles management remains intact; role sync and direct-permission sync are preserved.
+- Basic roles documented and preserved:
+  - superadmin
+  - admin
+  - editor
+  - viewer
+- Admin create/edit pages now include dynamic Effective permissions help based on selected roles:
+  - union of selected-role permissions
+  - panel access summary (Admin/Editor/Viewer)
+- Last-admin lockout protection is preserved and now also checks direct admin.access capability patterns when evaluating admin-like users.
+
+Current next priorities:
+1. Confirm profile/avatar/user edit fixes manually.
+2. Continue source verification workflow if not completed.
+3. Add real AI provider integration.
+4. Add AI request logs and cost control.
+5. Add automatic schedule execution later.
+6. Add audio/video/publishing after editorial workflow is stable.

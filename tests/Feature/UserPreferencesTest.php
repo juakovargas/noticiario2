@@ -109,6 +109,42 @@ class UserPreferencesTest extends TestCase
     }
 
 
+    public function test_profile_update_works_with_method_spoofed_multipart_payload(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('profile.update'), [
+            '_method' => 'patch',
+            'name' => 'Editor User',
+            'email' => $user->email,
+            'preferred_locale' => 'es',
+            'timezone' => 'Europe/Madrid',
+            'avatar' => UploadedFile::fake()->image('avatar.png'),
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Editor User',
+            'preferred_locale' => 'es',
+            'timezone' => 'Europe/Madrid',
+        ]);
+        $this->assertNotNull($user->fresh()->avatar_path);
+    }
+
+    public function test_profile_edit_page_receives_selected_panel(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+
+        $this->actingAs($editor)
+            ->get(route('profile.edit', ['panel' => 'editor']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('panel', 'editor')
+                ->where('auth.user.name', $editor->name)
+                ->where('auth.user.email', $editor->email)
+            );
+    }
+
     public function test_admin_can_see_preferred_locale_in_user_listing(): void
     {
         $admin = $this->createUserWithPermissions(['admin.access', 'users.view']);

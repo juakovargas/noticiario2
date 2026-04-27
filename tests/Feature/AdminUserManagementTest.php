@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -129,6 +131,40 @@ class AdminUserManagementTest extends TestCase
             'preferred_locale' => 'es',
             'timezone' => 'Europe/Madrid',
         ]);
+    }
+
+    public function test_admin_update_works_with_method_spoofed_multipart_payload(): void
+    {
+        Storage::fake('public');
+        $admin = $this->createUserWithPermissions(['admin.access', 'users.update']);
+        $target = User::factory()->create(['email' => 'target@example.com']);
+
+        $this->actingAs($admin)->post(route('admin.users.update', $target), [
+            '_method' => 'put',
+            'name' => 'Updated Target',
+            'email' => 'target@example.com',
+            'is_active' => true,
+            'roles' => ['viewer'],
+            'permissions' => [],
+            'preferred_locale' => 'es',
+            'timezone' => 'Europe/Madrid',
+            'date_format' => 'locale_default',
+            'time_format' => '24h',
+            'avatar' => UploadedFile::fake()->image('target.png'),
+        ])->assertRedirect(route('admin.users.index'));
+
+        $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Updated Target']);
+        $this->assertNotNull($target->fresh()->avatar_path);
+    }
+
+    public function test_roles_with_permissions_are_shared_to_edit_page(): void
+    {
+        $admin = $this->createUserWithPermissions(['admin.access', 'users.update']);
+        $user = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.edit', $user))
+            ->assertInertia(fn ($page) => $page->has('rolesWithPermissions'));
     }
 
     public function test_update_fails_when_name_is_missing(): void

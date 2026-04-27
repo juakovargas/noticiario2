@@ -41,7 +41,8 @@ class RolesAndPermissionsSeeder extends Seeder
             );
         }
 
-        $superAdminRole = Role::query()->updateOrCreate(['name' => 'super-admin', 'guard_name' => 'web'], []);
+        $superAdminRole = Role::query()->updateOrCreate(['name' => 'superadmin', 'guard_name' => 'web'], []);
+        Role::query()->updateOrCreate(['name' => 'super-admin', 'guard_name' => 'web'], []);
         $adminRole = Role::query()->updateOrCreate(['name' => 'admin', 'guard_name' => 'web'], []);
         $editorRole = Role::query()->updateOrCreate(['name' => 'editor', 'guard_name' => 'web'], []);
         $viewerRole = Role::query()->updateOrCreate(['name' => 'viewer', 'guard_name' => 'web'], []);

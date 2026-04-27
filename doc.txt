@@ -663,3 +663,64 @@ Current next priorities:
 4. Add AI request logs and cost control.
 5. Add automatic schedule execution later.
 6. Add audio/video/publishing after editorial workflow is stable.
+
+USER MANAGEMENT
+
+Admin Users CRUD:
+- Admin users listing includes avatar/initials, name, email, role badges, preferred locale, timezone, status, created date, and actions for edit/impersonate/delete.
+- Admin Users Edit page uses Inertia React form with proper method spoofing and multipart FormData support, fixing missing name/email on save.
+- Admin Users Create/Edit support:
+  - name
+  - email
+  - password / confirm password
+  - roles
+  - direct permissions
+  - preferred_locale
+  - timezone
+  - date_format
+  - time_format
+  - avatar upload
+  - active status
+- Role helper text is shown in Create/Edit UI:
+  - superadmin: full system access
+  - admin: technical administration and access to editor/viewer panels
+  - editor: editorial workspace access
+  - viewer: read-only panel access
+
+User preference fields:
+- preferred_locale
+- timezone
+- avatar_path
+- date_format
+- time_format
+
+Role management from admin:
+- Admin can update user roles from user edit/create pages.
+- Safety rule added: avoid removing last admin-like access (admin/superadmin/super-admin) from the final admin-like user.
+
+Basic roles and access:
+- Roles ensured via seeder (idempotent):
+  - superadmin
+  - admin
+  - editor
+  - viewer
+- Core panel permissions:
+  - admin.access
+  - editor.access
+  - viewer.access
+- Role access mapping:
+  - superadmin/admin -> admin/editor/viewer
+  - editor -> editor
+  - viewer -> viewer
+- Legacy role compatibility kept for existing super-admin naming.
+
+Impersonation/login as user:
+- Preserved existing admin impersonation behavior and routes.
+
+Current next priorities:
+1. Finish/fix user management and preferences.
+2. Continue source verification workflow if not complete.
+3. Add real AI provider integration.
+4. Add AI run logs and cost control.
+5. Add automatic schedule execution later.
+6. Add audio/video/publishing after editorial workflow is stable.

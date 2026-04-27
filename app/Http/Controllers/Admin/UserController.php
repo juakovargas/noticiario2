@@ -74,7 +74,7 @@ class UserController extends Controller
         $user->syncRoles($data['roles'] ?? []);
         $user->syncPermissions($data['permissions'] ?? []);
 
-        return to_route('admin.users.index')->with('success', 'User created successfully.');
+        return to_route('admin.users.index')->with('success', 'User created successfully');
     }
 
     public function show(User $user): Response
@@ -117,6 +117,7 @@ class UserController extends Controller
                 'date_format' => $user->date_format,
                 'time_format' => $user->time_format,
                 'avatar_url' => $user->avatar_url,
+                'initials' => $user->initials,
             ],
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
@@ -129,6 +130,10 @@ class UserController extends Controller
     public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
         $data = $request->validated();
+
+        if ($this->wouldRemoveLastAdminLikeAccess($user, $data['roles'] ?? [])) {
+            return back()->with('error', 'Cannot remove last admin');
+        }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
@@ -160,12 +165,12 @@ class UserController extends Controller
         $user->syncRoles($data['roles'] ?? []);
         $user->syncPermissions($data['permissions'] ?? []);
 
-        return to_route('admin.users.index')->with('success', 'User updated successfully.');
+        return to_route('admin.users.index')->with('success', 'User updated successfully');
     }
 
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->hasRole('super-admin')) {
+        if ($user->hasAnyRole(['super-admin', 'superadmin'])) {
             return to_route('admin.users.index')->with('error', 'Super admin user cannot be deleted.');
         }
 
@@ -190,5 +195,27 @@ class UserController extends Controller
         }
 
         return $locales;
+    }
+
+    private function wouldRemoveLastAdminLikeAccess(User $user, array $newRoles): bool
+    {
+        $adminLikeRoles = ['admin', 'superadmin', 'super-admin'];
+        $userIsCurrentlyAdminLike = $user->hasAnyRole($adminLikeRoles);
+
+        if (! $userIsCurrentlyAdminLike) {
+            return false;
+        }
+
+        $newHasAdminLikeRole = collect($newRoles)->intersect($adminLikeRoles)->isNotEmpty();
+
+        if ($newHasAdminLikeRole) {
+            return false;
+        }
+
+        $adminLikeUsersCount = User::query()
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', $adminLikeRoles))
+            ->count();
+
+        return $adminLikeUsersCount <= 1;
     }
 }

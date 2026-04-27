@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Language;
-use App\Services\UserAvatarService;
+use App\Services\Media\MediaFileService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    public function __construct(private readonly UserAvatarService $avatarService)
+    public function __construct(private readonly MediaFileService $mediaFileService)
     {
     }
 
@@ -60,13 +60,14 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = $request->safe()->except(['avatar', 'remove_avatar', 'panel']);
 
-        if ($request->boolean('remove_avatar')) {
-            $this->avatarService->deleteAvatar($user);
-            $data['avatar_path'] = null;
+        if ($request->boolean('remove_avatar') && $user->profileImage) {
+            $this->mediaFileService->archiveMediaFile($user->profileImage);
+            $data['profile_image_id'] = null;
         }
 
         if ($request->hasFile('avatar')) {
-            $data['avatar_path'] = $this->avatarService->replaceAvatar($user, $request->file('avatar'));
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+            $data['profile_image_id'] = $mediaFile->id;
         }
 
         $user->fill($data);

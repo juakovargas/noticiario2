@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\MediaFile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -41,6 +44,111 @@ class ProfileTest extends TestCase
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_user_can_upload_profile_image(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/profile', [
+                '_method' => 'patch',
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => UploadedFile::fake()->image('avatar.png', 180, 180),
+            ])
+            ->assertRedirect('/profile');
+
+        $user->refresh();
+
+        $this->assertNotNull($user->profile_image_id);
+        $this->assertDatabaseHas('media_files', ['id' => $user->profile_image_id, 'media_type' => 'image']);
+    }
+
+    public function test_profile_update_validates_name_and_email_with_avatar_payload(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->post('/profile', [
+                '_method' => 'patch',
+                'name' => '',
+                'email' => '',
+                'avatar' => UploadedFile::fake()->image('avatar.png'),
+            ])
+            ->assertRedirect('/profile')
+            ->assertSessionHasErrors(['name', 'email']);
+    }
+
+    public function test_profile_update_without_avatar_still_works(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patch('/profile', [
+                'name' => 'Renamed User',
+                'email' => $user->email,
+            ])
+            ->assertRedirect('/profile')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Renamed User', $user->fresh()->name);
+    }
+
+    public function test_profile_upload_rejects_invalid_file_type(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->post('/profile', [
+                '_method' => 'patch',
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => UploadedFile::fake()->create('avatar.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect('/profile')
+            ->assertSessionHasErrors('avatar');
+    }
+
+    public function test_profile_upload_rejects_oversized_file(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from('/profile')
+            ->post('/profile', [
+                '_method' => 'patch',
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => UploadedFile::fake()->image('large.png')->size(2500),
+            ])
+            ->assertRedirect('/profile')
+            ->assertSessionHasErrors('avatar');
+    }
+
+    public function test_auth_shared_props_include_avatar_url_with_legacy_avatar_path_fallback(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/users/1/legacy.png', 'legacy-avatar-content');
+
+        $user = User::factory()->create([
+            'avatar_path' => 'avatars/users/1/legacy.png',
+            'profile_image_id' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/profile')
+            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', Storage::disk('public')->url('avatars/users/1/legacy.png')));
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void

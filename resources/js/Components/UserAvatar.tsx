@@ -8,7 +8,7 @@ type AvatarUser = {
 
 interface UserAvatarProps {
     user?: AvatarUser | null;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
 }
 
@@ -16,6 +16,7 @@ const sizeClass: Record<NonNullable<UserAvatarProps['size']>, string> = {
     sm: 'h-8 w-8 text-xs',
     md: 'h-10 w-10 text-sm',
     lg: 'h-16 w-16 text-lg',
+    xl: 'h-24 w-24 text-2xl',
 };
 
 export default function UserAvatar({ user, size = 'sm', className = '' }: UserAvatarProps): JSX.Element {
@@ -39,7 +40,7 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
         return (
             <img
                 src={user.avatar_url}
-                alt={user?.name ? `${user.name} avatar` : 'User avatar'}
+                alt={user?.name ? `${user.name} avatar` : 'Avatar'}
                 className={`${sizeClass[size]} rounded-full object-cover ${className}`}
                 onError={() => setImageFailed(true)}
             />
@@ -48,7 +49,7 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
 
     return (
         <span
-            aria-label="User initials avatar"
+            aria-label="Avatar"
             className={`${sizeClass[size]} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 ${className}`}
         >
             {fallback}

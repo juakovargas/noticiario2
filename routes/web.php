@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\LanguageController;
+use App\Http\Controllers\Admin\MediaFileController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeoSettingController;
@@ -113,6 +114,9 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
                 'update' => 'permission:permissions.update',
                 'destroy' => 'permission:permissions.delete',
             ]);
+
+        Route::resource('media-files', MediaFileController::class)
+            ->only(['index', 'show', 'update']);
 
         Route::resource('languages', LanguageController::class)->except('show');
         Route::resource('ai-providers', AiProviderController::class);

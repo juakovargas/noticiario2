@@ -4,7 +4,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { Bot, ChartNoAxesCombined, Globe, LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
+import { Bot, ChartNoAxesCombined, Globe, Image, LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
 import { PropsWithChildren, useMemo, useState } from 'react';
 import { PageProps } from '@/types';
 
@@ -65,6 +65,12 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 href: route('admin.prompt-profiles.index'),
                 routeName: 'admin.prompt-profiles.*',
                 icon: <Bot className="h-4 w-4" />,
+            },
+            {
+                label: t('Media Library'),
+                href: route('admin.media-files.index'),
+                routeName: 'admin.media-files.*',
+                icon: <Image className="h-4 w-4" />,
             },
             {
                 label: t('SEO & Tracking'),

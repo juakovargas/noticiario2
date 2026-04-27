@@ -68,6 +68,10 @@ class User extends Authenticatable
             return null;
         }
 
+        if (! Storage::disk('public')->exists($this->avatar_path)) {
+            return null;
+        }
+
         return Storage::disk('public')->url($this->avatar_path);
     }
 

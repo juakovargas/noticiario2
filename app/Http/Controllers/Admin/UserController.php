@@ -7,10 +7,10 @@ use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Language;
 use App\Models\User;
+use App\Services\UserAvatarService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
@@ -18,6 +18,10 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly UserAvatarService $avatarService)
+    {
+    }
+
     public function index(): Response
     {
         return Inertia::render('Admin/Users/Index', [
@@ -44,6 +48,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Create', [
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
+            'rolesWithPermissions' => $this->rolesWithPermissions(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
             'localeOptions' => $this->localeOptions(),
             'dateFormatOptions' => ['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'],
@@ -55,10 +60,6 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('avatar')) {
-            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
-        }
-
         $user = User::query()->create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -68,8 +69,13 @@ class UserController extends Controller
             'timezone' => $data['timezone'] ?? null,
             'date_format' => $data['date_format'] ?? null,
             'time_format' => $data['time_format'] ?? null,
-            'avatar_path' => $data['avatar_path'] ?? null,
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $user->update([
+                'avatar_path' => $this->avatarService->storeAvatar($user, $request->file('avatar')),
+            ]);
+        }
 
         $user->syncRoles($data['roles'] ?? []);
         $user->syncPermissions($data['permissions'] ?? []);
@@ -120,6 +126,7 @@ class UserController extends Controller
                 'initials' => $user->initials,
             ],
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
+            'rolesWithPermissions' => $this->rolesWithPermissions(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
             'localeOptions' => $this->localeOptions(),
             'dateFormatOptions' => ['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'],
@@ -135,12 +142,13 @@ class UserController extends Controller
             return back()->with('error', 'Cannot remove last admin');
         }
 
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
+        if ($request->boolean('remove_avatar')) {
+            $this->avatarService->deleteAvatar($user);
+            $data['avatar_path'] = null;
+        }
 
-            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        if ($request->hasFile('avatar')) {
+            $data['avatar_path'] = $this->avatarService->replaceAvatar($user, $request->file('avatar'));
         }
 
         $payload = [
@@ -153,7 +161,7 @@ class UserController extends Controller
             'time_format' => $data['time_format'] ?? null,
         ];
 
-        if (! empty($data['avatar_path'])) {
+        if (array_key_exists('avatar_path', $data)) {
             $payload['avatar_path'] = $data['avatar_path'];
         }
 
@@ -197,10 +205,26 @@ class UserController extends Controller
         return $locales;
     }
 
+    private function rolesWithPermissions(): array
+    {
+        return Role::query()
+            ->with('permissions:id,name')
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Role $role) => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ])
+            ->values()
+            ->all();
+    }
+
     private function wouldRemoveLastAdminLikeAccess(User $user, array $newRoles): bool
     {
         $adminLikeRoles = ['admin', 'superadmin', 'super-admin'];
-        $userIsCurrentlyAdminLike = $user->hasAnyRole($adminLikeRoles);
+        $userIsCurrentlyAdminLike = $user->hasAnyRole($adminLikeRoles) || $user->can('admin.access');
 
         if (! $userIsCurrentlyAdminLike) {
             return false;
@@ -213,7 +237,11 @@ class UserController extends Controller
         }
 
         $adminLikeUsersCount = User::query()
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', $adminLikeRoles))
+            ->where(function ($query) use ($adminLikeRoles): void {
+                $query
+                    ->whereHas('roles', fn ($roleQuery) => $roleQuery->whereIn('name', $adminLikeRoles))
+                    ->orWhereHas('permissions', fn ($permQuery) => $permQuery->where('name', 'admin.access'));
+            })
             ->count();
 
         return $adminLikeUsersCount <= 1;

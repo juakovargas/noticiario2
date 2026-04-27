@@ -48,6 +48,7 @@ class UserStoreRequest extends FormRequest
             'date_format' => ['nullable', Rule::in(['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'])],
             'time_format' => ['nullable', Rule::in(['24h', '12h'])],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ];
     }
 }

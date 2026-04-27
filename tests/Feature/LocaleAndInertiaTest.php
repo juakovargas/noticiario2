@@ -48,6 +48,25 @@ class LocaleAndInertiaTest extends TestCase
         $response->assertSessionHasErrors('locale');
     }
 
+    public function test_locale_update_persists_preferred_locale_for_authenticated_user(): void
+    {
+        $user = $this->createUserWithPermissions(['editor.access', 'editor.dashboard.view']);
+
+        $this->actingAs($user)->post(route('locale.update'), ['locale' => 'es'])->assertRedirect();
+
+        $this->assertSame('es', $user->fresh()->preferred_locale);
+    }
+
+    public function test_user_preferred_locale_is_used_when_session_locale_is_missing(): void
+    {
+        $user = $this->createUserWithPermissions(['editor.access', 'editor.dashboard.view']);
+        $user->update(['preferred_locale' => 'es']);
+
+        $this->actingAs($user)
+            ->get(route('editor.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page->where('i18n.locale', 'es'));
+    }
+
     public function test_inertia_shared_props_include_i18n_locale_and_available_locales(): void
     {
         $user = $this->createUserWithPermissions(['editor.access', 'editor.dashboard.view']);

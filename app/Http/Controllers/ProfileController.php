@@ -4,23 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Language;
+use App\Services\UserAvatarService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
+    public function __construct(private readonly UserAvatarService $avatarService)
+    {
+    }
+
     public function edit(Request $request): Response
     {
+        $panel = $request->string('panel')->value();
+
+        if (! in_array($panel, ['admin', 'editor', 'viewer'], true)) {
+            $panel = null;
+        }
+
+        if (! $panel) {
+            $user = $request->user();
+            $panel = $user?->can('admin.access') ? 'admin' : ($user?->can('editor.access') ? 'editor' : 'viewer');
+        }
+
         $locales = [
             ['code' => 'en', 'name' => 'English'],
             ['code' => 'es', 'name' => 'Español'],
@@ -39,23 +51,22 @@ class ProfileController extends Controller
             'locales' => $locales,
             'dateFormatOptions' => ['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'],
             'timeFormatOptions' => ['24h', '12h'],
+            'panel' => $panel,
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $data = $request->safe()->except('avatar');
+        $data = $request->safe()->except(['avatar', 'remove_avatar', 'panel']);
+
+        if ($request->boolean('remove_avatar')) {
+            $this->avatarService->deleteAvatar($user);
+            $data['avatar_path'] = null;
+        }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
-
-            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar_path'] = $this->avatarService->replaceAvatar($user, $request->file('avatar'));
         }
 
         $user->fill($data);
@@ -68,14 +79,15 @@ class ProfileController extends Controller
             $request->session()->put('locale', $user->preferred_locale);
         }
 
+        if ($user->isDirty('preferred_locale') && blank($user->preferred_locale)) {
+            $request->session()->forget('locale');
+        }
+
         $user->save();
 
-        return Redirect::route('profile.edit')->with('success', 'Profile updated');
+        return Redirect::route('profile.edit', ['panel' => $request->input('panel')])->with('success', 'Profile updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate([

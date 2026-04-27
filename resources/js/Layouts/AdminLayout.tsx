@@ -130,7 +130,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                             <div className="ml-auto flex items-center gap-2">
                                 <LanguageSwitcher />
                                 <Button asChild variant="outline" size="sm">
-                                    <Link href={route('profile.edit')}>{t('My profile')}</Link>
+                                    <Link href={route('profile.edit', { panel: 'admin' })}>{t('Preferences')}</Link>
                                 </Button>
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={route('logout')} method="post" as="button">

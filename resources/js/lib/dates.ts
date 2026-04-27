@@ -8,6 +8,11 @@ const LOCALE_MAP: Record<string, string> = {
     fr: 'fr-FR',
 };
 
+interface FormatPreferences {
+    dateFormat?: string | null;
+    timeFormat?: string | null;
+}
+
 function toAppLocale(locale?: string): string {
     if (!locale) {
         return 'en-GB';
@@ -73,31 +78,39 @@ function safeFormat(
     }
 }
 
-export function formatDate(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK): string {
+function dateOptions(dateFormat?: string | null): Intl.DateTimeFormatOptions {
+    if (dateFormat === 'yyyy-mm-dd') {
+        return { year: 'numeric', month: '2-digit', day: '2-digit' };
+    }
+
+    if (dateFormat === 'mm/dd/yyyy') {
+        return { month: '2-digit', day: '2-digit', year: 'numeric' };
+    }
+
+    return { day: '2-digit', month: '2-digit', year: 'numeric' };
+}
+
+function timeOptions(timeFormat?: string | null): Intl.DateTimeFormatOptions {
+    return {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: timeFormat === '12h',
+    };
+}
+
+export function formatDate(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK, preferences?: FormatPreferences): string {
+    return safeFormat(value, locale, dateOptions(preferences?.dateFormat), fallback);
+}
+
+export function formatDateTime(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK, preferences?: FormatPreferences): string {
     return safeFormat(value, locale, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
+        ...dateOptions(preferences?.dateFormat),
+        ...timeOptions(preferences?.timeFormat),
     }, fallback);
 }
 
-export function formatDateTime(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK): string {
-    return safeFormat(value, locale, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }, fallback);
-}
-
-export function formatTime(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK): string {
-    return safeFormat(value, locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }, fallback);
+export function formatTime(value: DateLike, locale?: string, fallback = DEFAULT_FALLBACK, preferences?: FormatPreferences): string {
+    return safeFormat(value, locale, timeOptions(preferences?.timeFormat), fallback);
 }
 
 export function toDateTimeLocalInputValue(value: DateLike): string {

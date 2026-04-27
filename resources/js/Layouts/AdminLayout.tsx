@@ -1,5 +1,6 @@
 import FlashMessage from '@/Components/FlashMessage';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
@@ -118,9 +119,12 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                                 <Menu className="h-4 w-4" />
                             </button>
 
-                            <div className="text-sm">
-                                <p className="font-semibold text-slate-900">{user?.name}</p>
-                                <p className="text-slate-500">{user?.email}</p>
+                            <div className="flex items-center gap-2 text-sm">
+                                <UserAvatar name={user?.name} avatarUrl={user?.avatar_url} initials={user?.initials} />
+                                <div>
+                                    <p className="font-semibold text-slate-900">{user?.name}</p>
+                                    <p className="text-slate-500">{user?.email}</p>
+                                </div>
                             </div>
 
                             <div className="ml-auto flex items-center gap-2">

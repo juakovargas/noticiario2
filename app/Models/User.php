@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -24,6 +26,11 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'is_active',
+        'preferred_locale',
+        'timezone',
+        'avatar_path',
+        'date_format',
+        'time_format',
     ];
 
     /**
@@ -34,6 +41,11 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $appends = [
+        'avatar_url',
+        'initials',
     ];
 
     /**
@@ -48,5 +60,25 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->avatar_path);
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $parts = Str::of((string) $this->name)->trim()->explode(' ')->filter()->take(2);
+
+        if ($parts->isEmpty()) {
+            return 'U';
+        }
+
+        return $parts->map(fn (string $part) => Str::upper(Str::substr($part, 0, 1)))->implode('');
     }
 }

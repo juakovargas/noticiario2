@@ -606,3 +606,60 @@ Current next priorities:
 3. Add real AI provider integration.
 4. Add automatic schedule execution later.
 5. Add audio/video/publishing after editorial workflow is stable.
+
+USER PREFERENCES AND AVATAR
+
+Overview:
+- Added user profile preference fields and avatar support.
+- Preferences now support preferred locale, timezone, and date/time display preferences.
+
+User fields:
+- preferred_locale (nullable)
+- timezone (nullable)
+- avatar_path (nullable)
+- date_format (nullable)
+- time_format (nullable)
+
+Locale resolution order:
+1. session locale
+2. authenticated user preferred_locale
+3. app/default locale
+
+Profile page updates:
+- Profile now supports editing:
+  - name
+  - email
+  - preferred locale
+  - timezone
+  - date format
+  - time format
+  - avatar upload (jpg/jpeg/png/webp, max 2MB)
+- If avatar is not set, the UI uses initials fallback.
+
+Admin user management updates:
+- Admin user list now displays avatar/initials, preferred locale, and timezone.
+- Admin create/edit supports preferred locale, timezone, date/time format preferences, and optional avatar upload.
+
+Layout avatar display:
+- Admin, Editor, and Viewer layouts now display user avatar or initials in the top bar.
+- Works with impersonation context because top-bar user data is shared through auth props.
+
+Storage note:
+- Avatar URLs are served from public storage.
+- Run: php artisan storage:link
+
+SOURCE VERIFICATION WORKFLOW
+
+Current limitations (confirmed):
+- no automatic URL checking
+- no scraping
+- no external API calls
+- no automatic fact-checking yet
+
+Current next priorities:
+1. Improve source verification workflow based on manual testing.
+2. Add optional live URL checking later.
+3. Add real AI provider integration.
+4. Add AI request logs and cost control.
+5. Add automatic schedule execution later.
+6. Add audio/video/publishing after editorial workflow is stable.

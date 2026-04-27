@@ -4,11 +4,16 @@ import { DateLike, formatDate as baseFormatDate, formatDateTime as baseFormatDat
 
 export function useDateFormatter() {
     const page = usePage<PageProps>();
-    const locale = page.props.i18n?.locale;
+    const user = page.props.auth?.user;
+    const locale = user?.preferred_locale || page.props.i18n?.locale;
+    const preferences = {
+        dateFormat: user?.date_format,
+        timeFormat: user?.time_format,
+    };
 
-    const formatDate = (value: DateLike, fallback = '-'): string => baseFormatDate(value, locale, fallback);
-    const formatDateTime = (value: DateLike, fallback = '-'): string => baseFormatDateTime(value, locale, fallback);
-    const formatTime = (value: DateLike, fallback = '-'): string => baseFormatTime(value, locale, fallback);
+    const formatDate = (value: DateLike, fallback = '-'): string => baseFormatDate(value, locale, fallback, preferences);
+    const formatDateTime = (value: DateLike, fallback = '-'): string => baseFormatDateTime(value, locale, fallback, preferences);
+    const formatTime = (value: DateLike, fallback = '-'): string => baseFormatTime(value, locale, fallback, preferences);
 
     return {
         formatDate,

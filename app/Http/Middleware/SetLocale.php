@@ -31,9 +31,13 @@ class SetLocale
             }
         }
 
-        $locale = $request->session()->get('locale', $defaultLocale);
+        $locale = $request->session()->get('locale');
 
-        if (! in_array($locale, $supportedLocales, true)) {
+        if (! $locale && $request->user()?->preferred_locale) {
+            $locale = $request->user()->preferred_locale;
+        }
+
+        if (! is_string($locale) || ! in_array($locale, $supportedLocales, true)) {
             $locale = $defaultLocale;
         }
 

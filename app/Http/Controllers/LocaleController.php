@@ -26,6 +26,12 @@ class LocaleController extends Controller
 
         $request->session()->put('locale', $validated['locale']);
 
+        if ($request->user()) {
+            $request->user()->forceFill([
+                'preferred_locale' => $validated['locale'],
+            ])->save();
+        }
+
         return back();
     }
 }

@@ -1,0 +1,11 @@
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import Pagination from '@/Components/Pagination';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import EditorLayout from '@/Layouts/EditorLayout';
+import { Head, Link, router } from '@inertiajs/react';
+interface Req { id:number; title:string; status:string; ai_provider?:{name:string}|null; ai_prompt_template?:{name:string}|null; }
+export default function Index({ requests }: { requests:{ data:Req[]; links:Array<{url:string|null; label:string; active:boolean}> } }): JSX.Element {
+    const destroy = (id:number): void => { if (window.confirm('Delete this request?')) router.delete(route('editor.editorial-requests.destroy', id)); };
+    return <EditorLayout><Head title="Editorial Requests" /><AdminPageHeader title="Editorial Requests" description="AI-assisted editorial planning requests." actionLabel="Create Editorial Request" actionHref={route('editor.editorial-requests.create')} /><Card><CardContent className="overflow-x-auto pt-6"><table className="w-full min-w-[800px] text-sm"><thead><tr className="border-b"><th className="px-2 pb-3 text-left">Title</th><th className="px-2 pb-3 text-left">Status</th><th className="px-2 pb-3 text-left">Provider</th><th className="px-2 pb-3 text-left">Template</th><th className="px-2 pb-3 text-right">Actions</th></tr></thead><tbody>{requests.data.length ? requests.data.map((item)=><tr key={item.id} className="border-b"><td className="px-2 py-3">{item.title}</td><td className="px-2 py-3">{item.status}</td><td className="px-2 py-3">{item.ai_provider?.name || '-'}</td><td className="px-2 py-3">{item.ai_prompt_template?.name || '-'}</td><td className="px-2 py-3"><div className="flex justify-end gap-2"><Button asChild size="sm" variant="outline"><Link href={route('editor.editorial-requests.show', item.id)}>View</Link></Button><Button asChild size="sm" variant="secondary"><Link href={route('editor.editorial-requests.edit', item.id)}>Edit</Link></Button><Button size="sm" variant="destructive" onClick={()=>destroy(item.id)}>Delete</Button></div></td></tr>) : <tr><td colSpan={5} className="px-2 py-6 text-center">No requests found.</td></tr>}</tbody></table><Pagination links={requests.links} /></CardContent></Card></EditorLayout>;
+}

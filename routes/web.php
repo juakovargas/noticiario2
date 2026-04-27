@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\EditionController;
 use App\Http\Controllers\Editor\EditionNewsItemController;
+use App\Http\Controllers\Editor\EditorialRequestController;
 use App\Http\Controllers\Editor\EditorialTemplateController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\ScriptBuilderController;
@@ -102,6 +105,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
             ]);
 
         Route::resource('languages', LanguageController::class)->except('show');
+        Route::resource('ai-providers', AiProviderController::class);
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])
@@ -155,11 +159,11 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         ]))->name('social-channels');
 
         Route::resource('editorial-templates', EditorialTemplateController::class);
-
-        Route::get('/ai-prompt-templates', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'AI Prompt Templates',
-            'description' => 'AI prompt templates module will be implemented in a future phase.',
-        ]))->name('ai-prompt-templates');
+        Route::resource('ai-prompt-templates', AiPromptTemplateController::class);
+        Route::resource('editorial-requests', EditorialRequestController::class);
+        Route::post('/editorial-requests/{editorialRequest}/run', [EditorialRequestController::class, 'run'])->name('editorial-requests.run');
+        Route::post('/editorial-requests/{editorialRequest}/create-news-items', [EditorialRequestController::class, 'createNewsItems'])->name('editorial-requests.create-news-items');
+        Route::post('/editorial-requests/{editorialRequest}/convert-to-edition', [EditorialRequestController::class, 'convertToEdition'])->name('editorial-requests.convert-to-edition');
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])

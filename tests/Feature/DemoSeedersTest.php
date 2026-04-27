@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Edition;
+use App\Models\AiPromptTemplate;
+use App\Models\AiProvider;
 use App\Models\EditorialTemplate;
+use App\Models\EditorialRequest;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
@@ -54,6 +57,8 @@ class DemoSeedersTest extends TestCase
         $editionsCount = Edition::query()->count();
         $scriptsCount = Script::query()->count();
         $templatesCount = EditorialTemplate::query()->count();
+        $providersCount = AiProvider::query()->count();
+        $promptTemplatesCount = AiPromptTemplate::query()->count();
 
         $this->seed(DemoEditorialSeeder::class);
 
@@ -62,6 +67,8 @@ class DemoSeedersTest extends TestCase
         $this->assertSame($editionsCount, Edition::query()->count());
         $this->assertSame($scriptsCount, Script::query()->count());
         $this->assertSame($templatesCount, EditorialTemplate::query()->count());
+        $this->assertSame($providersCount, AiProvider::query()->count());
+        $this->assertSame($promptTemplatesCount, AiPromptTemplate::query()->count());
     }
 
     public function test_expected_demo_editorial_records_exist(): void
@@ -90,6 +97,10 @@ class DemoSeedersTest extends TestCase
         $this->assertDatabaseHas('scripts', ['title' => 'Draft script for Morning Briefing Spain']);
         $this->assertDatabaseHas('editorial_templates', ['slug' => 'morning-briefing']);
         $this->assertDatabaseHas('editorial_templates', ['slug' => 'madrid-local-update']);
+        $this->assertDatabaseHas('ai_providers', ['slug' => 'mock-ai-provider', 'provider_type' => 'mock', 'is_default' => true]);
+        $this->assertDatabaseHas('ai_prompt_templates', ['slug' => 'general-editorial-research', 'type' => 'editorial_research']);
+        $this->assertDatabaseHas('ai_prompt_templates', ['slug' => 'short-script-generation', 'type' => 'script_generation']);
+        $this->assertDatabaseHas('editorial_requests', ['title' => 'Demo Madrid Afternoon Briefing', 'status' => 'draft']);
         $this->assertDatabaseHas('scripts', ['title' => 'Review script for Madrid Local Midday Update']);
 
         $this->assertTrue(

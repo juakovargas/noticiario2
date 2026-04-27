@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\EditionController;
 use App\Http\Controllers\Editor\EditionNewsItemController;
+use App\Http\Controllers\Editor\EditorialTemplateController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\ScriptBuilderController;
 use App\Http\Controllers\Editor\NewsCategoryController;
@@ -150,10 +151,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
             'description' => 'Social channels module will be implemented in a future phase.',
         ]))->name('social-channels');
 
-        Route::get('/editorial-templates', fn () => Inertia::render('Editor/Placeholder', [
-            'title' => 'Editorial Templates',
-            'description' => 'Editorial templates module will be implemented in a future phase.',
-        ]))->name('editorial-templates');
+        Route::resource('editorial-templates', EditorialTemplateController::class);
 
         Route::get('/ai-prompt-templates', fn () => Inertia::render('Editor/Placeholder', [
             'title' => 'AI Prompt Templates',

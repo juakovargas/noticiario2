@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Edition;
+use App\Models\EditorialTemplate;
+use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\Script;
@@ -51,6 +53,7 @@ class DemoSeedersTest extends TestCase
         $categoriesCount = NewsCategory::query()->count();
         $editionsCount = Edition::query()->count();
         $scriptsCount = Script::query()->count();
+        $templatesCount = EditorialTemplate::query()->count();
 
         $this->seed(DemoEditorialSeeder::class);
 
@@ -58,6 +61,7 @@ class DemoSeedersTest extends TestCase
         $this->assertSame($categoriesCount, NewsCategory::query()->count());
         $this->assertSame($editionsCount, Edition::query()->count());
         $this->assertSame($scriptsCount, Script::query()->count());
+        $this->assertSame($templatesCount, EditorialTemplate::query()->count());
     }
 
     public function test_expected_demo_editorial_records_exist(): void
@@ -74,11 +78,18 @@ class DemoSeedersTest extends TestCase
 
         $this->assertDatabaseHas('news_category_translations', ['language_code' => 'es', 'name' => 'Política']);
 
+        $this->assertDatabaseHas('languages', ['code' => 'en']);
+        $this->assertDatabaseHas('languages', ['code' => 'es']);
+        $this->assertDatabaseHas('languages', ['code' => 'fr']);
+        $this->assertDatabaseHas('locations', ['slug' => 'spain', 'default_language_id' => Language::query()->where('code', 'es')->value('id')]);
+
         foreach (['morning-briefing-spain', 'madrid-local-midday-update', 'evening-global-recap', 'sports-weekend-preview'] as $slug) {
             $this->assertDatabaseHas('editions', ['slug' => $slug]);
         }
 
         $this->assertDatabaseHas('scripts', ['title' => 'Draft script for Morning Briefing Spain']);
+        $this->assertDatabaseHas('editorial_templates', ['slug' => 'morning-briefing']);
+        $this->assertDatabaseHas('editorial_templates', ['slug' => 'madrid-local-update']);
         $this->assertDatabaseHas('scripts', ['title' => 'Review script for Madrid Local Midday Update']);
 
         $this->assertTrue(

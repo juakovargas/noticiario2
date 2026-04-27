@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Editor;
 
+use App\Models\Language;
 use App\Models\NewsItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,7 +29,7 @@ class UpdateNewsItemRequest extends FormRequest
             'body' => ['nullable', 'string'],
             'source_url' => ['nullable', 'url'],
             'author' => ['nullable', 'string', 'max:255'],
-            'language' => ['nullable', 'string', 'max:10'],
+            'language' => ['nullable', 'string', 'max:10', Rule::exists(Language::class, 'code')->where('is_active', true)],
             'published_at' => ['nullable', 'date'],
             'collected_at' => ['nullable', 'date'],
             'status' => ['required', 'string', 'max:50', Rule::in(['draft', 'collected', 'selected', 'rejected', 'archived'])],

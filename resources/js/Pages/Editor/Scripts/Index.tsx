@@ -15,6 +15,7 @@ interface Item {
     edition_id: number;
     status: string;
     language: string | null;
+    language_display?: { code:string; name:string; native_name:string | null; flag_emoji:string | null } | null;
     estimated_duration_seconds: number | null;
     approved_at: string | null;
 }
@@ -24,7 +25,7 @@ interface Props {
     filters: Record<string, string>;
     statuses: string[];
     editions: Array<{ id: number; title: string }>;
-    languages: string[];
+    languages: Array<{ id:number; code:string; name:string; native_name:string | null; flag_emoji:string | null }>;
 }
 
 const initialFilters = {
@@ -94,7 +95,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                         <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}>
                             <option value="">{t('All languages')}</option>
                             {languages.map((language) => (
-                                <option key={language} value={language}>{language}</option>
+                                <option key={language.id} value={language.code}>{language.flag_emoji} {language.native_name || language.name} ({language.code})</option>
                             ))}
                         </select>
 
@@ -147,7 +148,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                         <td className="px-2 py-3 font-medium">{item.title}</td>
                                         <td className="px-2 py-3">{item.edition || '-'}</td>
                                         <td className="px-2 py-3">{item.status}</td>
-                                        <td className="px-2 py-3">{item.language || '-'}</td>
+                                        <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3">{item.estimated_duration_seconds || '-'}</td>
                                         <td className="px-2 py-3">{item.approved_at ? t('Approved') : t('Not approved')}</td>
                                         <td className="px-2 py-3">

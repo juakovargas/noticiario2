@@ -8,6 +8,7 @@ use App\Http\Requests\Editor\UpdateScriptRequest;
 use App\Models\Edition;
 use App\Models\Language;
 use App\Models\Script;
+use App\Support\EditorialLanguage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,8 +17,15 @@ use Inertia\Response;
 
 class ScriptController extends Controller
 {
+    public function __construct(private readonly EditorialLanguage $editorialLanguage)
+    {
+    }
+
     public function index(Request $request): Response
     {
+        $activeLanguages = $this->editorialLanguage->activeLanguageOptions();
+        $languageDisplayMap = $activeLanguages->keyBy('code');
+
         $filters = [
             'search' => (string) $request->query('search', ''),
             'status' => (string) $request->query('status', ''),
@@ -61,13 +69,14 @@ class ScriptController extends Controller
                     'edition_id' => $script->edition_id,
                     'status' => $script->status,
                     'language' => $script->language,
+                    'language_display' => $languageDisplayMap->get($script->language),
                     'estimated_duration_seconds' => $script->estimated_duration_seconds,
                     'approved_at' => $script->approved_at?->toDateTimeString(),
                 ]),
             'filters' => $filters,
             'statuses' => ['draft', 'review', 'approved', 'rejected', 'archived'],
             'editions' => Edition::query()->orderBy('title')->get(['id', 'title']),
-            'languages' => Language::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('code'),
+            'languages' => $activeLanguages->values(),
         ]);
     }
 
@@ -81,7 +90,12 @@ class ScriptController extends Controller
 
     public function store(StoreScriptRequest $request): RedirectResponse
     {
-        Script::query()->create($request->validated());
+        $data = $request->validated();
+        $edition = Edition::query()->with('location.defaultLanguage')->findOrFail($data['edition_id']);
+
+        $data['language'] = $this->editorialLanguage->resolveCode($edition->location, $data['language'] ?? null);
+
+        Script::query()->create($data);
 
         return to_route('editor.scripts.index')->with('success', 'Script created successfully.');
     }
@@ -97,6 +111,7 @@ class ScriptController extends Controller
                 'edition' => $script->edition ? ['id' => $script->edition->id, 'title' => $script->edition->title] : null,
                 'status' => $script->status,
                 'language' => $script->language,
+                'language_display' => Language::query()->where('code', $script->language)->first(['code', 'name', 'native_name', 'flag_emoji']),
                 'intro' => $script->intro,
                 'body' => $script->body,
                 'outro' => $script->outro,
@@ -117,7 +132,13 @@ class ScriptController extends Controller
 
     public function update(UpdateScriptRequest $request, Script $script): RedirectResponse
     {
-        $script->update($request->validated());
+        $data = $request->validated();
+        $editionId = $data['edition_id'] ?? $script->edition_id;
+        $edition = Edition::query()->with('location.defaultLanguage')->findOrFail($editionId);
+
+        $data['language'] = $this->editorialLanguage->resolveCode($edition->location, $data['language'] ?? null);
+
+        $script->update($data);
 
         return to_route('editor.scripts.index')->with('success', 'Script updated successfully.');
     }
@@ -132,8 +153,17 @@ class ScriptController extends Controller
     private function formOptions(): array
     {
         return [
-            'editions' => Edition::query()->orderBy('title')->get(['id', 'title']),
+            'editions' => Edition::query()
+                ->with(['location.defaultLanguage:id,code'])
+                ->orderBy('title')
+                ->get(['id', 'title', 'location_id'])
+                ->map(fn (Edition $edition) => [
+                    'id' => $edition->id,
+                    'title' => $edition->title,
+                    'default_language_code' => $edition->location?->defaultLanguage?->code,
+                ]),
             'statuses' => ['draft', 'review', 'approved', 'rejected', 'archived'],
+            'languages' => $this->editorialLanguage->activeLanguageOptions()->values(),
         ];
     }
 }

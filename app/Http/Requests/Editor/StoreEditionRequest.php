@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Editor;
 
+use App\Models\Language;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class StoreEditionRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'unique:editions,slug'],
             'edition_type' => ['required', 'string', 'max:50', Rule::in(['morning', 'afternoon', 'night', 'special'])],
             'scheduled_for' => ['nullable', 'date'],
-            'language' => ['nullable', 'string', 'max:10'],
+            'language' => ['nullable', 'string', 'max:10', Rule::exists(Language::class, 'code')->where('is_active', true)],
             'status' => ['required', 'string', 'max:50', Rule::in(['draft', 'planning', 'scripting', 'approved', 'archived'])],
             'target_duration_seconds' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],

@@ -35,7 +35,7 @@ interface Props {
     newsItems: { data: Item[]; links: Array<{ url: string | null; label: string; active: boolean }> };
     filters: Record<string, string>;
     statuses: string[];
-    languages: string[];
+    languages: Array<{ id:number; code:string; name:string; native_name:string | null; flag_emoji:string | null }>;
     priorities: number[];
     sources: OptionItem[];
     categories: OptionItem[];
@@ -155,7 +155,7 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
                         <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}>
                             <option value="">{t('All languages')}</option>
                             {languages.map((language) => (
-                                <option key={language} value={language}>{language}</option>
+                                <option key={language.id} value={language.code}>{language.flag_emoji} {language.native_name || language.name} ({language.code})</option>
                             ))}
                         </select>
 

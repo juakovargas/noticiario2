@@ -22,6 +22,7 @@ class StoreLocationRequest extends FormRequest
             'type' => ['required', 'string', 'max:50', Rule::in(['global', 'country', 'region', 'city', 'custom'])],
             'country_code' => ['nullable', 'string', 'max:10'],
             'timezone' => ['nullable', 'string', 'max:255'],
+            'default_language_id' => ['nullable', 'exists:languages,id'],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

@@ -269,3 +269,92 @@ Current limitations:
 - No cron/scheduler yet.
 - No queue workers yet.
 - No audio/video/publishing automation yet.
+
+PROMPT QUALITY AND AI RESPONSE PARSING
+
+What was improved:
+- Editorial schedule run prompt generation now includes stronger guidance for factuality, recency, source hints, uncertainty handling, short presenter-ready paragraphs, and strict response structure.
+- The default expected external AI response format is now structured plain text:
+  - TITLE
+  - INTRO
+  - NEWS ITEMS with repeated HEADLINE/SUMMARY/SCRIPT/EDITORIAL ANGLE/SOURCE HINTS blocks
+  - OUTRO
+  - NOTES
+- Prompt language instruction now explicitly tells the external AI to answer in the configured schedule language.
+
+AiResponseParser service:
+- New service: app/Services/EditorialScheduling/AiResponseParser.php
+- Method: parse(string $responseText): array
+- Handles English and Spanish label variants, including:
+  - TITLE / TÍTULO
+  - INTRO / INTRODUCTION / ENTRADILLA
+  - NEWS ITEMS / ITEMS / NOTICIAS
+  - HEADLINE / TITULAR
+  - SUMMARY / RESUMEN
+  - SCRIPT / GUION
+  - EDITORIAL ANGLE / ENFOQUE EDITORIAL
+  - SOURCE HINTS / FUENTES
+  - OUTRO / CIERRE
+  - NOTES / NOTAS
+- Deterministic and tolerant parser behavior.
+- Safe fallback for unstructured responses:
+  - title=null, intro=null, outro=null, items=[]
+  - body=full response text
+
+Storage on editorial_schedule_runs:
+- Added nullable JSON fields:
+  - parsed_response
+  - parser_warnings
+- On AI response save:
+  - ai_response_text is stored
+  - response is parsed and stored in parsed_response
+  - warnings are saved when structure is missing
+  - response_received_at is set
+  - status becomes response_received
+
+Script creation from parsed response:
+- If parsed_response contains useful structure:
+  - script.title uses parsed title (fallback to edition title)
+  - script.intro/outro are filled from parsed content
+  - script.body is assembled from parsed items for presenter-ready flow
+  - metadata includes parsed_response_used, news_item_count, and flattened source_hints
+- If parsing is weak/unstructured:
+  - fallback to previous behavior with full ai_response_text in body
+  - parsed_response_used=false
+- Existing script duplication is avoided (if script already exists for run, it is reused).
+
+Editorial Run UI preview:
+- Run show page now includes parsed response preview:
+  - parsed title/intro/body/outro/notes
+  - parsed items with headline/summary/script/editorial angle/source hints
+  - parser warnings
+  - raw response fallback preview
+- Includes clear fallback messaging when no structured sections are detected.
+
+Prompt template seeds:
+- Updated seeded templates using updateOrCreate without deleting existing templates:
+  - Manual AI Research And Script Prompt
+  - Spanish Noticiario Prompt
+  - Sports Special Prompt
+- expected_output_format updated to structured_text for these templates.
+
+Demo data updates:
+- Demo schedule run seeding now includes a generated prompt snapshot, structured sample ai_response_text, and parsed_response snapshot for a manual workflow example.
+- Seeding remains idempotent via updateOrCreate.
+
+Optional extraction of candidate news items:
+- Not implemented in this branch to keep scope safe and preserve current CRUD stability.
+- Next incremental step: add manual action to create News Items from parsed_response with duplicate guard.
+
+Current limitations:
+- no real AI API calls yet
+- no automatic fact-checking yet
+- no source verification yet
+- no audio/video/publishing yet
+
+Current next priorities:
+1. Improve/manual test prompt quality with real external AI tools.
+2. Add source verification/fact-checking workflow.
+3. Add optional real AI provider integration.
+4. Add automatic schedule execution later.
+5. Add audio/video/publishing after editorial workflow is stable.

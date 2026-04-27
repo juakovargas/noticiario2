@@ -16,6 +16,7 @@ use App\Models\NewsItem;
 use App\Models\NewsSource;
 use App\Models\NewsCategoryTranslation;
 use App\Models\Script;
+use App\Services\EditorialScheduling\AiResponseParser;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -572,12 +573,12 @@ class DemoEditorialSeeder extends Seeder
 
         $definitions = [
             [
-                'name' => 'General Editorial Research',
-                'slug' => 'general-editorial-research',
+                'name' => 'Manual AI Research And Script Prompt',
+                'slug' => 'manual-ai-research-and-script-prompt',
                 'type' => 'editorial_research',
-                'expected_output_format' => 'json',
-                'system_prompt' => 'You are an editorial research assistant for a short-form digital news bulletin platform. You must find relevant, recent and verifiable news topics for the requested location and category. Return concise structured output.',
-                'user_prompt' => "Research concise candidate stories for {{location_name}} and {{category_name}}.\nEdition type: {{edition_type}}\nLanguage: {{language_name}}\nDuration: {{target_duration_seconds}}\nDate: {{date}}\nInstructions: {{editorial_instructions}}\nReturn JSON with candidate news items including title, summary, source_hint, suggested_category, suggested_location, relevance_score, editorial_angle, why_it_matters.",
+                'expected_output_format' => 'structured_text',
+                'system_prompt' => 'You are an editorial assistant for a short digital news bulletin. Prioritize recent, relevant and verifiable information. Do not invent facts and include source hints.',
+                'user_prompt' => "Create a short digital news bulletin for {{location_name}} in {{language_name}} ({{language_code}}) focused on {{category_name}}.\nEdition type: {{edition_type}}\nScheduled date/time: {{scheduled_for}}\nTarget duration seconds: {{target_duration_seconds}}\nTone: {{tone}}\nEditorial instructions: {{editorial_instructions}}\nOutput instructions: {{output_instructions}}\nUse current/web information if browsing is available. Do not invent facts. Include source hints and separate uncertainty from confirmed facts.\nReturn this structured plain text format exactly:\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\n- ...\nOUTRO:\nNOTES:\n",
                 'language_id' => null,
                 'location_id' => null,
                 'news_category_id' => null,
@@ -586,7 +587,7 @@ class DemoEditorialSeeder extends Seeder
                 'name' => 'Short Script Generation',
                 'slug' => 'short-script-generation',
                 'type' => 'script_generation',
-                'expected_output_format' => 'text',
+                'expected_output_format' => 'structured_text',
                 'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
                 'user_prompt' => "Create a short script for {{edition_title}} in {{language_name}} for {{location_name}}.\nDuration: {{target_duration_seconds}}\nNews items:\n{{selected_news_items}}\nTemplate: {{editorial_template}}\nTone: {{tone}}",
                 'language_id' => null,
@@ -594,23 +595,23 @@ class DemoEditorialSeeder extends Seeder
                 'news_category_id' => null,
             ],
             [
-                'name' => 'Spanish Local News Brief',
-                'slug' => 'spanish-local-news-brief',
+                'name' => 'Spanish Noticiario Prompt',
+                'slug' => 'spanish-noticiario-prompt',
                 'type' => 'script_generation',
-                'expected_output_format' => 'text',
-                'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
-                'user_prompt' => "Escribe un guion breve para {{edition_title}} en {{language_name}} para {{location_name}}.\nDuración: {{target_duration_seconds}}\nNoticias:\n{{selected_news_items}}",
+                'expected_output_format' => 'structured_text',
+                'system_prompt' => 'Eres editor de noticiarios breves. Prioriza noticias recientes y verificables, evita inventar hechos e incluye pistas de fuentes.',
+                'user_prompt' => "Crea un noticiario digital corto para {{location_name}} en {{language_name}} ({{language_code}}), categoría {{category_name}}.\nFecha/hora programada: {{scheduled_for}}\nDuración objetivo: {{target_duration_seconds}} segundos\nTono: {{tone}}\nInstrucciones editoriales: {{editorial_instructions}}\nInstrucciones de salida: {{output_instructions}}\nUsa información reciente y verificable. No inventes hechos y aporta pistas de fuentes.\nDevuelve este formato de texto:\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\n- ...\nOUTRO:\nNOTES:\n",
                 'language_id' => $languages->get('es')?->id,
                 'location_id' => null,
                 'news_category_id' => null,
             ],
             [
-                'name' => 'Sports Preview Script',
-                'slug' => 'sports-preview-script',
+                'name' => 'Sports Special Prompt',
+                'slug' => 'sports-special-prompt',
                 'type' => 'script_generation',
-                'expected_output_format' => 'text',
+                'expected_output_format' => 'structured_text',
                 'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
-                'user_prompt' => "Draft a sports preview script for {{edition_title}} in {{language_name}}.\nDuration: {{target_duration_seconds}}\nItems:\n{{selected_news_items}}",
+                'user_prompt' => "Create a sports special bulletin for {{location_name}} in {{language_name}} ({{language_code}}).\nScheduled date/time: {{scheduled_for}}\nTarget duration seconds: {{target_duration_seconds}}\nUse recent and verifiable sports updates. Do not invent facts. Include source hints.\nReturn structured plain text with TITLE, INTRO, NEWS ITEMS (HEADLINE/SUMMARY/SCRIPT/EDITORIAL ANGLE/SOURCE HINTS), OUTRO, NOTES.",
                 'language_id' => null,
                 'location_id' => null,
                 'news_category_id' => $categories['sports']->id,
@@ -649,7 +650,7 @@ class DemoEditorialSeeder extends Seeder
             [
                 'requested_by' => null,
                 'ai_provider_id' => $providers['mock-ai-provider']->id,
-                'ai_prompt_template_id' => $promptTemplates['general-editorial-research']->id,
+                'ai_prompt_template_id' => $promptTemplates['manual-ai-research-and-script-prompt']->id,
                 'location_id' => $locations['madrid']->id,
                 'news_category_id' => $categories['general']->id,
                 'language_id' => $spanish?->id,
@@ -688,9 +689,47 @@ class DemoEditorialSeeder extends Seeder
         if (app()->environment(['local', 'testing'])) {
             $schedule = EditorialSchedule::query()->where('slug', 'spain-morning-briefing')->first();
             if ($schedule) {
+                $sampleResponse = "TITLE:
+Boletín de la mañana - España
+
+INTRO:
+Buenos días. Estas son las noticias más relevantes del momento para España.
+
+NEWS ITEMS:
+1. HEADLINE:
+Mercados europeos abren con volatilidad moderada
+
+SUMMARY:
+Las bolsas abren mixtas mientras inversores esperan nuevos datos macroeconómicos.
+
+SCRIPT:
+En economía, los mercados europeos iniciaron la sesión con movimientos moderados y atención en próximos indicadores de inflación.
+
+EDITORIAL ANGLE:
+Impacta la percepción de consumo y coste de vida.
+
+SOURCE HINTS:
+- Reuters
+- https://www.bloomberg.com
+
+OUTRO:
+Seguiremos actualizando durante el día con contexto verificado.
+
+NOTES:
+Confirmar cifras exactas antes de emisión.";
+
+                $parsed = (new AiResponseParser())->parse($sampleResponse);
+
                 EditorialScheduleRun::query()->updateOrCreate(
                     ['editorial_schedule_id' => $schedule->id, 'scheduled_for' => now()->startOfDay()->addHours(8)],
-                    ['status' => 'pending'],
+                    [
+                        'status' => 'response_received',
+                        'generated_prompt' => "Demo structured prompt generated for manual AI workflow.",
+                        'prompt_generated_at' => now()->subMinutes(20),
+                        'ai_response_text' => $sampleResponse,
+                        'parsed_response' => $parsed,
+                        'response_received_at' => now()->subMinutes(10),
+                    ],
                 );
             }
         }

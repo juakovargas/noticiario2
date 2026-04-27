@@ -7,7 +7,9 @@ use App\Models\EditorialScheduleRun;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
+use App\Models\Script;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -16,21 +18,24 @@ class EditorialScheduleWorkflowTest extends TestCase
     use InteractsWithPermissions;
     use RefreshDatabase;
 
-    public function test_editor_can_access_schedules_index(): void
+    #[Test]
+    public function editor_can_access_schedules_index(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access']);
 
         $this->actingAs($editor)->get(route('editor.editorial-schedules.index'))->assertOk();
     }
 
-    public function test_viewer_cannot_access_schedules(): void
+    #[Test]
+    public function viewer_cannot_access_schedules(): void
     {
         $viewer = $this->createUserWithPermissions(['viewer.access']);
 
         $this->actingAs($viewer)->get(route('editor.editorial-schedules.index'))->assertForbidden();
     }
 
-    public function test_editor_can_create_daily_weekdays_and_once_schedules_and_slug_auto_generation(): void
+    #[Test]
+    public function editor_can_create_daily_weekdays_and_once_schedules_and_slug_auto_generation(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access']);
         $location = Location::factory()->create();
@@ -76,7 +81,8 @@ class EditorialScheduleWorkflowTest extends TestCase
         $this->assertNotNull(EditorialSchedule::query()->where('name', 'Daily Schedule')->value('slug'));
     }
 
-    public function test_validation_prevents_invalid_target_duration(): void
+    #[Test]
+    public function validation_prevents_invalid_target_duration(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access']);
 
@@ -88,12 +94,128 @@ class EditorialScheduleWorkflowTest extends TestCase
         ])->assertSessionHasErrors('target_duration_seconds');
     }
 
-    public function test_editor_can_create_run_generate_prompt_receive_response_and_create_script(): void
+    #[Test]
+    public function editor_can_create_run_generate_prompt_receive_response_and_create_script(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $run = $this->createRunFixture();
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.generate-prompt', $run))->assertRedirect();
+        $run->refresh();
+
+        $this->assertSame('prompt_ready', $run->status);
+        $this->assertStringContainsString('Spain', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('General', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('Spanish', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('90', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('Do not invent facts', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('SOURCE HINTS', $run->generated_prompt ?? '');
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.receive-response', $run), [
+            'response_text' => "TITLE:\nDemo\n\nINTRO:\nIntro text\n\nNEWS ITEMS:\n1. HEADLINE:\nItem one\n\nSUMMARY:\nSummary one\n\nSCRIPT:\nBody text\n\nEDITORIAL ANGLE:\nWhy now\n\nSOURCE HINTS:\n- https://example.com\n\nOUTRO:\nOutro text",
+        ])->assertRedirect();
+
+        $run->refresh();
+        $this->assertSame('response_received', $run->status);
+        $this->assertIsArray($run->parsed_response);
+        $this->assertSame('Demo', $run->parsed_response['title']);
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.create-script', $run))->assertRedirect();
+
+        $run->refresh();
+        $this->assertNotNull($run->script_id);
+        $this->assertSame('script_created', $run->status);
+
+        /** @var Script $script */
+        $script = Script::query()->findOrFail($run->script_id);
+        $this->assertSame('Demo', $script->title);
+        $this->assertSame('Intro text', $script->intro);
+        $this->assertStringContainsString('Item one', $script->body);
+        $this->assertSame('Outro text', $script->outro);
+        $this->assertTrue((bool) data_get($script->metadata, 'parsed_response_used'));
+    }
+
+    #[Test]
+    public function unstructured_response_still_saves_safely_and_falls_back_when_creating_script(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $run = $this->createRunFixture();
+        $text = 'Plain response without sections.';
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.receive-response', $run), [
+            'response_text' => $text,
+        ])->assertRedirect();
+
+        $run->refresh();
+        $this->assertSame('response_received', $run->status);
+        $this->assertSame($text, data_get($run->parsed_response, 'body'));
+        $this->assertNotEmpty($run->parser_warnings);
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.create-script', $run))->assertRedirect();
+
+        $script = Script::query()->findOrFail($run->fresh()->script_id);
+        $this->assertSame($text, $script->body);
+        $this->assertFalse((bool) data_get($script->metadata, 'parsed_response_used'));
+    }
+
+    #[Test]
+    public function creating_script_twice_does_not_duplicate_scripts(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $run = $this->createRunFixture();
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.receive-response', $run), [
+            'response_text' => "TITLE:\nDemo\n\nNEWS ITEMS:\n1. HEADLINE:\nOne\n\nSUMMARY:\nTwo\n\nSCRIPT:\nThree",
+        ])->assertRedirect();
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.create-script', $run))->assertRedirect();
+        $firstScriptId = $run->fresh()->script_id;
+
+        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.create-script', $run->fresh()))->assertRedirect();
+
+        $run->refresh();
+        $this->assertSame($firstScriptId, $run->script_id);
+        $this->assertSame(1, Script::query()->where('id', $firstScriptId)->count());
+    }
+
+    #[Test]
+    public function viewer_and_non_editor_cannot_access_run_actions_or_desk(): void
+    {
+        $viewer = $this->createUserWithPermissions(['viewer.access']);
+        $user = $this->createUserWithPermissions([]);
+        $schedule = EditorialSchedule::query()->create([
+            'name' => 'x',
+            'slug' => 'x',
+            'edition_type' => 'morning',
+            'frequency_type' => 'daily',
+            'manual_ai_mode' => true,
+            'is_active' => true,
+        ]);
+
+        $run = EditorialScheduleRun::query()->create(['editorial_schedule_id' => $schedule->id, 'status' => 'pending']);
+
+        $this->actingAs($viewer)->get(route('editor.editorial-desk.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('editor.editorial-schedule-runs.index'))->assertForbidden();
+        $this->actingAs($viewer)->post(route('editor.editorial-schedules.runs.store', $schedule))->assertForbidden();
+        $this->actingAs($viewer)->post(route('editor.editorial-schedule-runs.receive-response', $run), ['response_text' => 'x'])->assertForbidden();
+        $this->actingAs($user)->post(route('editor.editorial-schedule-runs.create-script', $run), [])->assertForbidden();
+    }
+
+    #[Test]
+    public function editor_can_access_editorial_desk(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+
+        $this->actingAs($editor)->get(route('editor.editorial-desk.index'))->assertOk();
+    }
+
+    private function createRunFixture(): EditorialScheduleRun
     {
         $editor = $this->createUserWithPermissions(['editor.access']);
         $location = Location::factory()->create(['name' => 'Spain']);
         $category = NewsCategory::factory()->create(['name' => 'General']);
         $language = Language::factory()->create(['name' => 'Spanish', 'code' => 'es']);
+
         $schedule = EditorialSchedule::query()->create([
             'name' => 'Spain Morning Briefing',
             'slug' => 'spain-morning-briefing',
@@ -109,51 +231,7 @@ class EditorialScheduleWorkflowTest extends TestCase
         ]);
 
         $this->actingAs($editor)->post(route('editor.editorial-schedules.runs.store', $schedule))->assertRedirect();
-        $run = EditorialScheduleRun::query()->firstOrFail();
 
-        $this->assertSame('pending', $run->status);
-        $this->assertNotNull($run->edition_id);
-
-        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.generate-prompt', $run))->assertRedirect();
-        $run->refresh();
-        $this->assertSame('prompt_ready', $run->status);
-        $this->assertStringContainsString('Spain', $run->generated_prompt ?? '');
-        $this->assertStringContainsString('General', $run->generated_prompt ?? '');
-        $this->assertStringContainsString('Spanish', $run->generated_prompt ?? '');
-        $this->assertStringContainsString('90', $run->generated_prompt ?? '');
-
-        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.receive-response', $run), [
-            'response_text' => "Title: Demo\nIntro: Intro text\nBody: Body text\nOutro: Outro text",
-        ])->assertRedirect();
-
-        $run->refresh();
-        $this->assertSame('response_received', $run->status);
-
-        $this->actingAs($editor)->post(route('editor.editorial-schedule-runs.create-script', $run))->assertRedirect();
-
-        $run->refresh();
-        $this->assertNotNull($run->script_id);
-        $this->assertSame('script_created', $run->status);
-        $this->assertDatabaseHas('scripts', ['id' => $run->script_id, 'edition_id' => $run->edition_id]);
-    }
-
-    public function test_viewer_and_non_editor_cannot_access_run_actions_or_desk(): void
-    {
-        $viewer = $this->createUserWithPermissions(['viewer.access']);
-        $user = $this->createUserWithPermissions([]);
-        $schedule = EditorialSchedule::query()->create([
-            'name' => 'x', 'slug' => 'x', 'edition_type' => 'morning', 'frequency_type' => 'daily', 'manual_ai_mode' => true, 'is_active' => true,
-        ]);
-
-        $this->actingAs($viewer)->get(route('editor.editorial-desk.index'))->assertForbidden();
-        $this->actingAs($user)->get(route('editor.editorial-schedule-runs.index'))->assertForbidden();
-        $this->actingAs($viewer)->post(route('editor.editorial-schedules.runs.store', $schedule))->assertForbidden();
-    }
-
-    public function test_editor_can_access_editorial_desk(): void
-    {
-        $editor = $this->createUserWithPermissions(['editor.access']);
-
-        $this->actingAs($editor)->get(route('editor.editorial-desk.index'))->assertOk();
+        return EditorialScheduleRun::query()->firstOrFail();
     }
 }

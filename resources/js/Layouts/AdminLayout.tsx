@@ -3,7 +3,7 @@ import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { Bot, Globe, LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
+import { Bot, ChartNoAxesCombined, Globe, LayoutGrid, LockKeyhole, Menu, ShieldCheck, Users, X } from 'lucide-react';
 import { PropsWithChildren, useMemo, useState } from 'react';
 import { PageProps } from '@/types';
 
@@ -58,6 +58,12 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 href: route('admin.ai-providers.index'),
                 routeName: 'admin.ai-providers.*',
                 icon: <Bot className="h-4 w-4" />,
+            },
+            {
+                label: t('SEO & Tracking'),
+                href: route('admin.seo-settings.edit'),
+                routeName: 'admin.seo-settings.*',
+                icon: <ChartNoAxesCombined className="h-4 w-4" />,
             },
         ],
         [t],

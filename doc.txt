@@ -358,3 +358,74 @@ Current next priorities:
 3. Add optional real AI provider integration.
 4. Add automatic schedule execution later.
 5. Add audio/video/publishing after editorial workflow is stable.
+
+SEO AND TRACKING SETTINGS
+
+Database:
+- Added seo_settings table for global SEO and tracking configuration.
+- This table is intended to keep one active/global row.
+
+Admin module:
+- Added Admin > SEO & Tracking page:
+  - Route: /admin/seo-settings
+  - Permission: admin.access only
+- Editors/viewers cannot access this module.
+
+Configurable SEO defaults:
+- site_name
+- default_title
+- title_suffix
+- default_description
+- default_keywords
+- canonical_base_url
+- default_robots
+- default_og_image
+- default_twitter_card
+- enable_indexing
+
+Search verification tokens:
+- google_site_verification
+- bing_site_verification
+
+Tracking IDs:
+- google_tag_manager_id
+- google_analytics_id
+- microsoft_clarity_id
+- meta_pixel_id
+- tiktok_pixel_id
+
+Custom script injection:
+- custom_head_scripts
+- custom_body_start_scripts
+- custom_body_end_scripts
+- enable_custom_scripts toggle
+
+Safety defaults and guardrails:
+- Only admin.access can manage SEO/tracking settings.
+- Tracking is disabled by default.
+- Custom scripts are disabled by default.
+- Do not store private API keys in this module.
+
+Injection location:
+- SEO/meta/tracking/custom scripts are injected from resources/views/app.blade.php.
+- This file is the Inertia root view (not a Blade application page).
+
+Operational notes:
+- The app safely handles missing seo_settings table during fresh installs/tests.
+- Demo seeders create/update one safe default SEO row with tracking/custom scripts disabled.
+
+Future considerations:
+- Cookie consent / privacy compliance
+- GDPR tracking consent
+- CSP/security headers
+- Per-environment tracking configuration
+- Page-specific SEO overrides
+
+Current modules list update:
+- Admin modules now include SEO & Tracking configuration.
+
+Current next priorities update:
+1. Stabilize editorial schedule + run workflow with stronger QA.
+2. Add page-level SEO override strategy for public content pages.
+3. Add privacy consent framework before enabling production tracking by default.
+4. Continue improving prompt/template quality and editorial automation reliability.

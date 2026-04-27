@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Language;
 use App\Models\User;
+use App\Support\Seo\SeoSettingsResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
@@ -53,6 +54,8 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
+        $seoProps = app(SeoSettingsResolver::class)->safeSeoProps();
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -74,6 +77,7 @@ class HandleInertiaRequests extends Middleware
                 'locale' => app()->getLocale(),
                 'availableLocales' => $availableLocales,
             ],
+            'seo' => $seoProps,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -37,6 +37,38 @@ class DemoSeedersTest extends TestCase
         $this->assertNotNull(Role::findByName('viewer'));
     }
 
+
+    public function test_basic_roles_exist_with_expected_access_boundaries(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $superadmin = Role::findByName('superadmin');
+        $admin = Role::findByName('admin');
+        $editor = Role::findByName('editor');
+        $viewer = Role::findByName('viewer');
+
+        $this->assertNotNull($superadmin);
+        $this->assertNotNull($admin);
+        $this->assertNotNull($editor);
+        $this->assertNotNull($viewer);
+
+        $this->assertTrue($admin->hasPermissionTo('admin.access'));
+        $this->assertFalse($editor->hasPermissionTo('admin.access'));
+        $this->assertFalse($viewer->hasPermissionTo('admin.access'));
+        $this->assertFalse($viewer->hasPermissionTo('editor.access'));
+    }
+
+    public function test_roles_and_permissions_seeder_is_idempotent_for_basic_roles(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $this->assertSame(1, Role::query()->where('name', 'superadmin')->count());
+        $this->assertSame(1, Role::query()->where('name', 'admin')->count());
+        $this->assertSame(1, Role::query()->where('name', 'editor')->count());
+        $this->assertSame(1, Role::query()->where('name', 'viewer')->count());
+    }
+
     public function test_demo_users_exist_after_testing_seeding_with_expected_roles(): void
     {
         $this->seed(DatabaseSeeder::class);

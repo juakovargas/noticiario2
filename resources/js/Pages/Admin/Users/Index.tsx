@@ -88,7 +88,15 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                         </Badge>
                                     </td>
                                     <td className="px-2 py-3 text-slate-600">
-                                        {user.roles.length ? user.roles.join(', ') : t('No roles')}
+                                        {user.roles.length ? (
+                                            <div className="flex flex-wrap gap-1">
+                                                {user.roles.map((role) => (
+                                                    <Badge key={`${user.id}-${role}`} variant="outline">
+                                                        {role}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        ) : t('No roles')}
                                     </td>
                                     <td className="px-2 py-3 text-slate-600">{formatDateTime(user.created_at)}</td>
                                     <td className="px-2 py-3">
@@ -105,7 +113,7 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                                     variant="outline"
                                                     onClick={() => impersonateUser(user.id)}
                                                 >
-                                                    {t('Login as user')}
+                                                    {t('Impersonate')}
                                                 </Button>
                                             )}
                                             <Button

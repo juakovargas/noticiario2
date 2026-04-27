@@ -11,7 +11,7 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         $user = User::query()->updateOrCreate(
-            ['email' => 'super-admin@example.com'],
+            ['email' => 'superadmin@example.com'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
@@ -19,6 +19,6 @@ class SuperAdminSeeder extends Seeder
             ],
         );
 
-        $user->assignRole('super-admin');
+        $user->syncRoles(['superadmin']);
     }
 }

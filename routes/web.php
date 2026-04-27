@@ -24,6 +24,7 @@ use App\Http\Controllers\Editor\NewsItemController;
 use App\Http\Controllers\Editor\NewsSourceController;
 use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
+use App\Http\Controllers\Editor\ScriptReviewController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Viewer\DashboardController as ViewerDashboardController;
@@ -138,6 +139,14 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::put('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'update'])->name('editions.news-items.update');
         Route::delete('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'destroy'])->name('editions.news-items.destroy');
         Route::resource('scripts', ScriptController::class);
+        Route::get('/scripts/{script}/review', [ScriptReviewController::class, 'show'])->name('scripts.review');
+        Route::post('/scripts/{script}/review/generate-items', [ScriptReviewController::class, 'generateItems'])->name('scripts.review.generate-items');
+        Route::put('/scripts/{script}/review', [ScriptReviewController::class, 'update'])->name('scripts.review.update');
+        Route::put('/scripts/{script}/review-items/{scriptReviewItem}', [ScriptReviewController::class, 'updateItem'])->name('scripts.review-items.update');
+        Route::post('/scripts/{script}/review/mark-in-review', [ScriptReviewController::class, 'markInReview'])->name('scripts.review.mark-in-review');
+        Route::post('/scripts/{script}/review/mark-verified', [ScriptReviewController::class, 'markVerified'])->name('scripts.review.mark-verified');
+        Route::post('/scripts/{script}/review/approve', [ScriptReviewController::class, 'approve'])->name('scripts.review.approve');
+        Route::post('/scripts/{script}/review/reject', [ScriptReviewController::class, 'reject'])->name('scripts.review.reject');
         Route::get('/editions/{edition}/script-builder', [ScriptBuilderController::class, 'create'])->name('editions.script-builder');
         Route::post('/editions/{edition}/script-builder', [ScriptBuilderController::class, 'store'])->name('editions.script-builder.store');
 

@@ -429,3 +429,87 @@ Current next priorities update:
 2. Add page-level SEO override strategy for public content pages.
 3. Add privacy consent framework before enabling production tracking by default.
 4. Continue improving prompt/template quality and editorial automation reliability.
+
+MANUAL FACT-CHECK AND SCRIPT REVIEW
+
+Overview:
+- Added a manual editorial review and fact-check layer on top of existing script status flow.
+- This workflow is designed for human review before any automated AI/audio/video/publishing steps.
+
+Scripts review fields:
+- Added review_status (default: pending).
+- Added review_notes and fact_check_notes.
+- Added reviewed_by/reviewed_at.
+- Added rejected_by/rejected_at/rejection_reason.
+- Kept existing status + approved_by/approved_at behavior and used review_status as a parallel editorial layer.
+
+script_review_items table:
+- New granular review table linked to scripts.
+- Supports optional link to news_items.
+- Stores type, content, source_hints, verification_status, verification_notes, required_action, reviewer/timestamp, and metadata.
+
+Purpose of review items:
+- Allow editors to review each script section independently.
+- Support fact-check and source completeness checks at block/item level.
+- Enable clear manual workflow before final script approval.
+
+Review statuses:
+- pending
+- in_review
+- needs_sources
+- needs_changes
+- verified
+- approved
+- rejected
+
+Verification statuses:
+- pending
+- verified
+- needs_source
+- needs_changes
+- rejected
+- not_applicable
+
+Required actions:
+- add_source
+- rewrite
+- remove
+- check_date
+- check_claim
+- none
+
+ScriptReviewItemGenerator service:
+- New service: app/Services/EditorialReview/ScriptReviewItemGenerator.php
+- Deterministically generates review items without AI/external calls.
+- Prefers parsed metadata items when available.
+- Otherwise splits body by double new lines and falls back safely.
+- Optionally links edition news items to review items.
+- Prevents duplicate generation unless force regeneration is requested.
+
+Script Review page:
+- New page: Editor/Scripts/Review
+- Includes script header/status summary, counters, script-level review notes, per-item verification controls, and workflow actions.
+- Supports generate items, mark in review, mark verified, approve, and reject (with required reason).
+
+Approval/rejection workflow:
+- Verified only when unresolved blocking item states are absent.
+- Approval allowed when review_status=verified or all items are verified/not_applicable.
+- Rejection requires rejection_reason.
+- Approval/rejection also updates legacy script status to preserve previous workflow compatibility.
+
+Relationship with AI-generated/manual scripts:
+- Works for manually written scripts and scripts created from manual AI response parsing.
+- No AI call is required for review item generation.
+
+Current limitations:
+- no automatic fact-checking yet
+- no external source verification yet
+- no AI review yet
+- no audio/video/publishing yet
+
+Current next priorities:
+1. Improve review workflow based on manual testing.
+2. Add real source verification/fact-checking support.
+3. Add optional real AI provider integration.
+4. Add automatic schedule execution later.
+5. Add audio/video/publishing after editorial workflow is stable.

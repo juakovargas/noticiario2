@@ -42,7 +42,7 @@ class ScriptController extends Controller
 
         return Inertia::render('Editor/Scripts/Index', [
             'scripts' => Script::query()
-                ->with('edition:id,title')
+                ->with(['edition:id,title', 'reviewedBy:id,name', 'approvedBy:id,name', 'rejectedBy:id,name'])
                 ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                     $search = $filters['search'];
                     $query->where(function (Builder $subQuery) use ($search): void {
@@ -71,7 +71,13 @@ class ScriptController extends Controller
                     'language' => $script->language,
                     'language_display' => $languageDisplayMap->get($script->language),
                     'estimated_duration_seconds' => $script->estimated_duration_seconds,
+                    'review_status' => $script->review_status ?? 'pending',
+                    'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
+                    'reviewed_by' => $script->reviewedBy?->name,
                     'approved_at' => $script->approved_at?->toDateTimeString(),
+                    'approved_by' => $script->approvedBy?->name,
+                    'rejected_at' => $script->rejected_at?->toDateTimeString(),
+                    'rejected_by' => $script->rejectedBy?->name,
                 ]),
             'filters' => $filters,
             'statuses' => ['draft', 'review', 'approved', 'rejected', 'archived'],
@@ -102,7 +108,7 @@ class ScriptController extends Controller
 
     public function show(Script $script): Response
     {
-        $script->load(['edition:id,title', 'approvedBy:id,name']);
+        $script->load(['edition:id,title', 'approvedBy:id,name', 'reviewedBy:id,name', 'rejectedBy:id,name', 'reviewItems']);
 
         return Inertia::render('Editor/Scripts/Show', [
             'script' => [
@@ -116,8 +122,15 @@ class ScriptController extends Controller
                 'body' => $script->body,
                 'outro' => $script->outro,
                 'estimated_duration_seconds' => $script->estimated_duration_seconds,
+                'review_status' => $script->review_status ?? 'pending',
+                'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
+                'reviewed_by' => $script->reviewedBy?->name,
                 'approved_at' => $script->approved_at?->toDateTimeString(),
                 'approved_by' => $script->approvedBy?->name,
+                'rejected_at' => $script->rejected_at?->toDateTimeString(),
+                'rejected_by' => $script->rejectedBy?->name,
+                'rejection_reason' => $script->rejection_reason,
+                'review_items_count' => $script->reviewItems->count(),
             ],
         ]);
     }

@@ -24,7 +24,14 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
     const { t } = useTranslations();
 
     const sections: NavSection[] = [
-        { title: t('Workspace'), items: [{ label: t('Dashboard'), routeName: 'editor.dashboard' }, { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' }] },
+        {
+            title: t('Workspace'),
+            items: [
+                { label: t('Dashboard'), routeName: 'editor.dashboard' },
+                { label: t('Editorial Desk'), routeName: 'editor.editorial-desk.index' },
+                { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' },
+            ],
+        },
         {
             title: t('News'),
             items: [
@@ -39,6 +46,8 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
             items: [
                 { label: t('Editions'), routeName: 'editor.editions.index' },
                 { label: t('Scripts'), routeName: 'editor.scripts.index' },
+                { label: t('Editorial Schedules'), routeName: 'editor.editorial-schedules.index' },
+                { label: t('Editorial Runs'), routeName: 'editor.editorial-schedule-runs.index' },
             ],
         },
         {

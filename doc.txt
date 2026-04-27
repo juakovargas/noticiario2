@@ -138,12 +138,12 @@ What has been done (feature/ui-date-formatting-project-doc):
 In progress:
 - Keep date formatting adoption consistent for newly added pages/modules.
 
-What should be done next:
-1. Continue applying centralized formatter to any new pages that display raw timestamps.
-2. Keep doc.txt updated on each major branch.
-3. Continue/complete AI editorial planning workflow hardening (without storing real API keys in DB).
-4. Add source verification/fact-checking before any automated script generation.
-5. Only add audio/video/publishing automation after editorial workflow is stable.
+Current next priorities:
+1. Finish manual AI schedule workflow.
+2. Add real AI provider integration later.
+3. Add source verification/fact-checking before automatic generation.
+4. Add automatic scheduler/queues only after manual workflow is stable.
+5. Add audio/video/publishing later.
 
 Strategic decision:
 RSS is not the main product direction.
@@ -159,6 +159,56 @@ Editorial Request
 -> Audio
 -> Video
 -> Publishing
+
+EDITORIAL SCHEDULES AND MANUAL AI WORKFLOW
+
+New database tables:
+- editorial_schedules
+  - Defines reusable schedule configurations (daily/weekly/once/custom), editorial context, language/location/category, timing, manual AI mode, and instruction blocks.
+- editorial_schedule_runs
+  - Represents concrete workflow executions created from schedules and linked to editions/scripts.
+
+Purpose:
+- Schedules let editors configure recurring and one-off noticiario planning templates.
+- Runs provide the operational unit for each execution cycle (prompt generation, manual AI response capture, and script draft creation).
+
+Manual AI mode workflow:
+1. Configure schedule.
+2. Create run.
+3. Generate prompt.
+4. Copy prompt to external AI.
+5. Paste AI response.
+6. Create script draft.
+
+Demo schedule seeds added:
+- Spain Morning Briefing (08:00 Europe/Madrid)
+- Spain Afternoon Briefing (15:00 Europe/Madrid)
+- Spain Night Recap (21:00 Europe/Madrid)
+- Madrid Local Morning (weekdays at 09:00 Europe/Madrid)
+- Spain Sports Evening (20:00 Europe/Madrid)
+- Super Bowl Special Demo (once, America/New_York)
+
+New routes/pages:
+- Editor routes:
+  - /editor/editorial-desk
+  - /editor/editorial-schedules (CRUD)
+  - /editor/editorial-schedule-runs (index/show)
+  - run workflow actions:
+    - create run
+    - generate prompt
+    - receive response
+    - create script
+    - complete run
+- React pages:
+  - resources/js/Pages/Editor/EditorialDesk/Index.tsx
+  - resources/js/Pages/Editor/EditorialSchedules/*
+  - resources/js/Pages/Editor/EditorialScheduleRuns/*
+
+Current limitations:
+- No automatic AI calls yet.
+- No cron/scheduler execution yet.
+- No queue workers yet.
+- No audio/video/publishing automation yet.
 
 Conventions and restrictions:
 - Do not create Blade application pages.

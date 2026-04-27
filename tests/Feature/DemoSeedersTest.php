@@ -48,6 +48,10 @@ class DemoSeedersTest extends TestCase
         $this->assertTrue($admin->hasRole('admin'));
         $this->assertTrue($editor->hasRole('editor'));
         $this->assertTrue($viewer->hasRole('viewer'));
+        $this->assertSame('en', $admin->preferred_locale);
+        $this->assertSame('es', $editor->preferred_locale);
+        $this->assertSame('es', $viewer->preferred_locale);
+        $this->assertSame('Europe/Madrid', $admin->timezone);
     }
 
     public function test_demo_editorial_seeder_runs_safely_and_does_not_duplicate_core_records(): void

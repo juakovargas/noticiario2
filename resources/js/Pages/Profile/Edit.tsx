@@ -8,7 +8,10 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 export default function Edit({
     mustVerifyEmail,
     status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+    locales,
+    dateFormatOptions,
+    timeFormatOptions,
+}: PageProps<{ mustVerifyEmail: boolean; status?: string; locales: Array<{code:string; name:string}>; dateFormatOptions: string[]; timeFormatOptions: string[] }>) {
     return (
         <AuthenticatedLayout
             header={
@@ -25,6 +28,9 @@ export default function Edit({
                         <UpdateProfileInformationForm
                             mustVerifyEmail={mustVerifyEmail}
                             status={status}
+                            locales={locales}
+                            dateFormatOptions={dateFormatOptions}
+                            timeFormatOptions={timeFormatOptions}
                             className="max-w-xl"
                         />
                     </div>

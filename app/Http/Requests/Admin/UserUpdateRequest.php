@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -26,6 +27,15 @@ class UserUpdateRequest extends FormRequest
     {
         $userId = $this->route('user')?->id;
 
+        $locales = ['en', 'es'];
+
+        if (Schema::hasTable('languages')) {
+            $codes = \App\Models\Language::query()->where('is_active', true)->pluck('code')->all();
+            if (! empty($codes)) {
+                $locales = $codes;
+            }
+        }
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
@@ -35,6 +45,11 @@ class UserUpdateRequest extends FormRequest
             'roles.*' => ['string', 'exists:roles,name'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
+            'preferred_locale' => ['nullable', 'string', Rule::in($locales)],
+            'timezone' => ['nullable', 'string', 'max:100'],
+            'date_format' => ['nullable', Rule::in(['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'])],
+            'time_format' => ['nullable', Rule::in(['24h', '12h'])],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 }

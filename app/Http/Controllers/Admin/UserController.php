@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
+use App\Models\Language;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
@@ -29,6 +32,10 @@ class UserController extends Controller
                     'is_active' => $user->is_active,
                     'created_at' => $user->created_at?->toDateTimeString(),
                     'roles' => $user->roles->pluck('name')->values(),
+                    'preferred_locale' => $user->preferred_locale,
+                    'timezone' => $user->timezone,
+                    'avatar_url' => $user->avatar_url,
+                    'initials' => $user->initials,
                 ]),
         ]);
     }
@@ -38,6 +45,9 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Create', [
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
+            'localeOptions' => $this->localeOptions(),
+            'dateFormatOptions' => ['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'],
+            'timeFormatOptions' => ['24h', '12h'],
         ]);
     }
 
@@ -45,11 +55,20 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
+        if ($request->hasFile('avatar')) {
+            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
         $user = User::query()->create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'is_active' => $data['is_active'],
+            'preferred_locale' => $data['preferred_locale'] ?? null,
+            'timezone' => $data['timezone'] ?? null,
+            'date_format' => $data['date_format'] ?? null,
+            'time_format' => $data['time_format'] ?? null,
+            'avatar_path' => $data['avatar_path'] ?? null,
         ]);
 
         $user->syncRoles($data['roles'] ?? []);
@@ -72,6 +91,11 @@ class UserController extends Controller
                 'updated_at' => $user->updated_at?->toDateTimeString(),
                 'roles' => $user->roles->pluck('name')->values(),
                 'permissions' => $user->permissions->pluck('name')->values(),
+                'preferred_locale' => $user->preferred_locale,
+                'timezone' => $user->timezone,
+                'date_format' => $user->date_format,
+                'time_format' => $user->time_format,
+                'avatar_url' => $user->avatar_url,
             ],
         ]);
     }
@@ -88,9 +112,17 @@ class UserController extends Controller
                 'is_active' => $user->is_active,
                 'roles' => $user->roles->pluck('name')->values(),
                 'permissions' => $user->permissions->pluck('name')->values(),
+                'preferred_locale' => $user->preferred_locale,
+                'timezone' => $user->timezone,
+                'date_format' => $user->date_format,
+                'time_format' => $user->time_format,
+                'avatar_url' => $user->avatar_url,
             ],
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
+            'localeOptions' => $this->localeOptions(),
+            'dateFormatOptions' => ['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'],
+            'timeFormatOptions' => ['24h', '12h'],
         ]);
     }
 
@@ -98,11 +130,27 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
         $payload = [
             'name' => $data['name'],
             'email' => $data['email'],
             'is_active' => $data['is_active'],
+            'preferred_locale' => $data['preferred_locale'] ?? null,
+            'timezone' => $data['timezone'] ?? null,
+            'date_format' => $data['date_format'] ?? null,
+            'time_format' => $data['time_format'] ?? null,
         ];
+
+        if (! empty($data['avatar_path'])) {
+            $payload['avatar_path'] = $data['avatar_path'];
+        }
 
         if (! empty($data['password'])) {
             $payload['password'] = Hash::make($data['password']);
@@ -124,5 +172,23 @@ class UserController extends Controller
         $user->delete();
 
         return to_route('admin.users.index')->with('success', 'User deleted successfully.');
+    }
+
+    private function localeOptions(): array
+    {
+        $locales = [
+            ['code' => 'en', 'name' => 'English'],
+            ['code' => 'es', 'name' => 'Español'],
+        ];
+
+        if (Schema::hasTable('languages')) {
+            $dbLocales = Language::query()->where('is_active', true)->orderBy('sort_order')->get(['code', 'name']);
+
+            if ($dbLocales->isNotEmpty()) {
+                return $dbLocales->map(fn (Language $language) => ['code' => $language->code, 'name' => $language->name])->values()->all();
+            }
+        }
+
+        return $locales;
     }
 }

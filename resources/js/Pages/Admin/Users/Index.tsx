@@ -1,5 +1,6 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import Pagination from '@/Components/Pagination';
+import UserAvatar from '@/Components/UserAvatar';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -16,6 +17,10 @@ interface UserItem {
     is_active: boolean;
     created_at: string;
     roles: string[];
+    preferred_locale: string | null;
+    timezone: string | null;
+    avatar_url: string | null;
+    initials: string;
 }
 
 interface UsersIndexProps {
@@ -62,6 +67,8 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                             <tr className="border-b border-slate-200 text-slate-500">
                                 <th className="px-2 pb-3">{t('Name')}</th>
                                 <th className="px-2 pb-3">{t('Email')}</th>
+                                <th className="px-2 pb-3">{t('Preferred locale')}</th>
+                                <th className="px-2 pb-3">{t('Timezone')}</th>
                                 <th className="px-2 pb-3">{t('Status')}</th>
                                 <th className="px-2 pb-3">{t('Roles')}</th>
                                 <th className="px-2 pb-3">{t('Created at')}</th>
@@ -71,8 +78,10 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                         <tbody>
                             {users.data.map((user) => (
                                 <tr key={user.id} className="border-b border-slate-100">
-                                    <td className="px-2 py-3 font-medium text-slate-900">{user.name}</td>
+                                    <td className="px-2 py-3 font-medium text-slate-900"><div className="flex items-center gap-2"><UserAvatar name={user.name} avatarUrl={user.avatar_url} initials={user.initials} /><span>{user.name}</span></div></td>
                                     <td className="px-2 py-3 text-slate-600">{user.email}</td>
+                                    <td className="px-2 py-3 text-slate-600">{user.preferred_locale ?? '-'}</td>
+                                    <td className="px-2 py-3 text-slate-600">{user.timezone ?? '-'}</td>
                                     <td className="px-2 py-3">
                                         <Badge variant={user.is_active ? 'success' : 'danger'}>
                                             {user.is_active ? t('Active') : t('Inactive')}

@@ -65,6 +65,12 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
                     'permissions' => $user->getAllPermissions()->pluck('name'),
+                    'preferred_locale' => $user->preferred_locale,
+                    'timezone' => $user->timezone,
+                    'date_format' => $user->date_format,
+                    'time_format' => $user->time_format,
+                    'avatar_url' => $user->avatar_url,
+                    'initials' => $user->initials,
                 ] : null,
             ],
             'impersonation' => [

@@ -10,12 +10,12 @@ class DemoUsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedDemoUser('Admin User', 'admin@example.com', 'admin');
-        $this->seedDemoUser('Editor User', 'editor@example.com', 'editor');
-        $this->seedDemoUser('Viewer User', 'viewer@example.com', 'viewer');
+        $this->seedDemoUser('Admin User', 'admin@example.com', 'admin', 'en', 'Europe/Madrid');
+        $this->seedDemoUser('Editor User', 'editor@example.com', 'editor', 'es', 'Europe/Madrid');
+        $this->seedDemoUser('Viewer User', 'viewer@example.com', 'viewer', 'es', 'Europe/Madrid');
     }
 
-    private function seedDemoUser(string $name, string $email, string $role): void
+    private function seedDemoUser(string $name, string $email, string $role, string $preferredLocale, string $timezone): void
     {
         $user = User::query()->firstOrCreate(
             ['email' => $email],
@@ -24,21 +24,22 @@ class DemoUsersSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
                 'is_active' => true,
+                'preferred_locale' => $preferredLocale,
+                'timezone' => $timezone,
             ],
         );
 
-        $updates = [];
+        $user->update([
+            'preferred_locale' => $preferredLocale,
+            'timezone' => $timezone,
+        ]);
 
         if (blank($user->name)) {
-            $updates['name'] = $name;
+            $user->update(['name' => $name]);
         }
 
         if (is_null($user->email_verified_at)) {
-            $updates['email_verified_at'] = now();
-        }
-
-        if (! empty($updates)) {
-            $user->update($updates);
+            $user->update(['email_verified_at' => now()]);
         }
 
         $user->syncRoles([$role]);

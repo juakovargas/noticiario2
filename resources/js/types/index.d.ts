@@ -5,6 +5,12 @@ export interface User {
     email_verified_at?: string;
     roles?: string[];
     permissions?: string[];
+    preferred_locale?: string | null;
+    timezone?: string | null;
+    date_format?: string | null;
+    time_format?: string | null;
+    avatar_url?: string | null;
+    initials?: string;
 }
 
 export interface AvailableLocale {

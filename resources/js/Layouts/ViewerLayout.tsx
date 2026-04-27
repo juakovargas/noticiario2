@@ -1,5 +1,6 @@
 import FlashMessage from '@/Components/FlashMessage';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
@@ -59,7 +60,10 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
 
                     <div className="flex items-center gap-3">
                         <LanguageSwitcher />
-                        <p className="hidden text-sm text-slate-600 md:block">{page.props.auth.user?.name}</p>
+                        <div className="hidden items-center gap-2 md:flex">
+                            <UserAvatar name={page.props.auth.user?.name} avatarUrl={page.props.auth.user?.avatar_url} initials={page.props.auth.user?.initials} />
+                            <p className="text-sm text-slate-600">{page.props.auth.user?.name}</p>
+                        </div>
                         <Button asChild variant="outline" size="sm">
                             <Link href={route('logout')} method="post" as="button">
                                 {t('Logout')}

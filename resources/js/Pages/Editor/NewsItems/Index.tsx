@@ -6,6 +6,7 @@ import { Input } from '@/Components/ui/input';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { countryCodeToFlagEmoji } from '@/lib/flags';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
@@ -58,6 +59,7 @@ const initialFilters = {
 
 export default function Index({ newsItems, filters, statuses, languages, priorities, sources, categories, locations }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
     const [form, setForm] = useState({ ...initialFilters, ...filters });
 
     const statusClasses = useMemo<Record<string, string>>(
@@ -224,7 +226,7 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
                                                 {item.status}
                                             </span>
                                         </td>
-                                        <td className="px-2 py-3">{item.published_at || '-'}</td>
+                                        <td className="px-2 py-3">{formatDateTime(item.published_at)}</td>
                                         <td className="px-2 py-3">
                                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${priorityClasses[item.editorial_priority] || 'bg-slate-100 text-slate-700'}`}>
                                                 {item.editorial_priority}

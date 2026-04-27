@@ -6,6 +6,7 @@ import { Input } from '@/Components/ui/input';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { countryCodeToFlagEmoji } from '@/lib/flags';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
@@ -46,6 +47,7 @@ const initialFilters = {
 
 export default function Index({ editions, filters, statuses, editionTypes, languages, locations }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
     const [form, setForm] = useState({ ...initialFilters, ...filters });
 
     const statusClasses = useMemo<Record<string, string>>(
@@ -188,7 +190,7 @@ export default function Index({ editions, filters, statuses, editionTypes, langu
                                         <td className="px-2 py-3 font-medium">{item.title}</td>
                                         <td className="px-2 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeClasses[item.edition_type] || 'bg-slate-100 text-slate-700'}`}>{item.edition_type}</span></td>
                                         <td className="px-2 py-3">{countryCodeToFlagEmoji(item.location?.country_code)} {item.location?.name || '-'}</td>
-                                        <td className="px-2 py-3">{item.scheduled_for || '-'}</td>
+                                        <td className="px-2 py-3">{formatDateTime(item.scheduled_for)}</td>
                                         <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClasses[item.status] || 'bg-slate-100 text-slate-700'}`}>{item.status}</span></td>
                                         <td className="px-2 py-3">{item.target_duration_seconds || '-'}</td>

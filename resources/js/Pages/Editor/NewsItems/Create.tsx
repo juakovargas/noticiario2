@@ -1,4 +1,5 @@
 import EditorLayout from '@/Layouts/EditorLayout';
+import { toDateTimeLocalInputValue } from '@/lib/dates';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -11,7 +12,7 @@ interface NewsItem { id:number; news_source_id:number|null; news_category_id:num
 interface Props { newsItem?:NewsItem; sources:Option[]; categories:Option[]; locations:Option[]; statuses:string[]; languages:Language[]; }
 export default function Form({ newsItem, sources, categories, locations, statuses, languages }: Props): JSX.Element {
  const isEdit = !!newsItem;
- const { data, setData, post, put, processing } = useForm({ news_source_id:newsItem?.news_source_id?.toString() || '', news_category_id:newsItem?.news_category_id?.toString() || '', location_id:newsItem?.location_id?.toString() || '', title:newsItem?.title || '', slug:newsItem?.slug || '', summary:newsItem?.summary || '', body:newsItem?.body || '', source_url:newsItem?.source_url || '', author:newsItem?.author || '', language:newsItem?.language || '', published_at:newsItem?.published_at || '', collected_at:newsItem?.collected_at || '', status:newsItem?.status || 'draft', editorial_priority:newsItem?.editorial_priority || 3, is_evergreen:newsItem?.is_evergreen || false });
+ const { data, setData, post, put, processing } = useForm({ news_source_id:newsItem?.news_source_id?.toString() || '', news_category_id:newsItem?.news_category_id?.toString() || '', location_id:newsItem?.location_id?.toString() || '', title:newsItem?.title || '', slug:newsItem?.slug || '', summary:newsItem?.summary || '', body:newsItem?.body || '', source_url:newsItem?.source_url || '', author:newsItem?.author || '', language:newsItem?.language || '', published_at:toDateTimeLocalInputValue(newsItem?.published_at), collected_at:toDateTimeLocalInputValue(newsItem?.collected_at), status:newsItem?.status || 'draft', editorial_priority:newsItem?.editorial_priority || 3, is_evergreen:newsItem?.is_evergreen || false });
  const submit=(e:React.FormEvent)=>{e.preventDefault(); if (isEdit) put(route('editor.news-items.update', newsItem!.id)); else post(route('editor.news-items.store'));};
  return <EditorLayout><Head title={isEdit ? 'Edit News Item' : 'Create News Item'} /><AdminPageHeader title={isEdit ? 'Edit News Item' : 'Create News Item'} description="Manage news item data." /><Card><CardContent className="pt-6"><form onSubmit={submit} className="space-y-4">
  <div><Label>Title</Label><Input value={data.title} onChange={(e)=>setData('title', e.target.value)} /></div><div><Label>Slug</Label><Input value={data.slug} onChange={(e)=>setData('slug', e.target.value)} /></div>

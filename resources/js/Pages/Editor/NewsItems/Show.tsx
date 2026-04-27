@@ -3,6 +3,7 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link } from '@inertiajs/react';
 
 interface NewsItem {
@@ -25,6 +26,7 @@ interface Props { newsItem: NewsItem; }
 
 export default function Show({ newsItem }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
 
     return (
         <EditorLayout>
@@ -39,8 +41,8 @@ export default function Show({ newsItem }: Props): JSX.Element {
                     <p><strong>{t('Location')}:</strong> {newsItem.location?.name || '-'}</p>
                     <p><strong>{t('Source URL')}:</strong> {newsItem.source_url ? <a className="text-blue-600 underline" href={newsItem.source_url} target="_blank" rel="noreferrer">{t('Open original')}</a> : '-'}</p>
                     <p><strong>{t('Status')}:</strong> {newsItem.status}</p>
-                    <p><strong>{t('Published at')}:</strong> {newsItem.published_at || '-'}</p>
-                    <p><strong>{t('Collected at')}:</strong> {newsItem.collected_at || '-'}</p>
+                    <p><strong>{t('Published at')}:</strong> {formatDateTime(newsItem.published_at)}</p>
+                    <p><strong>{t('Collected at')}:</strong> {formatDateTime(newsItem.collected_at)}</p>
 
                     <div className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                         <p><strong>{t('External ID')}:</strong> {newsItem.external_id || '-'}</p>

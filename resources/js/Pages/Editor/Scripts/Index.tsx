@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
+import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
@@ -40,6 +41,7 @@ const initialFilters = {
 
 export default function Index({ scripts, filters, statuses, editions, languages }: Props): JSX.Element {
     const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
     const [form, setForm] = useState({ ...initialFilters, ...filters });
 
     const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -137,7 +139,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                 <th className="px-2 pb-3">{t('Status')}</th>
                                 <th className="px-2 pb-3">{t('Language')}</th>
                                 <th className="px-2 pb-3">{t('Estimated Duration')}</th>
-                                <th className="px-2 pb-3">{t('Approved')}</th>
+                                <th className="px-2 pb-3">{t('Approved at')}</th>
                                 <th className="px-2 pb-3 text-right">{t('Actions')}</th>
                             </tr>
                         </thead>
@@ -150,7 +152,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                         <td className="px-2 py-3">{item.status}</td>
                                         <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3">{item.estimated_duration_seconds || '-'}</td>
-                                        <td className="px-2 py-3">{item.approved_at ? t('Approved') : t('Not approved')}</td>
+                                        <td className="px-2 py-3">{item.approved_at ? formatDateTime(item.approved_at) : t('Not approved')}</td>
                                         <td className="px-2 py-3">
                                             <div className="flex justify-end gap-2">
                                                 <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.show', item.id)}>{t('View')}</Link></Button>

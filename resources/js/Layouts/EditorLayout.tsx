@@ -24,7 +24,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
     const { t } = useTranslations();
 
     const sections: NavSection[] = [
-        { title: t('Workspace'), items: [{ label: t('Dashboard'), routeName: 'editor.dashboard' }] },
+        { title: t('Workspace'), items: [{ label: t('Dashboard'), routeName: 'editor.dashboard' }, { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' }] },
         {
             title: t('News'),
             items: [
@@ -60,7 +60,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
             title: t('Settings'),
             items: [
                 { label: t('Editorial Templates'), routeName: 'editor.editorial-templates.index' },
-                { label: t('AI Prompt Templates'), routeName: 'editor.ai-prompt-templates' },
+                { label: t('AI Prompt Templates'), routeName: 'editor.ai-prompt-templates.index' },
             ],
         },
     ];

@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Edition;
+use App\Models\EditorialRequest;
+use App\Models\AiPromptTemplate;
+use App\Models\AiProvider;
 use App\Models\EditorialTemplate;
 use App\Models\Language;
 use App\Models\Location;
@@ -21,6 +24,8 @@ class DemoEditorialSeeder extends Seeder
     {
         $locations = $this->seedLocations();
         $categories = $this->seedCategories();
+        $aiProviders = $this->seedAiProviders();
+        $aiPromptTemplates = $this->seedAiPromptTemplates($locations, $categories);
         $sources = $this->seedSources($categories, $locations);
         $newsItems = $this->seedNewsItems($locations, $categories, $sources);
         $editions = $this->seedEditions($locations);
@@ -28,6 +33,7 @@ class DemoEditorialSeeder extends Seeder
         $this->attachNewsItemsToEditions($editions, $newsItems);
         $this->seedScripts($editions);
         $this->seedEditorialTemplates($locations);
+        $this->seedEditorialRequests($locations, $categories, $aiProviders, $aiPromptTemplates);
     }
 
     /**
@@ -498,6 +504,158 @@ class DemoEditorialSeeder extends Seeder
                 ]),
             );
         }
+    }
+
+    /**
+     * @return array<string, AiProvider>
+     */
+    private function seedAiProviders(): array
+    {
+        $definitions = [
+            [
+                'name' => 'Mock AI Provider',
+                'slug' => 'mock-ai-provider',
+                'provider_type' => 'mock',
+                'default_model' => 'mock-editorial-v1',
+                'supports_web_search' => true,
+                'supports_json_mode' => true,
+                'is_active' => true,
+                'is_default' => true,
+            ],
+            [
+                'name' => 'OpenRouter',
+                'slug' => 'openrouter',
+                'provider_type' => 'openrouter',
+                'api_key_env' => 'OPENROUTER_API_KEY',
+                'default_model' => 'openrouter/auto',
+                'supports_web_search' => true,
+                'supports_json_mode' => true,
+                'is_active' => false,
+                'is_default' => false,
+            ],
+            [
+                'name' => 'OpenAI',
+                'slug' => 'openai',
+                'provider_type' => 'openai',
+                'api_key_env' => 'OPENAI_API_KEY',
+                'default_model' => 'gpt-4.1-mini',
+                'supports_web_search' => false,
+                'supports_json_mode' => true,
+                'is_active' => false,
+                'is_default' => false,
+            ],
+        ];
+
+        $providers = [];
+
+        foreach ($definitions as $definition) {
+            $providers[$definition['slug']] = AiProvider::query()->updateOrCreate(
+                ['slug' => $definition['slug']],
+                array_merge($definition, ['base_url' => null]),
+            );
+        }
+
+        return $providers;
+    }
+
+    /**
+     * @param  array<string, Location>  $locations
+     * @param  array<string, NewsCategory>  $categories
+     * @return array<string, AiPromptTemplate>
+     */
+    private function seedAiPromptTemplates(array $locations, array $categories): array
+    {
+        $languages = Language::query()->whereIn('code', ['en', 'es'])->get()->keyBy('code');
+
+        $definitions = [
+            [
+                'name' => 'General Editorial Research',
+                'slug' => 'general-editorial-research',
+                'type' => 'editorial_research',
+                'expected_output_format' => 'json',
+                'system_prompt' => 'You are an editorial research assistant for a short-form digital news bulletin platform. You must find relevant, recent and verifiable news topics for the requested location and category. Return concise structured output.',
+                'user_prompt' => "Research concise candidate stories for {{location_name}} and {{category_name}}.\nEdition type: {{edition_type}}\nLanguage: {{language_name}}\nDuration: {{target_duration_seconds}}\nDate: {{date}}\nInstructions: {{editorial_instructions}}\nReturn JSON with candidate news items including title, summary, source_hint, suggested_category, suggested_location, relevance_score, editorial_angle, why_it_matters.",
+                'language_id' => null,
+                'location_id' => null,
+                'news_category_id' => null,
+            ],
+            [
+                'name' => 'Short Script Generation',
+                'slug' => 'short-script-generation',
+                'type' => 'script_generation',
+                'expected_output_format' => 'text',
+                'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
+                'user_prompt' => "Create a short script for {{edition_title}} in {{language_name}} for {{location_name}}.\nDuration: {{target_duration_seconds}}\nNews items:\n{{selected_news_items}}\nTemplate: {{editorial_template}}\nTone: {{tone}}",
+                'language_id' => null,
+                'location_id' => null,
+                'news_category_id' => null,
+            ],
+            [
+                'name' => 'Spanish Local News Brief',
+                'slug' => 'spanish-local-news-brief',
+                'type' => 'script_generation',
+                'expected_output_format' => 'text',
+                'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
+                'user_prompt' => "Escribe un guion breve para {{edition_title}} en {{language_name}} para {{location_name}}.\nDuración: {{target_duration_seconds}}\nNoticias:\n{{selected_news_items}}",
+                'language_id' => $languages->get('es')?->id,
+                'location_id' => null,
+                'news_category_id' => null,
+            ],
+            [
+                'name' => 'Sports Preview Script',
+                'slug' => 'sports-preview-script',
+                'type' => 'script_generation',
+                'expected_output_format' => 'text',
+                'system_prompt' => 'You are an experienced news script editor. Write clear, concise scripts for short digital news bulletins.',
+                'user_prompt' => "Draft a sports preview script for {{edition_title}} in {{language_name}}.\nDuration: {{target_duration_seconds}}\nItems:\n{{selected_news_items}}",
+                'language_id' => null,
+                'location_id' => null,
+                'news_category_id' => $categories['sports']->id,
+            ],
+        ];
+
+        $templates = [];
+
+        foreach ($definitions as $definition) {
+            $templates[$definition['slug']] = AiPromptTemplate::query()->updateOrCreate(
+                ['slug' => $definition['slug']],
+                array_merge($definition, [
+                    'description' => 'Demo AI prompt template for '.$definition['name'],
+                    'edition_type' => null,
+                    'is_active' => true,
+                    'sort_order' => 0,
+                ]),
+            );
+        }
+
+        return $templates;
+    }
+
+    /**
+     * @param  array<string, Location>  $locations
+     * @param  array<string, NewsCategory>  $categories
+     * @param  array<string, AiProvider>  $providers
+     * @param  array<string, AiPromptTemplate>  $promptTemplates
+     */
+    private function seedEditorialRequests(array $locations, array $categories, array $providers, array $promptTemplates): void
+    {
+        $spanish = Language::query()->where('code', 'es')->first();
+
+        EditorialRequest::query()->updateOrCreate(
+            ['title' => 'Demo Madrid Afternoon Briefing'],
+            [
+                'requested_by' => null,
+                'ai_provider_id' => $providers['mock-ai-provider']->id,
+                'ai_prompt_template_id' => $promptTemplates['general-editorial-research']->id,
+                'location_id' => $locations['madrid']->id,
+                'news_category_id' => $categories['general']->id,
+                'language_id' => $spanish?->id,
+                'edition_type' => 'afternoon',
+                'target_duration_seconds' => 90,
+                'status' => 'draft',
+                'editorial_instructions' => 'Focus on practical city impact and keep the pace concise.',
+            ],
+        );
     }
 
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Editor;
 use App\Http\Controllers\Controller;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
+use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
 use App\Services\PromptGeneration\BulletinPromptRunService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,8 +14,10 @@ use Inertia\Response;
 
 class BulletinPromptRunController extends Controller
 {
-    public function __construct(private readonly BulletinPromptRunService $service)
-    {
+    public function __construct(
+        private readonly BulletinPromptRunService $service,
+        private readonly BulletinCoverageWindowResolver $coverageWindowResolver,
+    ) {
     }
 
     public function index(): Response
@@ -38,14 +41,34 @@ class BulletinPromptRunController extends Controller
             'script:id,title,status',
         ]);
 
-        return Inertia::render('Editor/BulletinPromptRuns/Show', ['run' => $bulletinPromptRun]);
+        return Inertia::render('Editor/BulletinPromptRuns/Show', [
+            'run' => $bulletinPromptRun,
+            'promptContext' => $this->coverageWindowResolver->resolve($bulletinPromptRun),
+        ]);
     }
 
     public function store(BulletinType $bulletinType, Request $request): RedirectResponse
     {
-        $run = $this->service->createFromBulletinType($bulletinType, $request->user()?->id);
+        $data = $request->validate([
+            'scheduled_for' => ['nullable', 'date'],
+        ]);
+
+        $run = $this->service->createFromBulletinType($bulletinType, $request->user()?->id, $data['scheduled_for'] ?? null);
 
         return to_route('editor.bulletin-prompt-runs.show', $run)->with('success', 'Prompt run created successfully.');
+    }
+
+    public function updateSchedule(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $data = $request->validate([
+            'scheduled_for' => ['required', 'date'],
+        ]);
+
+        $bulletinPromptRun->update([
+            'scheduled_for' => $data['scheduled_for'],
+        ]);
+
+        return back()->with('success', 'Scheduled date/time updated successfully.');
     }
 
     public function generatePrompt(BulletinPromptRun $bulletinPromptRun): RedirectResponse

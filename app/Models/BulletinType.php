@@ -24,6 +24,16 @@ class BulletinType extends Model
         'target_duration_seconds',
         'default_schedule_time',
         'default_timezone',
+        'coverage_mode',
+        'coverage_starts_offset_minutes',
+        'coverage_ends_offset_minutes',
+        'coverage_description',
+        'include_future_agenda',
+        'include_historical_context',
+        'max_news_items',
+        'min_news_items',
+        'prompt_language',
+        'output_mode',
         'is_active',
         'sort_order',
         'metadata',
@@ -32,6 +42,8 @@ class BulletinType extends Model
     protected function casts(): array
     {
         return [
+            'include_future_agenda' => 'boolean',
+            'include_historical_context' => 'boolean',
             'is_active' => 'boolean',
             'metadata' => 'array',
         ];

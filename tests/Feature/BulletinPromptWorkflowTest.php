@@ -74,6 +74,7 @@ class BulletinPromptWorkflowTest extends TestCase
 
         $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertRedirect();
         $run = BulletinPromptRun::query()->firstOrFail();
+        $this->assertNotNull($run->scheduled_for);
 
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.generate-prompt', $run))->assertRedirect();
         $run->refresh();
@@ -85,9 +86,9 @@ class BulletinPromptWorkflowTest extends TestCase
         $this->assertStringContainsString('optimism level', strtolower($run->generated_prompt ?? ''));
         $this->assertStringContainsString('humor level', strtolower($run->generated_prompt ?? ''));
         $this->assertStringContainsString('irony level', strtolower($run->generated_prompt ?? ''));
-        $this->assertStringContainsString('Do not invent facts', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('No inventes', $run->generated_prompt ?? '');
         $this->assertStringContainsString('SOURCE HINTS', $run->generated_prompt ?? '');
-        $this->assertStringContainsString('exact structure and headings', strtolower($run->generated_prompt ?? ''));
+        $this->assertStringContainsString('Broadcast date', $run->generated_prompt ?? '');
 
         $responseText = "TITLE:\nDemo\n\nINTRO:\nIntro\n\nNEWS ITEMS:\n1. HEADLINE:\nHeadline\n\nSUMMARY:\nSummary\n\nSCRIPT:\nScript\n\nEDITORIAL ANGLE:\nAngle\n\nSOURCE HINTS:\n- https://example.com\n\nOUTRO:\nOutro";
 
@@ -105,6 +106,35 @@ class BulletinPromptWorkflowTest extends TestCase
 
         $this->actingAs($viewer)->get(route('editor.bulletin-prompt-runs.index'))->assertForbidden();
         $this->actingAs($viewer)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertForbidden();
+        $this->actingAs($viewer)->post(route('editor.bulletin-prompt-runs.generate-prompt', $run))->assertForbidden();
+    }
+
+
+    #[Test]
+    public function prompt_run_creation_uses_default_schedule_and_falls_back_to_now(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $typeWithDefault = BulletinType::query()->create([
+            'name' => 'With Default',
+            'slug' => 'with-default',
+            'default_schedule_time' => '08:00',
+            'default_timezone' => 'Europe/Madrid',
+        ]);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $typeWithDefault))->assertRedirect();
+        $this->assertSame('08:00', BulletinPromptRun::query()->latest('id')->firstOrFail()->scheduled_for?->timezone('Europe/Madrid')->format('H:i'));
+
+        $typeWithoutDefault = BulletinType::query()->create([
+            'name' => 'No Default',
+            'slug' => 'no-default',
+        ]);
+
+        $before = now()->subMinute();
+        $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $typeWithoutDefault))->assertRedirect();
+        $after = now()->addMinute();
+
+        $latest = BulletinPromptRun::query()->latest('id')->firstOrFail();
+        $this->assertTrue($latest->scheduled_for?->betweenIncluded($before, $after));
     }
 
     #[Test]
@@ -117,5 +147,8 @@ class BulletinPromptWorkflowTest extends TestCase
         $this->assertGreaterThanOrEqual(6, BulletinType::query()->count());
         $this->assertSame(1, PromptProfile::query()->where('slug', 'balanced-news')->count());
         $this->assertSame(1, BulletinType::query()->where('slug', 'spain-morning-general-news')->count());
+        $morning = BulletinType::query()->where('slug', 'spain-morning-general-news')->firstOrFail();
+        $this->assertSame('previous_period', $morning->coverage_mode);
+        $this->assertSame(-1440, $morning->coverage_starts_offset_minutes);
     }
 }

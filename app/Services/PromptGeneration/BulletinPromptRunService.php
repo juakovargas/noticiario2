@@ -9,6 +9,7 @@ use App\Models\PromptProfile;
 use App\Models\Script;
 use App\Services\EditorialScheduling\AiResponseParser;
 use App\Support\GeneratesUniqueSlug;
+use Carbon\Carbon;
 
 class BulletinPromptRunService
 {
@@ -20,7 +21,7 @@ class BulletinPromptRunService
     ) {
     }
 
-    public function createFromBulletinType(BulletinType $bulletinType, ?int $userId = null): BulletinPromptRun
+    public function createFromBulletinType(BulletinType $bulletinType, ?int $userId = null, ?string $scheduledForInput = null): BulletinPromptRun
     {
         $bulletinType->loadMissing(['location', 'newsCategory', 'language', 'promptProfile']);
 
@@ -28,14 +29,8 @@ class BulletinPromptRunService
             ?: PromptProfile::query()->where('is_active', true)->where('is_default', true)->first()
             ?: PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->first();
 
-        $scheduledFor = null;
-        if ($bulletinType->default_schedule_time) {
-            $scheduledFor = now($bulletinType->default_timezone ?: config('app.timezone'))
-                ->setTimeFromTimeString($bulletinType->default_schedule_time)
-                ->utc();
-        }
-
-        $title = sprintf('%s - %s', $bulletinType->name, ($scheduledFor ?? now())->format('Y-m-d H:i'));
+        $scheduledFor = $this->resolveScheduledFor($bulletinType, $scheduledForInput);
+        $title = sprintf('%s - %s', $bulletinType->name, $scheduledFor->format('Y-m-d H:i'));
 
         $edition = Edition::query()->create([
             'location_id' => $bulletinType->location_id,
@@ -136,6 +131,21 @@ class BulletinPromptRunService
         ]);
 
         return $script;
+    }
+
+    private function resolveScheduledFor(BulletinType $bulletinType, ?string $scheduledForInput): Carbon
+    {
+        $timezone = $bulletinType->default_timezone ?: config('app.timezone');
+
+        if ($scheduledForInput) {
+            return Carbon::parse($scheduledForInput, $timezone)->utc();
+        }
+
+        if ($bulletinType->default_schedule_time) {
+            return now($timezone)->setTimeFromTimeString($bulletinType->default_schedule_time)->utc();
+        }
+
+        return now()->startOfMinute();
     }
 
     private function bodyFromParsedItems(array $items): string

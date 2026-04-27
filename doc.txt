@@ -869,3 +869,58 @@ Current next priorities:
 5. Add AI run logs and cost control.
 6. Add automatic schedule execution later.
 7. Add audio/video/publishing after editorial workflow is stable.
+
+## BULLETIN PROMPT TIME WINDOW AND QUALITY
+
+- Bulletin types now include explicit prompt timing and quality fields:
+  - coverage_mode
+  - coverage_starts_offset_minutes
+  - coverage_ends_offset_minutes
+  - coverage_description
+  - include_future_agenda
+  - include_historical_context
+  - min_news_items
+  - max_news_items
+  - prompt_language
+  - output_mode
+- Coverage modes:
+  - previous_period
+  - today_so_far
+  - yesterday
+  - last_24_hours
+  - next_24_hours
+  - custom
+  - none
+- Coverage offsets are always relative to `scheduled_for`.
+- `scheduled_for` fallback behavior:
+  1. use explicitly submitted run datetime when provided
+  2. else use bulletin type default_schedule_time in default timezone for current day
+  3. else use current datetime
+- Prompt generation now enforces broadcast timing context in all normal runs:
+  - broadcast date
+  - broadcast time
+  - timezone
+  - coverage window mode/from/to
+- `prompt_language` controls the language used to instruct the external AI.
+- Bulletin language remains the target language of the final script output.
+- Output modes:
+  - `plain_script`: ask only for presenter-ready clean text
+  - `structured_script`: ask for structured sections (TITLE/INTRO/NEWS ITEMS/etc.)
+- News count guidance:
+  - use configured min/max when present
+  - otherwise infer from duration: 60s => 3-4, 90s => 4-5, 180s => 5-8, above => 7-10
+
+Examples:
+- Morning: previous day 08:00 to today 07:30.
+- Afternoon: today 08:00 to 14:30.
+- Night: today 15:00 to 20:30.
+- Preview: next 24 hours.
+
+Current next priorities:
+1. Manually test generated prompts with external AI.
+2. Tune bulletin type coverage windows.
+3. Improve pasted AI response parsing if needed.
+4. Add source verification workflow if not complete.
+5. Add real AI provider integration.
+6. Add AI logs and cost control.
+7. Add audio/video/publishing later.

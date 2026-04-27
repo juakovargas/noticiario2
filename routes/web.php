@@ -197,6 +197,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('bulletin-types', BulletinTypeController::class);
         Route::resource('bulletin-prompt-runs', BulletinPromptRunController::class)->only(['index', 'show']);
         Route::post('/bulletin-types/{bulletinType}/prompt-runs', [BulletinPromptRunController::class, 'store'])->name('bulletin-types.prompt-runs.store');
+        Route::put('/bulletin-prompt-runs/{bulletinPromptRun}/schedule', [BulletinPromptRunController::class, 'updateSchedule'])->name('bulletin-prompt-runs.update-schedule');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');

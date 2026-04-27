@@ -16,6 +16,7 @@ use App\Models\NewsItem;
 use App\Models\NewsSource;
 use App\Models\NewsCategoryTranslation;
 use App\Models\Script;
+use App\Models\SourceReference;
 use App\Services\EditorialReview\ScriptReviewItemGenerator;
 use App\Services\EditorialScheduling\AiResponseParser;
 use Illuminate\Database\Seeder;
@@ -36,6 +37,7 @@ class DemoEditorialSeeder extends Seeder
 
         $this->attachNewsItemsToEditions($editions, $newsItems);
         $this->seedScripts($editions);
+        $this->seedSourceReferences();
         $this->seedEditorialTemplates($locations);
         $this->seedEditorialRequests($locations, $categories, $aiProviders, $aiPromptTemplates);
         $this->seedEditorialSchedules($locations, $categories);
@@ -485,6 +487,38 @@ This second block gives extra details for manual fact-checking demonstrations.',
             );
 
             $generator->generateForScript($script);
+        }
+    }
+
+    private function seedSourceReferences(): void
+    {
+        $scripts = Script::query()->with('reviewItems')->orderBy('id')->get();
+        $script = $scripts->first();
+
+        if (! $script) {
+            return;
+        }
+
+        $reviewItem = $script->reviewItems->first();
+
+        $definitions = [
+            ['title' => 'Ministry release', 'source_name' => 'official.example.gov', 'source_url' => 'https://official.example.gov/release', 'source_type' => 'official', 'verification_status' => 'verified', 'trust_level' => 90],
+            ['title' => 'Wire candidate', 'source_name' => 'agency.example.com', 'source_url' => 'https://agency.example.com/item', 'source_type' => 'agency', 'verification_status' => 'pending', 'trust_level' => 70],
+            ['title' => 'Community social claim', 'source_name' => 'social.example.net', 'source_url' => 'https://social.example.net/post/42', 'source_type' => 'social', 'verification_status' => 'weak', 'trust_level' => 35],
+            ['title' => 'Missing citation in block 2', 'source_name' => 'manual hint', 'source_url' => null, 'source_type' => 'manual', 'verification_status' => 'missing', 'trust_level' => null],
+            ['title' => 'Discarded blog source', 'source_name' => 'unknown blog', 'source_url' => 'https://blog.example.invalid/story', 'source_type' => 'unknown', 'verification_status' => 'rejected', 'trust_level' => 10],
+        ];
+
+        foreach ($definitions as $definition) {
+            SourceReference::query()->updateOrCreate(
+                [
+                    'script_id' => $script->id,
+                    'script_review_item_id' => $reviewItem?->id,
+                    'source_url' => $definition['source_url'],
+                    'title' => $definition['title'],
+                ],
+                $definition,
+            );
         }
     }
 

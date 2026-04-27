@@ -7,6 +7,8 @@ use App\Models\Edition;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
 use App\Models\Script;
+use App\Models\SourceReference;
+use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -61,6 +63,13 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $scriptsBlockedBySources = Script::query()
+            ->whereHas('sourceReferences', fn (Builder $query) => $query->whereIn('verification_status', ['missing', 'broken', 'rejected']))
+            ->select(['id', 'title', 'status', 'review_status'])
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get();
+
         $upcomingSchedules = EditorialSchedule::query()
             ->with(['location:id,name', 'newsCategory:id,name', 'language:id,name,code'])
             ->where('is_active', true)
@@ -79,6 +88,11 @@ class DashboardController extends Controller
                 'scriptsPendingReview' => Script::query()->where('review_status', 'pending')->count(),
                 'scriptsNeedingSources' => Script::query()->where('review_status', 'needs_sources')->count(),
                 'scriptsApprovedToday' => Script::query()->whereDate('approved_at', $today)->count(),
+                'sourcesPendingVerification' => SourceReference::query()->where('verification_status', 'pending')->count(),
+                'weakSources' => SourceReference::query()->where('verification_status', 'weak')->count(),
+                'missingSources' => SourceReference::query()->where('verification_status', 'missing')->count(),
+                'brokenRejectedSources' => SourceReference::query()->whereIn('verification_status', ['broken', 'rejected'])->count(),
+                'scriptsBlockedBySources' => Script::query()->whereHas('sourceReferences', fn (Builder $query) => $query->whereIn('verification_status', ['missing', 'broken', 'rejected']))->count(),
             ],
             'todayRuns' => $todayRunsQuery->orderBy('scheduled_for')->get(),
             'pendingPromptRuns' => $pendingPromptRuns,
@@ -87,6 +101,7 @@ class DashboardController extends Controller
             'scriptsNeedingReview' => $scriptsNeedingReview,
             'upcomingSchedules' => $upcomingSchedules,
             'readyToApprove' => $readyToApprove,
+            'scriptsBlockedBySources' => $scriptsBlockedBySources,
         ]);
     }
 }

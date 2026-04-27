@@ -513,3 +513,96 @@ Current next priorities:
 3. Add optional real AI provider integration.
 4. Add automatic schedule execution later.
 5. Add audio/video/publishing after editorial workflow is stable.
+
+SOURCE VERIFICATION WORKFLOW
+
+Overview:
+- Added a manual source verification workflow for scripts, script review items, and news items.
+- This workflow is fully manual: no external calls, no scraping, and no automatic URL verification.
+
+source_references table:
+- New table: source_references
+- Stores editor-managed source references tied to:
+  - news_items (optional)
+  - scripts (optional)
+  - script_review_items (optional)
+  - editorial_schedule_runs (optional)
+- Includes title, source_name, source_url, source_type, verification_status, trust_level, checked_by/checked_at, notes, metadata, timestamps, and soft deletes.
+
+Purpose of source references:
+- Track the specific references editors use to validate claims.
+- Make source quality visible during script review and approval.
+- Surface weak/missing/broken/rejected references before approval.
+
+Source types:
+- web
+- official
+- agency
+- social
+- rss
+- manual
+- unknown
+
+Verification statuses:
+- pending
+- verified
+- weak
+- missing
+- broken
+- rejected
+- not_required
+
+Trust level:
+- Numeric editorial trust score (manual).
+- Intended for desk-level confidence scoring and prioritization.
+
+Model relations:
+- Script hasMany sourceReferences.
+- ScriptReviewItem hasMany sourceReferences.
+- NewsItem hasMany sourceReferences.
+- EditorialScheduleRun hasMany sourceReferences.
+- SourceReference belongsTo checkedBy user.
+
+SourceReferenceExtractor service:
+- New service: app/Services/EditorialReview/SourceReferenceExtractor.php
+- Extracts source hints from:
+  - script metadata and text
+  - script review item source_hints/content
+  - parsed response structures and source sections (SOURCE HINTS, FUENTES, SOURCES)
+- Extracts URLs via regex.
+- Deduplicates safe re-runs and avoids duplicate inserts.
+
+Source References pages:
+- Editor/SourceReferences/Index
+- Editor/SourceReferences/Show
+- Supports filtering, listing, detail/edit form, verification updates, and linked content navigation.
+
+Script Review integration:
+- Review page now shows linked source references per review item.
+- Added extract source actions for scripts and review items.
+- Approval now blocks when source references include missing/broken/rejected states.
+
+Script Show and News Item integration:
+- Script show includes source summary and quick actions to extract/manage sources.
+- News item show surfaces source references and allows creating a source reference from source_url.
+
+Dashboard integration:
+- Added source verification cards:
+  - Sources pending verification
+  - Weak sources
+  - Missing sources
+  - Broken/rejected sources
+  - Scripts blocked by sources
+
+Current limitations:
+- no automatic URL checking
+- no scraping
+- no external API calls
+- no automatic fact-checking yet
+
+Current next priorities:
+1. Improve source verification workflow based on manual testing.
+2. Add optional live URL checking later.
+3. Add real AI provider integration.
+4. Add automatic schedule execution later.
+5. Add audio/video/publishing after editorial workflow is stable.

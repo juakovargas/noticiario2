@@ -152,7 +152,7 @@ class NewsItemController extends Controller
     public function show(NewsItem $newsItem): Response
     {
         $locale = app()->getLocale();
-        $newsItem->load(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code']);
+        $newsItem->load(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code', 'sourceReferences:id,news_item_id,title,source_name,source_url,verification_status,source_type']);
 
         $languageDisplay = Language::query()->where('code', $newsItem->language)->first(['code', 'name', 'native_name', 'flag_emoji']);
 
@@ -173,6 +173,14 @@ class NewsItemController extends Controller
                 'status' => $newsItem->status,
                 'published_at' => $newsItem->published_at?->toDateTimeString(),
                 'collected_at' => $newsItem->collected_at?->toDateTimeString(),
+                'source_references' => $newsItem->sourceReferences->map(fn ($reference) => [
+                    'id' => $reference->id,
+                    'title' => $reference->title,
+                    'source_name' => $reference->source_name,
+                    'source_url' => $reference->source_url,
+                    'verification_status' => $reference->verification_status,
+                    'source_type' => $reference->source_type,
+                ])->values(),
             ],
         ]);
     }

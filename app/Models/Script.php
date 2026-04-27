@@ -74,4 +74,9 @@ class Script extends Model
     {
         return $this->hasMany(EditorialScheduleRun::class);
     }
+
+    public function sourceReferences(): HasMany
+    {
+        return $this->hasMany(SourceReference::class);
+    }
 }

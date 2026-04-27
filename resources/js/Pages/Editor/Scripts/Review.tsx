@@ -20,6 +20,7 @@ interface ReviewItem {
     reviewed_at: string | null;
     reviewed_by: string | null;
     news_item: { id: number; title: string } | null;
+    source_references: Array<{ id: number; title: string | null; source_name: string | null; verification_status: string }>;
 }
 
 interface ScriptData {
@@ -40,6 +41,7 @@ interface ScriptData {
     approved_by: string | null;
     rejected_by: string | null;
     review_items: ReviewItem[];
+    source_summary: { total: number; missing: number };
 }
 
 interface Props {
@@ -171,8 +173,10 @@ export default function Review({ script, reviewStatuses, verificationStatuses, r
                     <Button variant="outline" onClick={() => router.post(route('editor.scripts.review.mark-in-review', script.id))}>{t('Mark in review')}</Button>
                     <Button variant="outline" onClick={() => router.post(route('editor.scripts.review.mark-verified', script.id))}>{t('Mark verified')}</Button>
                     <Button variant="secondary" onClick={() => router.post(route('editor.scripts.review.approve', script.id))}>{t('Approve script')}</Button>
+                    <Button variant="outline" onClick={() => router.post(route('editor.scripts.source-references.extract', script.id))}>{t('Extract source references')}</Button>
                 </CardContent>
             </Card>
+            {script.source_summary.missing > 0 ? <p className="mb-4 text-sm text-rose-700">{t('This script has unresolved source issues')}</p> : null}
 
             <Card className="mb-4">
                 <CardHeader><CardTitle>{t('Reject script')}</CardTitle></CardHeader>
@@ -232,6 +236,19 @@ function ReviewItemCard({ scriptId, item, verificationStatuses, requiredActions 
             <p className="text-xs text-slate-500"><strong>{t('Linked news item')}:</strong> {item.news_item?.title ?? '-'}</p>
             <p className="text-xs text-slate-500"><strong>{t('Reviewed by')}:</strong> {item.reviewed_by ?? '-'} · <strong>{t('Reviewed at')}:</strong> {formatDateTime(item.reviewed_at)}</p>
             <div className="mt-2 text-xs text-slate-600"><strong>{t('Source hints')}:</strong> {item.source_hints.length ? item.source_hints.join(' · ') : '-'}</div>
+            <div className="mt-2 text-xs text-slate-600">
+                <strong>{t('Source References')}:</strong>{' '}
+                {item.source_references.length
+                    ? item.source_references.map((reference) => (
+                        <Link key={reference.id} className="mr-2 text-cyan-700 underline" href={route('editor.source-references.show', reference.id)}>
+                            {reference.title || reference.source_name || `#${reference.id}`} ({reference.verification_status})
+                        </Link>
+                    ))
+                    : '-'}
+            </div>
+            <div className="mt-2">
+                <Button size="sm" variant="outline" onClick={() => router.post(route('editor.script-review-items.source-references.extract', item.id))}>{t('Extract sources')}</Button>
+            </div>
 
             <form className="mt-3 grid gap-3 md:grid-cols-3" onSubmit={(e) => { e.preventDefault(); form.put(route('editor.scripts.review-items.update', [scriptId, item.id])); }}>
                 <div>

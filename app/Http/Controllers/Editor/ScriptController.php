@@ -108,7 +108,11 @@ class ScriptController extends Controller
 
     public function show(Script $script): Response
     {
-        $script->load(['edition:id,title', 'approvedBy:id,name', 'reviewedBy:id,name', 'rejectedBy:id,name', 'reviewItems']);
+        $script->load(['edition:id,title', 'approvedBy:id,name', 'reviewedBy:id,name', 'rejectedBy:id,name', 'reviewItems', 'sourceReferences']);
+
+        $sourceCounts = $script->sourceReferences
+            ->groupBy('verification_status')
+            ->map->count();
 
         return Inertia::render('Editor/Scripts/Show', [
             'script' => [
@@ -131,6 +135,13 @@ class ScriptController extends Controller
                 'rejected_by' => $script->rejectedBy?->name,
                 'rejection_reason' => $script->rejection_reason,
                 'review_items_count' => $script->reviewItems->count(),
+                'source_summary' => [
+                    'total' => $script->sourceReferences->count(),
+                    'verified' => $sourceCounts->get('verified', 0),
+                    'pending' => $sourceCounts->get('pending', 0),
+                    'weak' => $sourceCounts->get('weak', 0),
+                    'issues' => (int) ($sourceCounts->get('missing', 0) + $sourceCounts->get('broken', 0) + $sourceCounts->get('rejected', 0)),
+                ],
             ],
         ]);
     }

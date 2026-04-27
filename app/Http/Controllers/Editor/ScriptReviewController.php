@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Editor;
 use App\Http\Controllers\Controller;
 use App\Models\Script;
 use App\Models\ScriptReviewItem;
+use App\Models\SourceReference;
 use App\Services\EditorialReview\ScriptReviewItemGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,9 +25,11 @@ class ScriptReviewController extends Controller
             'edition:id,title',
             'reviewItems.newsItem:id,title',
             'reviewItems.reviewedBy:id,name',
+            'reviewItems.sourceReferences:id,script_review_item_id,verification_status,title,source_name',
             'reviewedBy:id,name',
             'approvedBy:id,name',
             'rejectedBy:id,name',
+            'sourceReferences:id,script_id,verification_status',
         ]);
 
         return Inertia::render('Editor/Scripts/Review', [
@@ -61,7 +64,17 @@ class ScriptReviewController extends Controller
                     'reviewed_by' => $item->reviewedBy?->name,
                     'news_item' => $item->newsItem ? ['id' => $item->newsItem->id, 'title' => $item->newsItem->title] : null,
                     'metadata' => $item->metadata,
+                    'source_references' => $item->sourceReferences->map(fn (SourceReference $reference) => [
+                        'id' => $reference->id,
+                        'title' => $reference->title,
+                        'source_name' => $reference->source_name,
+                        'verification_status' => $reference->verification_status,
+                    ])->values(),
                 ])->values(),
+                'source_summary' => [
+                    'total' => $script->sourceReferences->count(),
+                    'missing' => $script->sourceReferences->whereIn('verification_status', ['missing', 'broken', 'rejected'])->count(),
+                ],
             ],
             'reviewStatuses' => ['pending', 'in_review', 'needs_sources', 'needs_changes', 'verified', 'approved', 'rejected'],
             'verificationStatuses' => ['pending', 'verified', 'needs_source', 'needs_changes', 'rejected', 'not_applicable'],
@@ -148,8 +161,11 @@ class ScriptReviewController extends Controller
             ->exists();
 
         $canApproveByStatus = $script->review_status === 'verified';
+        $hasBlockingSources = $script->sourceReferences()
+            ->whereIn('verification_status', ['missing', 'broken', 'rejected'])
+            ->exists();
 
-        if (! $canApproveByStatus && ! $canApproveByItems) {
+        if ($hasBlockingSources || (! $canApproveByStatus && ! $canApproveByItems)) {
             return back()->with('error', 'This script cannot be approved until review issues are resolved.');
         }
 

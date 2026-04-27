@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EditorialScheduleRun extends Model
@@ -64,5 +65,10 @@ class EditorialScheduleRun extends Model
     public function script(): BelongsTo
     {
         return $this->belongsTo(Script::class);
+    }
+
+    public function sourceReferences(): HasMany
+    {
+        return $this->hasMany(SourceReference::class);
     }
 }

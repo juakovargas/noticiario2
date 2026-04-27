@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Editor;
 
 use App\Http\Controllers\Controller;
+use App\Models\BulletinPromptRun;
+use App\Models\BulletinType;
 use App\Models\Edition;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
@@ -80,6 +82,10 @@ class DashboardController extends Controller
         return Inertia::render('Editor/Dashboard', [
             'stats' => [
                 'activeSchedules' => EditorialSchedule::query()->where('is_active', true)->count(),
+                'activeBulletinTypes' => BulletinType::query()->where('is_active', true)->count(),
+                'recentPromptRuns' => BulletinPromptRun::query()->count(),
+                'promptRunsWaitingAiResponse' => BulletinPromptRun::query()->whereIn('status', ['prompt_ready', 'waiting_ai_response'])->count(),
+                'promptRunsReadyToCreateScript' => BulletinPromptRun::query()->where('status', 'response_received')->count(),
                 'todayRuns' => (clone $todayRunsQuery)->count(),
                 'pendingPrompts' => EditorialScheduleRun::query()->where('status', 'pending')->count(),
                 'waitingResponses' => EditorialScheduleRun::query()->whereIn('status', ['prompt_ready', 'waiting_ai_response'])->count(),
@@ -101,6 +107,7 @@ class DashboardController extends Controller
             'scriptsNeedingReview' => $scriptsNeedingReview,
             'upcomingSchedules' => $upcomingSchedules,
             'readyToApprove' => $readyToApprove,
+            'recentBulletinPromptRuns' => BulletinPromptRun::query()->with(['bulletinType:id,name'])->latest()->limit(10)->get(),
             'scriptsBlockedBySources' => $scriptsBlockedBySources,
         ]);
     }

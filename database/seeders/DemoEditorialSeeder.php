@@ -41,6 +41,7 @@ class DemoEditorialSeeder extends Seeder
         $this->seedEditorialTemplates($locations);
         $this->seedEditorialRequests($locations, $categories, $aiProviders, $aiPromptTemplates);
         $this->seedEditorialSchedules($locations, $categories);
+        $this->call(BulletinPromptWorkflowSeeder::class);
     }
 
     /**

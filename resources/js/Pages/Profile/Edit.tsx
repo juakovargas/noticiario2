@@ -5,7 +5,7 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
-interface Props {
+type Props = Record<string, unknown> & {
     mustVerifyEmail: boolean;
     status?: string;
     locales: Array<{ code: string; name: string }>;

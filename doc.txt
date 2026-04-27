@@ -824,3 +824,48 @@ Current next priorities:
 4. Add AI request logs and cost control.
 5. Add automatic schedule execution later.
 6. Add audio/video/publishing after editorial workflow is stable.
+
+## BULLETIN TYPES AND PROMPT GENERATION
+
+### New tables
+- `bulletin_types`: configurable noticiario types (location/category/language, edition style, default prompt profile, timing defaults).
+- `prompt_profiles`: editorial personality profiles with 0-10 parameters for happiness, optimism, seriousness, humor, irony, formality, negativity/controversy tolerance, and source strictness.
+- `bulletin_prompt_runs`: execution records for the manual external AI workflow, with generated prompt, pasted AI response, parsed response, and links to edition/script.
+
+### New modules
+- Admin prompt profile management (`/admin/prompt-profiles`) to define and maintain editorial personality presets.
+- Editor bulletin type management (`/editor/bulletin-types`) to define bulletin product variants.
+- Editor prompt run workflow (`/editor/bulletin-prompt-runs`) for manual copy/paste AI drafting.
+
+### Manual external AI workflow
+1. Select bulletin type.
+2. Create prompt run.
+3. Generate prompt.
+4. Copy prompt to external AI.
+5. Paste response.
+6. Create script.
+
+### Editorial personality parameters
+- happiness
+- optimism
+- seriousness
+- humor
+- irony
+- formality
+- negativity tolerance
+- controversy tolerance
+- source strictness
+
+### Current limitations
+- no real AI calls yet
+- no audio/video yet
+- no publishing yet
+
+### Updated next priorities
+1. Manually test bulletin prompt quality.
+2. Improve prompt profiles based on real AI output.
+3. Add source verification workflow if not complete.
+4. Add real AI provider integration.
+5. Add AI run logs and cost control.
+6. Add automatic schedule execution later.
+7. Add audio/video/publishing after editorial workflow is stable.

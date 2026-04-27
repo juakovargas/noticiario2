@@ -24,12 +24,22 @@ class Script extends Model
         'approved_at',
         'approved_by',
         'metadata',
+        'review_status',
+        'review_notes',
+        'fact_check_notes',
+        'reviewed_by',
+        'reviewed_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
     {
         return [
             'approved_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'metadata' => 'array',
         ];
     }
@@ -39,9 +49,25 @@ class Script extends Model
         return $this->belongsTo(Edition::class);
     }
 
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function reviewItems(): HasMany
+    {
+        return $this->hasMany(ScriptReviewItem::class)->orderBy('sort_order');
     }
 
     public function editorialScheduleRuns(): HasMany

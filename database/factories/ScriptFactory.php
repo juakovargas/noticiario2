@@ -19,6 +19,7 @@ class ScriptFactory extends Factory
             'edition_id' => Edition::factory(),
             'title' => fake()->sentence(3),
             'status' => 'draft',
+            'review_status' => 'pending',
             'language' => 'en',
         ];
     }

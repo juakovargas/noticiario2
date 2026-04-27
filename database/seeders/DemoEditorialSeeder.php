@@ -16,6 +16,7 @@ use App\Models\NewsItem;
 use App\Models\NewsSource;
 use App\Models\NewsCategoryTranslation;
 use App\Models\Script;
+use App\Services\EditorialReview\ScriptReviewItemGenerator;
 use App\Services\EditorialScheduling\AiResponseParser;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -450,25 +451,30 @@ class DemoEditorialSeeder extends Seeder
     private function seedScripts(array $editions): void
     {
         $definitions = [
-            ['edition' => 'morning-briefing-spain', 'title' => 'Draft script for Morning Briefing Spain', 'status' => 'draft', 'duration' => 90],
-            ['edition' => 'madrid-local-midday-update', 'title' => 'Review script for Madrid Local Midday Update', 'status' => 'review', 'duration' => 75],
-            ['edition' => 'evening-global-recap', 'title' => 'Draft script for Evening Global Recap', 'status' => 'draft', 'duration' => 120],
-            ['edition' => 'sports-weekend-preview', 'title' => 'Draft script for Sports Weekend Preview', 'status' => 'draft', 'duration' => 60],
+            ['edition' => 'morning-briefing-spain', 'title' => 'Draft script for Morning Briefing Spain', 'status' => 'draft', 'review_status' => 'pending', 'duration' => 90],
+            ['edition' => 'madrid-local-midday-update', 'title' => 'Review script for Madrid Local Midday Update', 'status' => 'review', 'review_status' => 'in_review', 'duration' => 75],
+            ['edition' => 'evening-global-recap', 'title' => 'Verified script for Evening Global Recap', 'status' => 'review', 'review_status' => 'verified', 'duration' => 120],
+            ['edition' => 'sports-weekend-preview', 'title' => 'Draft script for Sports Weekend Preview', 'status' => 'draft', 'review_status' => 'pending', 'duration' => 60],
         ];
+
+        $generator = app(ScriptReviewItemGenerator::class);
 
         foreach ($definitions as $definition) {
             $edition = $editions[$definition['edition']];
 
-            Script::query()->updateOrCreate(
+            $script = Script::query()->updateOrCreate(
                 [
                     'edition_id' => $edition->id,
                     'title' => $definition['title'],
                 ],
                 [
                     'status' => $definition['status'],
+                    'review_status' => $definition['review_status'],
                     'language' => $edition->language ?? 'en',
                     'intro' => 'Welcome to this demo editorial script.',
-                    'body' => 'We open with the key update, then move to context, impact, and what to watch next in the next 24 hours.',
+                    'body' => 'We open with the key update, then move to context, impact, and what to watch next in the next 24 hours.
+
+This second block gives extra details for manual fact-checking demonstrations.',
                     'outro' => 'That concludes this Noticiario briefing.',
                     'estimated_duration_seconds' => $definition['duration'],
                     'metadata' => [
@@ -477,6 +483,8 @@ class DemoEditorialSeeder extends Seeder
                     ],
                 ],
             );
+
+            $generator->generateForScript($script);
         }
     }
 

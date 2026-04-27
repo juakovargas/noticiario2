@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Com
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import { useTranslations } from '@/i18n/useTranslations';
 
 type Run = {
     id: number;
@@ -21,7 +22,8 @@ type Props = {
     pendingPromptRuns: Run[];
     waitingResponseRuns: Run[];
     responseReceivedRuns: Run[];
-    scriptsNeedingReview: Array<{ id: number; title: string; status: string }>;
+    scriptsNeedingReview: Array<{ id: number; title: string; status: string; review_status?: string }>;
+    readyToApprove: Array<{ id: number; title: string; status: string; review_status?: string }>;
     upcomingSchedules: Array<{ id: number; name: string; scheduled_time: string | null; frequency_type: string }>;
 };
 
@@ -32,6 +34,9 @@ const cards: Array<{ key: string; label: string }> = [
     { key: 'waitingResponses', label: 'Waiting responses' },
     { key: 'draftScripts', label: 'Draft scripts' },
     { key: 'plannedEditions', label: 'Planned editions' },
+    { key: 'scriptsPendingReview', label: 'Scripts pending review' },
+    { key: 'scriptsNeedingSources', label: 'Scripts needing sources' },
+    { key: 'scriptsApprovedToday', label: 'Scripts approved today' },
 ];
 
 function RunRow({ run }: { run: Run }): JSX.Element {
@@ -55,16 +60,18 @@ function RunRow({ run }: { run: Run }): JSX.Element {
     );
 }
 
-export default function Dashboard({ stats, todayRuns, pendingPromptRuns, waitingResponseRuns, responseReceivedRuns, scriptsNeedingReview, upcomingSchedules }: Props): JSX.Element {
+export default function Dashboard({ stats, todayRuns, pendingPromptRuns, waitingResponseRuns, responseReceivedRuns, scriptsNeedingReview, upcomingSchedules, readyToApprove }: Props): JSX.Element {
+    const { t } = useTranslations();
+
     return (
         <EditorLayout>
-            <Head title="Editor Dashboard" />
-            <AdminPageHeader title="Editor Dashboard" description="Operational desk for today: create runs, generate prompts, receive AI responses, and create scripts." />
+            <Head title={t('Dashboard')} />
+            <AdminPageHeader title={t('Dashboard')} description="Operational desk for today: create runs, generate prompts, receive AI responses, and create scripts." />
 
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 {cards.map((card) => (
                     <Card key={card.key}>
-                        <CardHeader className="pb-2"><CardDescription>{card.label}</CardDescription></CardHeader>
+                        <CardHeader className="pb-2"><CardDescription>{t(card.label)}</CardDescription></CardHeader>
                         <CardContent><CardTitle>{stats[card.key] ?? 0}</CardTitle></CardContent>
                     </Card>
                 ))}
@@ -81,7 +88,8 @@ export default function Dashboard({ stats, todayRuns, pendingPromptRuns, waiting
                 <Card><CardHeader><CardTitle>Pending prompt runs</CardTitle></CardHeader><CardContent className="space-y-2">{pendingPromptRuns.length ? pendingPromptRuns.map((run) => <RunRow key={run.id} run={run} />) : <p>No tasks pending</p>}</CardContent></Card>
                 <Card><CardHeader><CardTitle>Waiting for AI response</CardTitle></CardHeader><CardContent className="space-y-2">{waitingResponseRuns.length ? waitingResponseRuns.map((run) => <RunRow key={run.id} run={run} />) : <p>No tasks pending</p>}</CardContent></Card>
                 <Card><CardHeader><CardTitle>Responses received</CardTitle></CardHeader><CardContent className="space-y-2">{responseReceivedRuns.length ? responseReceivedRuns.map((run) => <RunRow key={run.id} run={run} />) : <p>No tasks pending</p>}</CardContent></Card>
-                <Card><CardHeader><CardTitle>Scripts needing review</CardTitle></CardHeader><CardContent className="space-y-2">{scriptsNeedingReview.length ? scriptsNeedingReview.map((script) => <div key={script.id} className="rounded border p-3 text-sm"><p className="font-medium">{script.title}</p><p className="text-slate-600">{script.status}</p><Button asChild size="sm" variant="outline" className="mt-2"><Link href={route('editor.scripts.show', script.id)}>Open Script</Link></Button></div>) : <p>No tasks pending</p>}</CardContent></Card>
+                <Card><CardHeader><CardTitle>{t('Scripts needing review')}</CardTitle></CardHeader><CardContent className="space-y-2">{scriptsNeedingReview.length ? scriptsNeedingReview.map((script) => <div key={script.id} className="rounded border p-3 text-sm"><p className="font-medium">{script.title}</p><p className="text-slate-600">{script.review_status ?? script.status}</p><Button asChild size="sm" variant="outline" className="mt-2"><Link href={route('editor.scripts.review', script.id)}>{t('Review')}</Link></Button></div>) : <p>No tasks pending</p>}</CardContent></Card>
+                <Card><CardHeader><CardTitle>{t('Ready to approve')}</CardTitle></CardHeader><CardContent className="space-y-2">{readyToApprove.length ? readyToApprove.map((script) => <div key={script.id} className="rounded border p-3 text-sm"><p className="font-medium">{script.title}</p><p className="text-slate-600">{script.review_status ?? script.status}</p><Button asChild size="sm" variant="outline" className="mt-2"><Link href={route('editor.scripts.review', script.id)}>{t('Approve script')}</Link></Button></div>) : <p>{t('No tasks pending')}</p>}</CardContent></Card>
                 <Card><CardHeader><CardTitle>Upcoming active schedules</CardTitle></CardHeader><CardContent className="space-y-2">{upcomingSchedules.length ? upcomingSchedules.map((schedule) => <div key={schedule.id} className="rounded border p-3 text-sm"><p className="font-medium">{schedule.name}</p><p className="text-slate-600">{schedule.frequency_type} · {(schedule.scheduled_time ?? '').slice(0, 5) || '-'}</p><div className="mt-2 flex gap-2"><Button size="sm" onClick={() => router.post(route('editor.editorial-schedules.runs.store', schedule.id))}>Create Run</Button><Button asChild size="sm" variant="outline"><Link href={route('editor.editorial-schedules.show', schedule.id)}>Open</Link></Button></div></div>) : <p>No active schedules.</p>}</CardContent></Card>
             </div>
         </EditorLayout>

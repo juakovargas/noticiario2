@@ -19,6 +19,7 @@ interface Item {
     language_display?: { code:string; name:string; native_name:string | null; flag_emoji:string | null } | null;
     estimated_duration_seconds: number | null;
     approved_at: string | null;
+    review_status: string;
 }
 
 interface Props {
@@ -139,6 +140,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                 <th className="px-2 pb-3">{t('Status')}</th>
                                 <th className="px-2 pb-3">{t('Language')}</th>
                                 <th className="px-2 pb-3">{t('Estimated Duration')}</th>
+                                <th className="px-2 pb-3">{t('Review status')}</th>
                                 <th className="px-2 pb-3">{t('Approved at')}</th>
                                 <th className="px-2 pb-3 text-right">{t('Actions')}</th>
                             </tr>
@@ -152,11 +154,13 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                         <td className="px-2 py-3">{item.status}</td>
                                         <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3">{item.estimated_duration_seconds || '-'}</td>
+                                        <td className="px-2 py-3">{item.review_status}</td>
                                         <td className="px-2 py-3">{item.approved_at ? formatDateTime(item.approved_at) : t('Not approved')}</td>
                                         <td className="px-2 py-3">
                                             <div className="flex justify-end gap-2">
                                                 <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.show', item.id)}>{t('View')}</Link></Button>
                                                 <Button asChild size="sm" variant="secondary"><Link href={route('editor.scripts.edit', item.id)}>{t('Edit')}</Link></Button>
+                                                <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.review', item.id)}>{t('Review')}</Link></Button>
                                                 <Button size="sm" variant="destructive" onClick={() => destroy(item.id)}>{t('Delete')}</Button>
                                             </div>
                                         </td>
@@ -164,7 +168,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-2 py-6 text-center text-slate-500">{t('No scripts found')}</td>
+                                    <td colSpan={8} className="px-2 py-6 text-center text-slate-500">{t('No scripts found')}</td>
                                 </tr>
                             )}
                         </tbody>

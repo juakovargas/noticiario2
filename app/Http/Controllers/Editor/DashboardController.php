@@ -48,8 +48,15 @@ class DashboardController extends Controller
             ->get();
 
         $scriptsNeedingReview = Script::query()
-            ->select(['id', 'title', 'status', 'edition_id', 'updated_at'])
-            ->whereIn('status', ['draft', 'review'])
+            ->select(['id', 'title', 'status', 'review_status', 'edition_id', 'updated_at'])
+            ->whereIn('review_status', ['pending', 'in_review', 'needs_sources', 'needs_changes'])
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get();
+
+        $readyToApprove = Script::query()
+            ->select(['id', 'title', 'status', 'review_status', 'updated_at'])
+            ->where('review_status', 'verified')
             ->orderByDesc('updated_at')
             ->limit(10)
             ->get();
@@ -69,6 +76,9 @@ class DashboardController extends Controller
                 'waitingResponses' => EditorialScheduleRun::query()->whereIn('status', ['prompt_ready', 'waiting_ai_response'])->count(),
                 'draftScripts' => Script::query()->whereIn('status', ['draft', 'review'])->count(),
                 'plannedEditions' => Edition::query()->whereIn('status', ['planning', 'scripting'])->count(),
+                'scriptsPendingReview' => Script::query()->where('review_status', 'pending')->count(),
+                'scriptsNeedingSources' => Script::query()->where('review_status', 'needs_sources')->count(),
+                'scriptsApprovedToday' => Script::query()->whereDate('approved_at', $today)->count(),
             ],
             'todayRuns' => $todayRunsQuery->orderBy('scheduled_for')->get(),
             'pendingPromptRuns' => $pendingPromptRuns,
@@ -76,6 +86,7 @@ class DashboardController extends Controller
             'responseReceivedRuns' => $responseReceivedRuns,
             'scriptsNeedingReview' => $scriptsNeedingReview,
             'upcomingSchedules' => $upcomingSchedules,
+            'readyToApprove' => $readyToApprove,
         ]);
     }
 }

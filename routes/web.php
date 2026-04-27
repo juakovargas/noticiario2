@@ -15,6 +15,7 @@ use App\Http\Controllers\Editor\ScriptBuilderController;
 use App\Http\Controllers\Editor\NewsCategoryController;
 use App\Http\Controllers\Editor\NewsItemController;
 use App\Http\Controllers\Editor\NewsSourceController;
+use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
@@ -116,6 +117,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('locations', LocationController::class)->except('show');
         Route::resource('news-categories', NewsCategoryController::class)->except('show');
         Route::resource('news-sources', NewsSourceController::class)->except('show');
+        Route::get('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'show'])->name('news-sources.import');
+        Route::post('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'store'])->name('news-sources.import.store');
         Route::resource('news-items', NewsItemController::class);
         Route::resource('editions', EditionController::class);
         Route::get('/editions/{edition}/news-items', [EditionNewsItemController::class, 'index'])->name('editions.news-items.index');

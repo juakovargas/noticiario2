@@ -21,7 +21,7 @@ class DemoEditorialSeeder extends Seeder
     {
         $locations = $this->seedLocations();
         $categories = $this->seedCategories();
-        $sources = $this->seedSources();
+        $sources = $this->seedSources($categories, $locations);
         $newsItems = $this->seedNewsItems($locations, $categories, $sources);
         $editions = $this->seedEditions($locations);
 
@@ -211,7 +211,7 @@ class DemoEditorialSeeder extends Seeder
     /**
      * @return array<string, NewsSource>
      */
-    private function seedSources(): array
+    private function seedSources(array $categories, array $locations): array
     {
         $definitions = [
             [
@@ -240,6 +240,10 @@ class DemoEditorialSeeder extends Seeder
                 'language' => 'es',
                 'country_code' => 'ES',
                 'trust_level' => 3,
+                'default_news_category_id' => $categories['general']->id,
+                'default_location_id' => $locations['spain']->id,
+                'is_demo' => true,
+                'ingestion_notes' => 'Demo RSS source for Spain coverage.',
             ],
             [
                 'name' => 'Demo RSS Sports',
@@ -249,15 +253,23 @@ class DemoEditorialSeeder extends Seeder
                 'language' => 'es',
                 'country_code' => 'ES',
                 'trust_level' => 3,
+                'default_news_category_id' => $categories['sports']->id,
+                'default_location_id' => $locations['spain']->id,
+                'is_demo' => true,
+                'ingestion_notes' => 'Demo RSS source for sports coverage.',
             ],
             [
-                'name' => 'Demo Technology Desk',
-                'type' => 'website',
+                'name' => 'Demo RSS Technology',
+                'type' => 'rss',
                 'url' => 'https://example.com/technology',
-                'feed_url' => null,
+                'feed_url' => 'https://example.com/rss/technology.xml',
                 'language' => 'en',
                 'country_code' => null,
                 'trust_level' => 3,
+                'default_news_category_id' => $categories['technology']->id,
+                'default_location_id' => $locations['global']->id,
+                'is_demo' => true,
+                'ingestion_notes' => 'Demo RSS source for technology coverage.',
             ],
         ];
 
@@ -267,7 +279,7 @@ class DemoEditorialSeeder extends Seeder
             $slug = Str::slug($definition['name']);
             $sources[$slug] = NewsSource::query()->updateOrCreate(
                 ['slug' => $slug],
-                array_merge($definition, ['is_active' => true]),
+                array_merge($definition, ['is_active' => true, 'is_demo' => $definition['is_demo'] ?? false]),
             );
         }
 
@@ -292,17 +304,17 @@ class DemoEditorialSeeder extends Seeder
             ['title' => 'New report highlights growth in small business digitization', 'category' => 'economy', 'source' => 'manual-source', 'location' => 'spain', 'status' => 'draft', 'priority' => 4, 'evergreen' => true, 'offset' => -2],
             ['title' => 'Spanish football clubs prepare for a decisive weekend', 'category' => 'sports', 'source' => 'demo-rss-sports', 'location' => 'spain', 'status' => 'selected', 'priority' => 5, 'evergreen' => false, 'offset' => 0],
             ['title' => 'Esports tournament brings international teams to Madrid', 'category' => 'esports', 'source' => 'demo-rss-sports', 'location' => 'madrid', 'status' => 'selected', 'priority' => 4, 'evergreen' => false, 'offset' => 1],
-            ['title' => 'Researchers present advances in renewable energy storage', 'category' => 'science', 'source' => 'demo-technology-desk', 'location' => 'global', 'status' => 'draft', 'priority' => 4, 'evergreen' => true, 'offset' => -2],
-            ['title' => 'Technology companies expand AI safety teams', 'category' => 'technology', 'source' => 'demo-technology-desk', 'location' => 'global', 'status' => 'selected', 'priority' => 5, 'evergreen' => true, 'offset' => 0],
+            ['title' => 'Researchers present advances in renewable energy storage', 'category' => 'science', 'source' => 'demo-rss-technology', 'location' => 'global', 'status' => 'draft', 'priority' => 4, 'evergreen' => true, 'offset' => -2],
+            ['title' => 'Technology companies expand AI safety teams', 'category' => 'technology', 'source' => 'demo-rss-technology', 'location' => 'global', 'status' => 'selected', 'priority' => 5, 'evergreen' => true, 'offset' => 0],
             ['title' => 'Museums prepare new spring exhibitions', 'category' => 'culture', 'source' => 'manual-source-es', 'location' => 'barcelona', 'status' => 'collected', 'priority' => 2, 'evergreen' => false, 'offset' => -1],
             ['title' => 'Health authorities launch seasonal prevention campaign', 'category' => 'health', 'source' => 'manual-source', 'location' => 'spain', 'status' => 'selected', 'priority' => 4, 'evergreen' => false, 'offset' => 0],
             ['title' => 'Climate experts warn about early heat episodes', 'category' => 'climate', 'source' => 'manual-source-es', 'location' => 'spain', 'status' => 'collected', 'priority' => 5, 'evergreen' => false, 'offset' => -1],
             ['title' => 'Local associations promote neighborhood events', 'category' => 'society', 'source' => 'manual-source-es', 'location' => 'valencia', 'status' => 'archived', 'priority' => 2, 'evergreen' => false, 'offset' => -2],
             ['title' => 'French cities expand sustainable mobility plans', 'category' => 'international', 'source' => 'manual-source', 'location' => 'france', 'status' => 'selected', 'priority' => 3, 'evergreen' => true, 'offset' => -1],
             ['title' => 'Economy analysts review inflation expectations', 'category' => 'economy', 'source' => 'manual-source', 'location' => 'global', 'status' => 'draft', 'priority' => 4, 'evergreen' => false, 'offset' => 0],
-            ['title' => 'Science teams test new satellite observation tools', 'category' => 'science', 'source' => 'demo-technology-desk', 'location' => 'global', 'status' => 'draft', 'priority' => 3, 'evergreen' => true, 'offset' => -1],
+            ['title' => 'Science teams test new satellite observation tools', 'category' => 'science', 'source' => 'demo-rss-technology', 'location' => 'global', 'status' => 'draft', 'priority' => 3, 'evergreen' => true, 'offset' => -1],
             ['title' => 'Youth sports programs grow in regional communities', 'category' => 'sports', 'source' => 'manual-source-es', 'location' => 'sevilla', 'status' => 'collected', 'priority' => 3, 'evergreen' => false, 'offset' => -2],
-            ['title' => 'Digital creators adapt content formats for short video platforms', 'category' => 'technology', 'source' => 'demo-technology-desk', 'location' => 'global', 'status' => 'selected', 'priority' => 4, 'evergreen' => true, 'offset' => 1],
+            ['title' => 'Digital creators adapt content formats for short video platforms', 'category' => 'technology', 'source' => 'demo-rss-technology', 'location' => 'global', 'status' => 'selected', 'priority' => 4, 'evergreen' => true, 'offset' => 1],
             ['title' => 'Paris opens a new public innovation lab downtown', 'category' => 'general', 'source' => 'manual-source', 'location' => 'paris', 'status' => 'collected', 'priority' => 3, 'evergreen' => false, 'offset' => 0],
             ['title' => 'Lyon pilots smart district energy dashboards', 'category' => 'technology', 'source' => 'manual-source', 'location' => 'lyon', 'status' => 'draft', 'priority' => 3, 'evergreen' => true, 'offset' => -1],
         ];

@@ -97,4 +97,49 @@ class DemoSeedersTest extends TestCase
             'At least one edition should have attached news items.',
         );
     }
+    public function test_demo_rss_sources_have_defaults_and_do_not_duplicate(): void
+    {
+        $this->seed([RolesAndPermissionsSeeder::class, DemoEditorialSeeder::class]);
+
+        $this->assertDatabaseHas('news_sources', [
+            'slug' => 'demo-rss-spain',
+            'type' => 'rss',
+            'feed_url' => 'https://example.com/rss/spain.xml',
+            'language' => 'es',
+            'is_demo' => true,
+        ]);
+
+        $this->assertDatabaseHas('news_sources', [
+            'slug' => 'demo-rss-sports',
+            'type' => 'rss',
+            'feed_url' => 'https://example.com/rss/sports.xml',
+            'language' => 'es',
+            'is_demo' => true,
+        ]);
+
+        $this->assertDatabaseHas('news_sources', [
+            'slug' => 'demo-rss-technology',
+            'type' => 'rss',
+            'feed_url' => 'https://example.com/rss/technology.xml',
+            'language' => 'en',
+            'is_demo' => true,
+        ]);
+
+        $this->assertDatabaseMissing('news_sources', [
+            'slug' => 'demo-rss-spain',
+            'default_news_category_id' => null,
+        ]);
+
+        $this->assertDatabaseMissing('news_sources', [
+            'slug' => 'demo-rss-spain',
+            'default_location_id' => null,
+        ]);
+
+        $count = \App\Models\NewsSource::query()->count();
+
+        $this->seed(DemoEditorialSeeder::class);
+
+        $this->assertSame($count, \App\Models\NewsSource::query()->count());
+    }
+
 }

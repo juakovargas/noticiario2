@@ -168,6 +168,8 @@ class NewsItemController extends Controller
                 'language' => $newsItem->language,
                 'language_display' => $languageDisplay,
                 'source_url' => $newsItem->source_url,
+                'external_id' => $newsItem->external_id,
+                'metadata' => $newsItem->metadata,
                 'status' => $newsItem->status,
                 'published_at' => $newsItem->published_at?->toDateTimeString(),
                 'collected_at' => $newsItem->collected_at?->toDateTimeString(),

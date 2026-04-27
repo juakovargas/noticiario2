@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SeoSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
@@ -110,6 +111,9 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
 
         Route::resource('languages', LanguageController::class)->except('show');
         Route::resource('ai-providers', AiProviderController::class);
+
+        Route::get('/seo-settings', [SeoSettingController::class, 'edit'])->name('seo-settings.edit');
+        Route::put('/seo-settings', [SeoSettingController::class, 'update'])->name('seo-settings.update');
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])

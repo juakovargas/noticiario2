@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             LanguageSeeder::class,
+            SeoSettingSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

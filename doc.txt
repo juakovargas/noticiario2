@@ -724,3 +724,49 @@ Current next priorities:
 4. Add AI run logs and cost control.
 5. Add automatic schedule execution later.
 6. Add audio/video/publishing after editorial workflow is stable.
+
+[2026-04-27] PROFILE/LAYOUT + LOCALE HARDENING UPDATE
+
+USER PROFILE, PREFERENCES AND AVATAR
+- Shared Inertia auth.user includes safe user fields used by layouts and profile forms:
+  id, name, email, roles, permissions, preferred_locale, timezone, avatar_url, initials, date_format, time_format.
+- Added/updated reusable frontend avatar component:
+  resources/js/Components/UserAvatar.tsx
+  - Supports props: user, size (sm|md|lg), className.
+  - Shows image when avatar_url exists.
+  - If image fails to load, falls back to initials.
+  - If no avatar_url, falls back to initials directly.
+- Admin/Editor/Viewer layouts now consistently show avatar/initials and include a visible "My profile" link to profile.edit.
+- Editors/viewers/admins can update own preferences through /profile (auth protected route).
+- Avatar upload remains public-disk based. If avatar URLs do not resolve in local environments, ensure:
+  php artisan storage:link
+
+Locale resolution and persistence
+- locale.update behavior:
+  - validates locale against active locales.
+  - stores locale in session.
+  - if authenticated user exists and users.preferred_locale column exists, persists preferred_locale.
+- Per-request locale priority:
+  1) session locale
+  2) authenticated user preferred_locale
+  3) default active language from languages table (is_default, or first active by sort order)
+  4) config('app.locale')
+  5) en
+- Includes safe fallback behavior during transient migration states.
+
+SOURCE VERIFICATION WORKFLOW
+- Existing source verification workflow remains preserved in this branch:
+  source_references model/table, extractor service, editor pages, script/review integrations, and dashboard counters.
+- This branch keeps all current limitations:
+  - no automatic URL checking
+  - no scraping
+  - no external API calls
+  - no automatic fact-checking yet
+
+Current next priorities:
+1. Improve source verification workflow based on manual testing.
+2. Add optional live URL checking later.
+3. Add real AI provider integration.
+4. Add AI request logs and cost control.
+5. Add automatic schedule execution later.
+6. Add audio/video/publishing after editorial workflow is stable.

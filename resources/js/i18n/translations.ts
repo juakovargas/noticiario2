@@ -7,6 +7,7 @@ export const translations: Record<string, Record<string, string>> = {
         Register: 'Register',
         Logout: 'Logout',
         Profile: 'Profile',
+        'My profile': 'My profile',
 
         Preferences: 'Preferences',
         'User preferences': 'User preferences',
@@ -513,6 +514,7 @@ export const translations: Record<string, Record<string, string>> = {
         Register: 'Registrarse',
         Logout: 'Cerrar sesión',
         Profile: 'Perfil',
+        'My profile': 'Mi perfil',
 
         Preferences: 'Preferencias',
         'User preferences': 'Preferencias del usuario',

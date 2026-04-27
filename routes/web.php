@@ -25,6 +25,7 @@ use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Viewer\DashboardController as ViewerDashboardController;
 use App\Support\AuthRedirect;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -183,7 +184,7 @@ Route::middleware(['auth', 'verified', 'permission:viewer.access'])
     ->group(function () {
         Route::get('/', fn () => redirect()->route('viewer.dashboard'));
 
-        Route::get('/dashboard', fn () => Inertia::render('Viewer/Dashboard'))
+        Route::get('/dashboard', [ViewerDashboardController::class, 'index'])
             ->middleware('permission:viewer.dashboard.view')
             ->name('dashboard');
 

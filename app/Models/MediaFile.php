@@ -61,6 +61,10 @@ class MediaFile extends Model
             return $this->url;
         }
 
+        if (! filled($this->disk) || ! filled($this->path)) {
+            return null;
+        }
+
         return Storage::disk($this->disk)->url($this->path);
     }
 

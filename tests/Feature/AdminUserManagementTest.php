@@ -316,12 +316,13 @@ class AdminUserManagementTest extends TestCase
             'timezone' => 'UTC',
             'date_format' => 'locale_default',
             'time_format' => '24h',
-            'avatar' => UploadedFile::fake()->image('new-avatar.png', 180, 180),
+            'profile_image' => UploadedFile::fake()->image('new-avatar.png', 180, 180),
         ])->assertRedirect(route('admin.users.index'));
 
-        $this->assertNotNull($target->fresh()->profile_image_id);
+        $target = $target->fresh();
+        $this->assertNotNull($target->profile_image_id);
         $this->assertDatabaseHas('media_files', [
-            'id' => $target->fresh()->profile_image_id,
+            'id' => $target->profile_image_id,
             'collection' => 'profile_images',
         ]);
     }

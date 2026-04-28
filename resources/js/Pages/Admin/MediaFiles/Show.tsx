@@ -15,6 +15,9 @@ interface MediaFile {
     disk: string;
     directory: string | null;
     path: string;
+    public_url: string | null;
+    file_exists: boolean;
+    storage_link_required: boolean;
     mime_type: string | null;
     extension: string | null;
     size_bytes: number;
@@ -70,8 +73,12 @@ export default function MediaFilesShow({ mediaFile }: { mediaFile: MediaFile }):
                     <div><dt className="font-semibold">{t('Visibility')}</dt><dd>{t(mediaFile.visibility === 'public' ? 'Public' : 'Private')}</dd></div>
                     <div><dt className="font-semibold">{t('Status')}</dt><dd>{t(mediaFile.status.charAt(0).toUpperCase() + mediaFile.status.slice(1))}</dd></div>
                     <div><dt className="font-semibold">{t('Uploaded by')}</dt><dd>{mediaFile.uploaded_by?.name ?? '-'}</dd></div>
-                    <div><dt className="font-semibold">URL</dt><dd className="break-all">{mediaFile.url ?? '-'}</dd></div>
+                    <div><dt className="font-semibold">{t('Public URL')}</dt><dd className="break-all">{mediaFile.public_url ?? '-'}</dd></div>
+                    <div><dt className="font-semibold">{t('File exists')}</dt><dd>{mediaFile.file_exists ? t('Yes') : t('File missing')}</dd></div>
                 </dl>
+                {mediaFile.storage_link_required && !mediaFile.file_exists && (
+                    <p className="mt-3 text-xs text-amber-700">{t('Storage link required')}: {t('Run php artisan storage:link')}</p>
+                )}
             </CardContent></Card>
 
             <Card><CardContent className="pt-6">
@@ -81,7 +88,7 @@ export default function MediaFilesShow({ mediaFile }: { mediaFile: MediaFile }):
                     <div><Label htmlFor="caption">{t('Caption')}</Label><Input id="caption" value={data.caption} onChange={(e) => setData('caption', e.target.value)} /></div>
                     <div><Label htmlFor="description">{t('Description')}</Label><textarea id="description" className="w-full rounded-md border border-slate-300" rows={4} value={data.description} onChange={(e) => setData('description', e.target.value)} /></div>
                     <div><Label htmlFor="status">{t('Status')}</Label><select id="status" className="w-full rounded-md border border-slate-300" value={data.status} onChange={(e) => setData('status', e.target.value)}><option value="active">{t('Active')}</option><option value="archived">{t('Archived')}</option><option value="deleted">{t('Deleted')}</option></select></div>
-                    <div className="flex gap-2"><Button type="submit" disabled={processing}>{t('Save')}</Button><Button asChild type="button" variant="outline"><Link href={route('admin.media-files.index')}>{t('Back')}</Link></Button>{mediaFile.url && <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(mediaFile.url ?? '')}>{t('Copy URL')}</Button>}</div>
+                    <div className="flex gap-2"><Button type="submit" disabled={processing}>{t('Save')}</Button><Button asChild type="button" variant="outline"><Link href={route('admin.media-files.index')}>{t('Back')}</Link></Button>{mediaFile.public_url && <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(mediaFile.public_url ?? '')}>{t('Copy URL')}</Button>}</div>
                 </form>
             </CardContent></Card>
         </AdminLayout>

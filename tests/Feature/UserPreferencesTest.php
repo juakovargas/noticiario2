@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\MediaFile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -101,11 +102,11 @@ class UserPreferencesTest extends TestCase
         $this->actingAs($user)->patch(route('profile.update'), [
             'name' => $user->name,
             'email' => $user->email,
-            'avatar' => UploadedFile::fake()->image('avatar.png'),
+            'profile_image' => UploadedFile::fake()->image('avatar.png'),
         ])->assertRedirect(route('profile.edit'));
 
-        $this->assertNotNull($user->fresh()->avatar_path);
-        Storage::disk('public')->assertExists($user->fresh()->avatar_path);
+        $mediaFile = MediaFile::query()->findOrFail($user->fresh()->profile_image_id);
+        Storage::disk('public')->assertExists($mediaFile->path);
     }
 
 
@@ -120,7 +121,7 @@ class UserPreferencesTest extends TestCase
             'email' => $user->email,
             'preferred_locale' => 'es',
             'timezone' => 'Europe/Madrid',
-            'avatar' => UploadedFile::fake()->image('avatar.png'),
+            'profile_image' => UploadedFile::fake()->image('avatar.png'),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('users', [
@@ -129,7 +130,7 @@ class UserPreferencesTest extends TestCase
             'preferred_locale' => 'es',
             'timezone' => 'Europe/Madrid',
         ]);
-        $this->assertNotNull($user->fresh()->avatar_path);
+        $this->assertNotNull($user->fresh()->profile_image_id);
     }
 
     public function test_profile_edit_page_receives_selected_panel(): void

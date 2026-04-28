@@ -57,7 +57,7 @@ class ProfileTest extends TestCase
                 '_method' => 'patch',
                 'name' => $user->name,
                 'email' => $user->email,
-                'avatar' => UploadedFile::fake()->image('avatar.png', 180, 180),
+                'profile_image' => UploadedFile::fake()->image('avatar.png', 180, 180),
             ])
             ->assertRedirect('/profile');
 
@@ -65,6 +65,8 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->profile_image_id);
         $this->assertDatabaseHas('media_files', ['id' => $user->profile_image_id, 'media_type' => 'image']);
+        $mediaFile = MediaFile::query()->findOrFail($user->profile_image_id);
+        Storage::disk('public')->assertExists($mediaFile->path);
     }
 
     public function test_profile_update_validates_name_and_email_with_avatar_payload(): void
@@ -79,7 +81,7 @@ class ProfileTest extends TestCase
                 '_method' => 'patch',
                 'name' => '',
                 'email' => '',
-                'avatar' => UploadedFile::fake()->image('avatar.png'),
+                'profile_image' => UploadedFile::fake()->image('avatar.png'),
             ])
             ->assertRedirect('/profile')
             ->assertSessionHasErrors(['name', 'email']);
@@ -149,6 +151,27 @@ class ProfileTest extends TestCase
         $this->actingAs($user)
             ->get('/profile')
             ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', Storage::disk('public')->url('avatars/users/1/legacy.png')));
+    }
+
+    public function test_auth_shared_props_include_avatar_url_from_profile_image(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/profile', [
+                '_method' => 'patch',
+                'name' => $user->name,
+                'email' => $user->email,
+                'profile_image' => UploadedFile::fake()->image('avatar.png', 180, 180),
+            ])
+            ->assertRedirect('/profile');
+
+        $mediaFile = MediaFile::query()->findOrFail($user->fresh()->profile_image_id);
+
+        $this->actingAs($user->fresh())
+            ->get('/profile')
+            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', Storage::disk('public')->url($mediaFile->path)));
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void

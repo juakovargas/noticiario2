@@ -11,11 +11,11 @@ interface RolePermissionOption { id: number; name: string; }
 interface RoleWithPermissions { id: number; name: string; permissions: string[]; }
 interface LocaleOption { code: string; name: string; }
 interface UsersCreateProps { roles: RolePermissionOption[]; rolesWithPermissions: RoleWithPermissions[]; permissions: RolePermissionOption[]; localeOptions: LocaleOption[]; dateFormatOptions: string[]; timeFormatOptions: string[]; }
-interface FormData { name:string; email:string; password:string; password_confirmation:string; is_active:boolean; roles:string[]; permissions:string[]; preferred_locale:string; timezone:string; date_format:string; time_format:string; avatar:File|null; remove_avatar:boolean; }
+interface FormData { name:string; email:string; password:string; password_confirmation:string; is_active:boolean; roles:string[]; permissions:string[]; preferred_locale:string; timezone:string; date_format:string; time_format:string; profile_image:File|null; remove_avatar:boolean; }
 
 export default function UsersCreate({ roles, rolesWithPermissions, permissions, localeOptions, dateFormatOptions, timeFormatOptions }: UsersCreateProps): JSX.Element {
     const { t } = useTranslations();
-    const { data, setData, post, processing, errors } = useForm<FormData>({ name:'', email:'', password:'', password_confirmation:'', is_active:true, roles:[], permissions:[], preferred_locale:'', timezone:'', date_format:'locale_default', time_format:'24h', avatar:null, remove_avatar:false });
+    const { data, setData, post, processing, errors } = useForm<FormData>({ name:'', email:'', password:'', password_confirmation:'', is_active:true, roles:[], permissions:[], preferred_locale:'', timezone:'', date_format:'locale_default', time_format:'24h', profile_image:null, remove_avatar:false });
 
     const toggleArrayValue = (field: 'roles' | 'permissions', value: string): void => setData(field, data[field].includes(value) ? data[field].filter((item) => item !== value) : [...data[field], value]);
     const effectivePermissions = Array.from(new Set(rolesWithPermissions.filter((r) => data.roles.includes(r.name)).flatMap((r) => r.permissions))).sort();
@@ -34,7 +34,7 @@ export default function UsersCreate({ roles, rolesWithPermissions, permissions, 
                 <div><Label htmlFor="timezone">{t('Timezone')}</Label><Input id="timezone" value={data.timezone} onChange={(e) => setData('timezone', e.target.value)} /></div>
                 <div><Label htmlFor="date_format">{t('Date format')}</Label><select id="date_format" className="w-full rounded-md border" value={data.date_format} onChange={(e)=>setData('date_format', e.target.value)}>{dateFormatOptions.map((i)=><option key={i} value={i}>{i}</option>)}</select></div>
                 <div><Label htmlFor="time_format">{t('Time format')}</Label><select id="time_format" className="w-full rounded-md border" value={data.time_format} onChange={(e)=>setData('time_format', e.target.value)}>{timeFormatOptions.map((i)=><option key={i} value={i}>{i}</option>)}</select></div>
-                <div className="md:col-span-2"><Label htmlFor="avatar">{t('Upload avatar')}</Label><Input id="avatar" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e)=>setData('avatar', e.target.files?.[0] ?? null)} />{errors.avatar && <p className="mt-1 text-xs text-rose-600">{errors.avatar}</p>}</div>
+                <div className="md:col-span-2"><Label htmlFor="profile_image">{t('Upload profile image')}</Label><Input id="profile_image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e)=>setData('profile_image', e.target.files?.[0] ?? null)} />{errors.profile_image && <p className="mt-1 text-xs text-rose-600">{errors.profile_image}</p>}</div>
             </div>
             <div><label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="rounded border-slate-300" />{data.is_active ? t('Active user') : t('Inactive user')}</label></div>
             <div className="grid gap-4 md:grid-cols-2">

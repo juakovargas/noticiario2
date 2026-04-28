@@ -25,7 +25,7 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $user = $request->user();
+        $user = $request->user()?->loadMissing('profileImage');
         $impersonatorId = $request->session()->get('impersonator_id');
         $impersonator = $impersonatorId ? User::query()->find($impersonatorId) : null;
 
@@ -70,7 +70,9 @@ class HandleInertiaRequests extends Middleware
                     'date_format' => $user->date_format,
                     'time_format' => $user->time_format,
                     'avatar_url' => $user->avatar_url,
+                    'avatarUrl' => $user->avatar_url,
                     'initials' => $user->initials,
+                    'profile_image_id' => $user->profile_image_id,
                 ] : null,
             ],
             'impersonation' => [

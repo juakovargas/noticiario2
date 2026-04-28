@@ -42,11 +42,11 @@ export default function UpdateProfileInformation({
         timezone: user.timezone ?? '',
         date_format: user.date_format ?? 'locale_default',
         time_format: user.time_format ?? '24h',
-        avatar: null as File | null,
+        profile_image: null as File | null,
         remove_avatar: false,
     });
 
-    const previewUrl = useMemo(() => (data.avatar ? URL.createObjectURL(data.avatar) : null), [data.avatar]);
+    const previewUrl = useMemo(() => (data.profile_image ? URL.createObjectURL(data.profile_image) : null), [data.profile_image]);
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -113,20 +113,20 @@ export default function UpdateProfileInformation({
                     <InputLabel value={t('Current profile image')} />
                     <div className="flex items-center gap-3">
                         <UserAvatar user={user} size="md" />
-                        <span className="text-sm text-slate-500">{t('Profile image')}</span>
+                        <span className="text-sm text-slate-500">{user.avatar_url ? t('Profile image') : t('No profile image')}</span>
                     </div>
                     {previewUrl && (
                         <div className="flex items-center gap-3">
                             <img src={previewUrl} alt={t('Preview')} className="h-10 w-10 rounded-full object-cover" />
-                            <span className="text-sm text-slate-500">{t('Preview')}</span>
+                            <span className="text-sm text-slate-500">{t('Image preview')}</span>
                         </div>
                     )}
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="avatar" value={t('Upload profile image')} />
-                    <input id="avatar" type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-sm" onChange={(e) => setData('avatar', e.target.files?.[0] ?? null)} />
-                    <InputError className="mt-2" message={errors.avatar} />
+                    <InputLabel htmlFor="profile_image" value={t('Upload profile image')} />
+                    <input id="profile_image" type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-sm" onChange={(e) => setData('profile_image', e.target.files?.[0] ?? null)} />
+                    <InputError className="mt-2" message={errors.profile_image} />
                     <label className="mt-2 inline-flex items-center gap-2 text-sm text-slate-600">
                         <input type="checkbox" checked={data.remove_avatar} onChange={(e) => setData('remove_avatar', e.target.checked)} />
                         {t('Remove avatar')}

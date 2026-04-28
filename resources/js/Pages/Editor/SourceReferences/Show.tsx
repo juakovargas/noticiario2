@@ -7,13 +7,13 @@ import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
-interface SourceReference { id:number; title:string|null; source_name:string|null; source_url:string|null; source_type:string; verification_status:string; trust_level:number|null; notes:string|null; checked_by:{ id:number; name:string; email:string | null; avatar_url?:string|null; initials?:string|null }|null; checked_at:string|null; archived_at:string|null; script:{id:number;title:string}|null; news_item:{id:number;title:string}|null; bulletin_prompt_run:{id:number;title:string|null}|null; edition:{id:number;title:string}|null; script_review_item:{id:number;title:string|null}|null; }
+interface SourceReference { id:number; title:string|null; source_name:string|null; source_url:string|null; source_domain:string|null; source_type:string; verification_status:string; trust_level:number|null; notes:string|null; checked_by:{ id:number; name:string; email:string | null; avatar_url?:string|null; initials?:string|null }|null; checked_at:string|null; archived_at:string|null; script:{id:number;title:string}|null; news_item:{id:number;title:string}|null; bulletin_prompt_run:{id:number;title:string|null}|null; edition:{id:number;title:string}|null; script_review_item:{id:number;title:string|null}|null; }
 interface Props { sourceReference: SourceReference; verificationStatuses:string[]; sourceTypes:string[] }
 
 export default function Show({ sourceReference, verificationStatuses, sourceTypes }: Props): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
-    const form = useForm({ title: sourceReference.title ?? '', source_name: sourceReference.source_name ?? '', source_url: sourceReference.source_url ?? '', source_type: sourceReference.source_type, verification_status: sourceReference.verification_status, trust_level: sourceReference.trust_level?.toString() ?? '', notes: sourceReference.notes ?? '' });
+    const form = useForm({ title: sourceReference.title ?? '', source_name: sourceReference.source_name ?? '', source_url: sourceReference.source_url ?? '', source_domain: sourceReference.source_domain ?? '', source_type: sourceReference.source_type, verification_status: sourceReference.verification_status, trust_level: sourceReference.trust_level?.toString() ?? '', notes: sourceReference.notes ?? '' });
 
     return <EditorLayout>
         <Head title={t('Source Reference')} />
@@ -23,6 +23,7 @@ export default function Show({ sourceReference, verificationStatuses, sourceType
                 <div><label className="mb-1 block text-sm font-medium">{t('Title')}</label><input className="w-full rounded border px-3 py-2" value={form.data.title} onChange={(e)=>form.setData('title', e.target.value)} /></div>
                 <div><label className="mb-1 block text-sm font-medium">{t('Source name')}</label><input className="w-full rounded border px-3 py-2" value={form.data.source_name} onChange={(e)=>form.setData('source_name', e.target.value)} /></div>
                 <div><label className="mb-1 block text-sm font-medium">{t('Source URL')}</label><input className="w-full rounded border px-3 py-2" value={form.data.source_url} onChange={(e)=>form.setData('source_url', e.target.value)} /></div>
+                <div><label className="mb-1 block text-sm font-medium">{t('Source domain')}</label><input className="w-full rounded border px-3 py-2" value={form.data.source_domain} onChange={(e)=>form.setData('source_domain', e.target.value)} /></div>
                 <div className="grid gap-3 md:grid-cols-3">
                     <div><label className="mb-1 block text-sm font-medium">{t('Source type')}</label><select className="w-full rounded border px-3 py-2" value={form.data.source_type} onChange={(e)=>form.setData('source_type', e.target.value)}>{sourceTypes.map((item)=><option key={item} value={item}>{item}</option>)}</select></div>
                     <div><label className="mb-1 block text-sm font-medium">{t('Verification status')}</label><select className="w-full rounded border px-3 py-2" value={form.data.verification_status} onChange={(e)=>form.setData('verification_status', e.target.value)}>{verificationStatuses.map((item)=><option key={item} value={item}>{item}</option>)}</select></div>

@@ -1340,3 +1340,27 @@ Updated next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+---
+SOURCE VERIFICATION WORKFLOW
+- source_references table supports editorial source tracking linked to bulletin_prompt_runs, scripts, news_items, editions, and script_review_items when available.
+- Verification model includes source_type, verification_status, trust_level (0-10), checked_by/checked_at, and archive metadata via archived_at/archived_by.
+- SourceReferenceExtractor service (app/Services/EditorialReview/SourceReferenceExtractor.php) extracts source hints from parsed responses, script metadata, review items, and raw text URL patterns.
+- Extraction is idempotent per context (deduplicated by URL or normalized name), stores metadata.raw_hint, and now derives source_domain when URL exists.
+- Editor workflow includes extraction actions from Bulletin Prompt Runs, Scripts, Script Review Items, and News Items, plus Source References index/show pages for manual verification.
+- Prompt run and script pages include source verification summaries and quick links to manage sources.
+- Script approval flow keeps source blocking rules for missing/broken/rejected sources.
+- Archive/list behavior follows the existing show_archived / only_archived pattern (archive is non-destructive, restore supported).
+
+Current limitations:
+- No live URL health checks.
+- No automatic fact-checking.
+- No scraping.
+- No external API calls.
+
+Updated next priorities:
+1. Manually test source verification with real prompt responses.
+2. Add real AI provider integration.
+3. Add AI logs and cost control.
+4. Add automatic schedule execution.
+5. Add audio/video/publishing later.

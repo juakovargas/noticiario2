@@ -203,8 +203,9 @@ class SourceReferenceExtractor
             ->unique()
             ->map(function (string $hint) use ($context) {
                 $url = $this->extractUrl($hint);
+                $domain = $this->extractDomain($url);
                 $label = $this->normalizeLabel($url ? trim(str_replace($url, '', $hint), " -:|\t") : $hint);
-                $name = $this->guessSourceName($hint, $url, $label);
+                $name = $this->guessSourceName($hint, $url, $label, $domain);
 
                 $query = SourceReference::query();
                 foreach (['bulletin_prompt_run_id', 'script_id', 'news_item_id', 'script_review_item_id', 'edition_id'] as $field) {
@@ -226,6 +227,7 @@ class SourceReferenceExtractor
                     'title' => Str::limit($label ?: $name, 255),
                     'source_name' => Str::limit($name, 255),
                     'source_url' => $url,
+                    'source_domain' => $domain,
                     'source_type' => 'web',
                     'verification_status' => 'pending',
                     'metadata' => ['raw_hint' => $hint],
@@ -251,10 +253,14 @@ class SourceReferenceExtractor
         return trim($cleaned, "-:•* \t\n\r\0\x0B");
     }
 
-    private function guessSourceName(string $hint, ?string $url, string $label): string
+    private function guessSourceName(string $hint, ?string $url, string $label, ?string $domain = null): string
     {
         if ($label !== '') {
             return $label;
+        }
+
+        if ($domain !== null && $domain !== '') {
+            return $domain;
         }
 
         if ($url) {
@@ -265,5 +271,19 @@ class SourceReferenceExtractor
         }
 
         return $this->normalizeLabel($hint);
+    }
+
+    private function extractDomain(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return null;
+        }
+
+        return Str::lower(Str::of($host)->replace('www.', '')->toString());
     }
 }

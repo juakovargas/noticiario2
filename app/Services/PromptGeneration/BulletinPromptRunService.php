@@ -76,11 +76,13 @@ class BulletinPromptRunService
     {
         $parsed = $this->parser->parse($responseText);
 
+        $currentStatus = (string) $run->status;
+
         $run->update([
             'ai_response_text' => $responseText,
             'parsed_response' => $parsed,
             'response_received_at' => now(),
-            'status' => 'response_received',
+            'status' => in_array($currentStatus, ['script_created', 'completed', 'archived'], true) ? $currentStatus : 'response_received',
         ]);
 
         return $run->refresh();
@@ -105,7 +107,8 @@ class BulletinPromptRunService
 
         [$body, $parsedResponseUsed] = $this->bodyFromParsedItems($items);
         if ($body === '') {
-            $body = trim((string) ($parsed['body'] ?? $response));
+            $body = trim((string) ($parsed['raw'] ?? $parsed['body'] ?? $response));
+            $parsedResponseUsed = false;
         }
 
         $sourceHints = collect($items)
@@ -133,15 +136,20 @@ class BulletinPromptRunService
                 'parsed_response_used' => $parsedResponseUsed,
                 'news_item_count' => count($items),
                 'source_hints' => $sourceHints,
+                'parser_warnings' => is_array($parsed['warnings'] ?? null) ? $parsed['warnings'] : [],
                 'notes' => $notes !== '' ? $notes : null,
                 'parsed_response' => $parsed,
             ],
         ]);
 
+        $nextStatus = in_array((string) $run->status, ['archived', 'completed'], true)
+            ? (string) $run->status
+            : 'script_created';
+
         $run->update([
             'script_id' => $script->id,
             'script_created_at' => now(),
-            'status' => 'script_created',
+            'status' => $nextStatus,
         ]);
 
         return $script;

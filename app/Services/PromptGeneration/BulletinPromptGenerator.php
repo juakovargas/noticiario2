@@ -132,6 +132,7 @@ class BulletinPromptGenerator
                 '- Escribe SCRIPT en el idioma final del boletín.',
                 '- No uses tablas Markdown.',
                 '- Mantén los encabezados exactamente como se solicitaron.',
+                '- Incluye al menos una pista de fuente por noticia cuando sea posible.',
             ]);
         }
 
@@ -226,6 +227,7 @@ class BulletinPromptGenerator
                 '- Write SCRIPT in the final bulletin language.',
                 '- Do not use Markdown tables.',
                 '- Keep headings exactly as requested.',
+                '- Include at least one source hint per news item when possible.',
             ]);
         }
 

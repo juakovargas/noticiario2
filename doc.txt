@@ -1174,3 +1174,61 @@ Current next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+BULLETIN RESPONSE PARSING AND SCRIPT CREATION
+
+Expected external AI response format (canonical headings for parser stability):
+- TITLE
+- INTRO
+- NEWS ITEMS
+- HEADLINE
+- SUMMARY
+- SCRIPT
+- EDITORIAL ANGLE
+- SOURCE HINTS
+- OUTRO
+- NOTES
+
+Key behavior:
+- SCRIPT blocks are the narration source for final Script.body.
+- SUMMARY is editorial support and is not used as final narration unless SCRIPT blocks are unavailable.
+- Processed preview now shows parsed bulletin title, intro, each item (headline/summary/script/editorial angle/source hints), outro, notes, and parser warnings.
+- Save AI Response action is placed directly with the response textarea to speed up manual paste/processing workflow.
+
+parsed_response JSON structure (saved on bulletin_prompt_runs.parsed_response):
+- title: string|null
+- intro: string|null
+- items: [{headline, summary, script, editorial_angle, source_hints[], raw}]
+- outro: string|null
+- notes: string|null
+- warnings: string[]
+- raw: string
+- body: string (compatibility helper; script body fallback)
+
+Fallback behavior:
+- If no structured sections are detected, parser returns warning unstructured_response and keeps full raw response.
+- Script creation falls back to full ai_response_text/raw response when no SCRIPT blocks are available.
+- Existing scripts are never overwritten by updating the response or re-triggering script creation.
+
+Parser warnings currently used:
+- missing_title
+- missing_intro
+- no_script_blocks
+- missing_sources
+- unstructured_response
+
+Source hints:
+- Source hints are displayed in preview and URL hints are clickable.
+- Verification-related hints (needs verification / requiere verificación / weak / fuente débil) are visually marked.
+- Source hints are displayed but not automatically verified in this branch.
+
+Optional next extension:
+- Create News Items from parsed response can be added safely as a follow-up step with duplicate protection keyed by run/headline.
+
+Updated next priorities:
+1. Manually test response parsing with external AI outputs.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

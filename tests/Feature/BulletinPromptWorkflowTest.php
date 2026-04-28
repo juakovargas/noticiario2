@@ -176,6 +176,90 @@ class BulletinPromptWorkflowTest extends TestCase
         $this->assertSame($text, $script->body);
         $this->assertFalse((bool) data_get($script->metadata, 'parsed_response_used'));
     }
+
+    #[Test]
+    public function existing_script_is_not_overwritten_when_creating_again_or_updating_response(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+
+        $type = BulletinType::query()->create([
+            'name' => 'No Overwrite Type',
+            'slug' => 'no-overwrite-type',
+            'default_timezone' => 'UTC',
+            'prompt_language' => 'en',
+        ]);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertRedirect();
+        $run = BulletinPromptRun::query()->latest('id')->firstOrFail();
+
+        $firstResponse = "TITLE:
+Demo
+
+INTRO:
+Intro
+
+NEWS ITEMS:
+HEADLINE:
+One
+SUMMARY:
+S
+SCRIPT:
+First script body
+
+OUTRO:
+O";
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => $firstResponse])->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertRedirect();
+
+        $run->refresh();
+        $script = Script::query()->findOrFail($run->script_id);
+        $this->assertStringContainsString('First script body', (string) $script->body);
+
+        $secondResponse = "TITLE:
+Demo
+
+INTRO:
+Intro
+
+NEWS ITEMS:
+HEADLINE:
+Two
+SUMMARY:
+S
+SCRIPT:
+Second script body
+
+OUTRO:
+O";
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => $secondResponse])->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertRedirect();
+
+        $this->assertSame($script->id, $run->fresh()->script_id);
+        $this->assertStringContainsString('First script body', (string) $script->fresh()->body);
+        $this->assertStringNotContainsString('Second script body', (string) $script->fresh()->body);
+    }
+
+    #[Test]
+    public function viewer_cannot_save_ai_response_or_create_script(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $viewer = $this->createUserWithPermissions(['viewer.access']);
+
+        $type = BulletinType::query()->create([
+            'name' => 'Permissions Type',
+            'slug' => 'permissions-type',
+            'default_timezone' => 'UTC',
+            'prompt_language' => 'en',
+        ]);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertRedirect();
+        $run = BulletinPromptRun::query()->latest('id')->firstOrFail();
+
+        $this->actingAs($viewer)->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => 'TITLE:
+No'])->assertForbidden();
+        $this->actingAs($viewer)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertForbidden();
+    }
+
     #[Test]
     public function bulletin_prompt_seed_data_is_idempotent(): void
     {

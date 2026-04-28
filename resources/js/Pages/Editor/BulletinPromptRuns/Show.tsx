@@ -37,12 +37,14 @@ const warningLabels: Record<string, string> = {
     unstructured_response: 'Unstructured response',
 };
 
-function hasUrl(value: string): boolean {
-    return /^https?:\/\//i.test(value.trim());
+function extractUrl(value: string): string | null {
+    const match = value.match(/https?:\/\/\S+/i);
+
+    return match?.[0] ?? null;
 }
 
 function needsVerification(value: string): boolean {
-    return /needs verification|requiere verificación/i.test(value);
+    return /needs verification|requiere verificación|weak|fuente débil/i.test(value);
 }
 
 export default function Show({ run, promptContext }: any): JSX.Element {
@@ -72,12 +74,6 @@ export default function Show({ run, promptContext }: any): JSX.Element {
             <div className="mb-4 flex flex-wrap gap-2">
                 <Button disabled={run.status === 'archived'} onClick={() => router.post(route('editor.bulletin-prompt-runs.generate-prompt', run.id))}>{t('Generate Prompt')}</Button>
                 <Button variant="secondary" onClick={copyPrompt}>{t('Copy Prompt')}</Button>
-                <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.create-script', run.id))}>{t('Create Script')}</Button>
-                {run.script_id && (
-                    <Button asChild variant="ghost">
-                        <Link href={route('editor.scripts.show', run.script_id)}>{t('Open Script')}</Link>
-                    </Button>
-                )}
                 {run.status !== 'archived' ? (
                     <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.archive', run.id))}>{t('Archive')}</Button>
                 ) : (
@@ -190,7 +186,7 @@ export default function Show({ run, promptContext }: any): JSX.Element {
                                             <ul className="ml-5 list-disc">
                                                 {item.source_hints?.map((hint, hintIndex) => (
                                                     <li key={hintIndex}>
-                                                        {hasUrl(hint) ? <a href={hint} className="text-cyan-700 underline" target="_blank" rel="noreferrer">{hint}</a> : hint}
+                                                        {extractUrl(hint) ? <a href={extractUrl(hint) as string} className="text-cyan-700 underline" target="_blank" rel="noreferrer">{hint}</a> : hint}
                                                         {needsVerification(hint) && <Badge className="ml-2" variant="danger">{t('Needs verification')}</Badge>}
                                                     </li>
                                                 ))}
@@ -207,6 +203,25 @@ export default function Show({ run, promptContext }: any): JSX.Element {
                             {t('No structured sections detected')}. {t('The full response will be used as the script body')}.
                         </div>
                     )}
+
+                    {parsed?.warnings?.includes('no_script_blocks') && (
+                        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{t('No script blocks detected')}. {t('The final script may use the full response fallback')}.</div>
+                    )}
+
+                    {parsed?.warnings?.includes('missing_sources') && (
+                        <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{t('No source hints provided')}.</div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                        {!run.script_id ? (
+                            <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.create-script', run.id))}>{t('Create Script')}</Button>
+                        ) : (
+                            <Button asChild variant="outline">
+                                <Link href={route('editor.scripts.show', run.script_id)}>{t('Open existing script')}</Link>
+                            </Button>
+                        )}
+                    </div>
+
 
                     <div>
                         <h4 className="font-medium">{t('Outro')}</h4>

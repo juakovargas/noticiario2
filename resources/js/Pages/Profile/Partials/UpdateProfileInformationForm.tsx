@@ -42,6 +42,7 @@ export default function UpdateProfileInformation({
         timezone: user.timezone ?? '',
         date_format: user.date_format ?? 'locale_default',
         time_format: user.time_format ?? '24h',
+        appearance: user.appearance ?? 'system',
         profile_image: null as File | null,
         remove_avatar: false,
     });
@@ -100,6 +101,15 @@ export default function UpdateProfileInformation({
                         <select id="date_format" className="mt-1 block w-full rounded-md border-gray-300" value={data.date_format} onChange={(e) => setData('date_format', e.target.value)}>
                             {dateFormatOptions.map((option) => <option key={option} value={option}>{t(option === 'locale_default' ? 'Locale default' : option)}</option>)}
                         </select>
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="appearance" value={t('Appearance')} />
+                        <select id="appearance" className="mt-1 block w-full rounded-md border-gray-300" value={data.appearance} onChange={(e) => setData('appearance', e.target.value)}>
+                            <option value="light">{t('Light mode')}</option>
+                            <option value="dark">{t('Dark mode')}</option>
+                            <option value="system">{t('Use system setting')}</option>
+                        </select>
+                        <InputError className="mt-2" message={errors.appearance} />
                     </div>
                     <div>
                         <InputLabel htmlFor="time_format" value={t('Time format')} />

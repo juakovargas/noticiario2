@@ -20,7 +20,7 @@ export default function Edit({ mustVerifyEmail, status, locales, dateFormatOptio
             <Head title="Profile" />
 
             <div className="mx-auto max-w-4xl space-y-6">
-                <div className="rounded-lg bg-white p-4 shadow sm:p-8">
+                <div className="rounded-lg bg-white p-4 shadow dark:bg-slate-900 sm:p-8">
                     <UpdateProfileInformationForm
                         mustVerifyEmail={mustVerifyEmail}
                         status={status}
@@ -32,11 +32,11 @@ export default function Edit({ mustVerifyEmail, status, locales, dateFormatOptio
                     />
                 </div>
 
-                <div className="rounded-lg bg-white p-4 shadow sm:p-8">
+                <div className="rounded-lg bg-white p-4 shadow dark:bg-slate-900 sm:p-8">
                     <UpdatePasswordForm className="max-w-xl" />
                 </div>
 
-                <div className="rounded-lg bg-white p-4 shadow sm:p-8">
+                <div className="rounded-lg bg-white p-4 shadow dark:bg-slate-900 sm:p-8">
                     <DeleteUserForm className="max-w-xl" />
                 </div>
             </div>

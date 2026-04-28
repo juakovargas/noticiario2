@@ -1,5 +1,6 @@
 import FlashMessage from '@/Components/FlashMessage';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
@@ -91,15 +92,21 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 routeName: 'admin.seo-settings.*',
                 icon: <ChartNoAxesCombined className="h-4 w-4" />,
             },
+            {
+                label: t('Home Page'),
+                href: route('admin.home-page-settings.index'),
+                routeName: 'admin.home-page-settings.*',
+                icon: <Globe className="h-4 w-4" />,
+            },
         ],
         [t],
     );
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#fef3c7,_transparent_50%),linear-gradient(140deg,_#f8fafc_20%,_#e2e8f0_100%)] text-slate-800">
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#fef3c7,_transparent_50%),linear-gradient(140deg,_#f8fafc_20%,_#e2e8f0_100%)] text-slate-800 dark:bg-slate-950 dark:text-slate-100">
             <div className="mx-auto flex min-h-screen max-w-7xl">
                 <aside
-                    className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-slate-200/70 bg-white/90 px-5 py-6 shadow-xl backdrop-blur transition-transform md:static md:translate-x-0 md:shadow-none ${
+                    className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-slate-200/70 bg-white/90 px-5 py-6 shadow-xl backdrop-blur transition-transform dark:border-slate-800 dark:bg-slate-900/95 md:static md:translate-x-0 md:shadow-none ${
                         open ? 'translate-x-0' : '-translate-x-full'
                     }`}
                 >
@@ -135,7 +142,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 </aside>
 
                 <div className="flex w-full flex-1 flex-col">
-                    <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/70 backdrop-blur">
+                    <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/70 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
                         <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-8">
                             <button
                                 className="inline-flex items-center justify-center rounded-md border border-slate-300 p-2 md:hidden"
@@ -154,6 +161,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
 
                             <div className="ml-auto flex items-center gap-2">
                                 <LanguageSwitcher />
+                                <ThemeSwitcher />
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={route('profile.edit', { panel: 'admin' })}>{t('Preferences')}</Link>
                                 </Button>

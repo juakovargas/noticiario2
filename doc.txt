@@ -1490,3 +1490,43 @@ Updated current next priorities:
 4. Add AI logs/cost control.
 5. Add automatic schedule execution.
 6. Add audio/video foundation.
+
+USER THEME AND CONFIGURABLE PUBLIC HOME
+
+Implemented in this branch:
+- Added users.appearance field (nullable string, max 20) with allowed values:
+  - light
+  - dark
+  - system
+- Added ThemeSwitcher component (resources/js/Components/ThemeSwitcher.tsx).
+- Theme uses Tailwind dark mode class strategy (darkMode: 'class').
+- Appearance preference is saved per authenticated user via PATCH /preferences/appearance.
+- Shared Inertia auth.user now includes appearance.
+- Added home_page_settings table with locale-aware, configurable public home content fields.
+- Added Admin > Home Page Settings module (CRUD):
+  - /admin/home-page-settings
+  - create/edit/update/store routes and pages
+- Replaced default public landing with Inertia public home page powered by HomeController and Home settings.
+- Public home now displays latest noticiarios only when ready/completed/published and excludes archived items.
+- Public home includes supported platforms section for social/video destinations.
+
+Current limitations after this branch:
+- No real publication URLs yet unless future publishing module persists final links.
+- No public advanced search yet.
+- No public map filtering yet.
+
+Current project status confirmations:
+- Implemented modules include admin/editor/viewer panels, user preferences, avatars/media, world map, SEO settings, editorial schedules/runs, manual fact-check workflow, source references.
+- Source verification workflow exists in manual/editorial mode (not fully automated fact-checking).
+- Real AI provider integration exists as infrastructure (providers/clients/logs) with guarded/manual workflows.
+- Translation coverage/audit is ongoing and should continue each branch.
+- Production metadata exists on scripts (production_status, ready_for_production, publication prep fields).
+
+Updated roadmap after this branch:
+1. Keep translations updated in every branch.
+2. Continue source verification workflow if not completed.
+3. Add real AI provider integration if not completed in production mode.
+4. Add AI logs/cost control improvements.
+5. Add automatic schedule execution.
+6. Add audio/video foundation.
+7. Add publishing foundation.

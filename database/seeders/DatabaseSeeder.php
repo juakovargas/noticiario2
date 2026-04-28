@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             LanguageSeeder::class,
             SeoSettingSeeder::class,
             AiProviderSeeder::class,
+            HomePageSettingSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

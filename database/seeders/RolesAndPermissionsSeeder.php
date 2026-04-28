@@ -32,6 +32,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'editor.dashboard.view',
             'viewer.access',
             'viewer.dashboard.view',
+            'home-page.manage',
         ];
 
         foreach ($permissions as $permissionName) {
@@ -67,6 +68,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'permissions.create',
             'permissions.update',
             'permissions.delete',
+            'home-page.manage',
         ]);
         $editorRole->syncPermissions([
             'editor.access',

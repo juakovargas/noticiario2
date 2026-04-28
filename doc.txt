@@ -267,3 +267,17 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 5. feature/audio-production-foundation
 6. feature/video-production-foundation
 7. feature/publishing-foundation
+
+## 10. LARAVEL VERSION (CURRENT STATUS)
+
+- Current framework: Laravel 12 (upgrade to Laravel 13 not completed in this environment).
+- PHP requirement in composer.json: ^8.2 (target for Laravel 13 branch remains PHP 8.3+).
+- Local PHP version in this execution environment: PHP 8.5.3-dev.
+- Upgrade command attempted: `composer require laravel/framework:^13.0 laravel/tinker:^3.0 --update-with-all-dependencies`.
+- Blocking issue: Composer could not reach Packagist (proxy/network failure), so dependency updates and lockfile changes could not be applied.
+- Current custom AI provider integration remains active and unchanged.
+- Laravel AI SDK is still deferred for a future branch: `feature/laravel-ai-sdk-evaluation`.
+
+Current branch note:
+- `feature/upgrade-laravel-13` has baseline checks and compatibility review progress, but framework upgrade is pending a network-enabled Composer environment.
+

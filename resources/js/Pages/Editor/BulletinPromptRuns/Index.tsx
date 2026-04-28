@@ -20,6 +20,7 @@ interface Item {
     generated_prompt: string | null;
     ai_response_text: string | null;
     script_id: number | null;
+    parsed_response?: { warnings?: string[] } | null;
     bulletin_type?: { id: number; name: string } | null;
     prompt_profile?: { id: number; name: string } | null;
     created_by?: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
@@ -113,6 +114,7 @@ export default function Index({ runs, filters, statuses, bulletinTypes, promptPr
                     <th className="px-2 pb-3 text-left">{t('Prompt Profile')}</th>
                     <th className="px-2 pb-3 text-left">{t('Status')}</th>
                     <th className="px-2 pb-3 text-left">{t('Scheduled for')}</th>
+                    <th className="px-2 pb-3 text-left">{t('Response status')}</th>
                     <th className="px-2 pb-3 text-left">{t('Created by')}</th>
                     <th className="px-2 pb-3 text-left">{t('Updated at')}</th>
                     <th className="px-2 pb-3 text-right">{t('Actions')}</th>
@@ -123,6 +125,15 @@ export default function Index({ runs, filters, statuses, bulletinTypes, promptPr
                         <td className="px-2 py-3">{item.prompt_profile?.name ?? '-'}</td>
                         <td className="px-2 py-3"><StatusBadge status={item.status} /></td>
                         <td className="px-2 py-3">{formatDateTime(item.scheduled_for)}</td>
+                        <td className="px-2 py-3">
+                            <div className="space-y-1">
+                                <p>{item.ai_response_text ? t('Response saved') : t('No response')}</p>
+                                <p className="text-xs text-slate-500">{item.parsed_response ? t('Parsed response available') : t('No parsed response')}</p>
+                                {(item.parsed_response?.warnings?.length ?? 0) > 0 && (
+                                    <p className="text-xs text-amber-700">{t('Parser warnings')}: {item.parsed_response?.warnings?.length}</p>
+                                )}
+                            </div>
+                        </td>
                         <td className="px-2 py-3">{item.created_by ? <div className="flex items-center gap-2"><UserAvatar user={item.created_by} size="sm" /><span>{item.created_by.name}</span></div> : '-'}</td>
                         <td className="px-2 py-3">{formatDateTime(item.updated_at)}</td>
                         <td className="px-2 py-3 text-right"><div className="flex flex-wrap justify-end gap-2">
@@ -134,7 +145,7 @@ export default function Index({ runs, filters, statuses, bulletinTypes, promptPr
                             {['response_received', 'script_created'].includes(item.status) && <Button size="sm" variant="outline" onClick={() => postAction('mark-completed', item.id)}>{t('Mark completed')}</Button>}
                             {['draft', 'prompt_ready'].includes(item.status) && !item.script_id && <Button size="sm" variant="outline" onClick={() => postAction('cancel', item.id)}>{t('Cancel')}</Button>}
                         </div></td>
-                    </tr>) : <tr><td colSpan={8} className="px-2 py-6 text-center">{Boolean(form.only_archived) ? t('No archived records found') : t('No prompt runs found')}</td></tr>}
+                    </tr>) : <tr><td colSpan={9} className="px-2 py-6 text-center">{Boolean(form.only_archived) ? t('No archived records found') : t('No prompt runs found')}</td></tr>}
                 </tbody></table><Pagination links={runs.links} />
             </CardContent>
         </Card>

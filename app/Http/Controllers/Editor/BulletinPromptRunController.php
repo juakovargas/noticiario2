@@ -198,11 +198,20 @@ class BulletinPromptRunController extends Controller
 
         $this->service->saveResponse($bulletinPromptRun, $data['response_text']);
 
-        return back()->with('success', 'AI response saved successfully.');
+        $message = $bulletinPromptRun->script_id
+            ? 'Response processed successfully. Existing script will not be overwritten.'
+            : 'Response processed successfully.';
+
+        return back()->with('success', $message);
     }
 
     public function createScript(BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
+        if ($bulletinPromptRun->script_id) {
+            return to_route('editor.scripts.show', $bulletinPromptRun->script_id)
+                ->with('success', 'Open existing script. Existing script will not be overwritten.');
+        }
+
         $script = $this->service->createScript($bulletinPromptRun);
 
         return to_route('editor.scripts.show', $script)->with('success', 'Script created from prompt run.');

@@ -199,6 +199,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('editorial-templates', EditorialTemplateController::class);
         Route::resource('ai-prompt-templates', AiPromptTemplateController::class);
         Route::resource('editorial-requests', EditorialRequestController::class);
+        Route::post('/editorial-requests/{editorialRequest}/archive', [EditorialRequestController::class, 'archive'])->name('editorial-requests.archive');
+        Route::post('/editorial-requests/{editorialRequest}/restore', [EditorialRequestController::class, 'restore'])->name('editorial-requests.restore');
         Route::post('/editorial-requests/{editorialRequest}/run', [EditorialRequestController::class, 'run'])->name('editorial-requests.run');
         Route::post('/editorial-requests/{editorialRequest}/create-news-items', [EditorialRequestController::class, 'createNewsItems'])->name('editorial-requests.create-news-items');
         Route::post('/editorial-requests/{editorialRequest}/convert-to-edition', [EditorialRequestController::class, 'convertToEdition'])->name('editorial-requests.convert-to-edition');
@@ -216,11 +218,15 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/mark-completed', [BulletinPromptRunController::class, 'markCompleted'])->name('bulletin-prompt-runs.mark-completed');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/cancel', [BulletinPromptRunController::class, 'cancel'])->name('bulletin-prompt-runs.cancel');
         Route::resource('editorial-schedule-runs', EditorialScheduleRunController::class)->only(['index', 'show']);
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/archive', [EditorialScheduleRunController::class, 'archive'])->name('editorial-schedule-runs.archive');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/restore', [EditorialScheduleRunController::class, 'restore'])->name('editorial-schedule-runs.restore');
         Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/receive-response', [EditorialScheduleRunController::class, 'receiveResponse'])->name('editorial-schedule-runs.receive-response');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/create-script', [EditorialScheduleRunController::class, 'createScript'])->name('editorial-schedule-runs.create-script');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/complete', [EditorialScheduleRunController::class, 'complete'])->name('editorial-schedule-runs.complete');
+        Route::post('/source-references/{sourceReference}/archive', [SourceReferenceController::class, 'archive'])->name('source-references.archive');
+        Route::post('/source-references/{sourceReference}/restore', [SourceReferenceController::class, 'restore'])->name('source-references.restore');
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])

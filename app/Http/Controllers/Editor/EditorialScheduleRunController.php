@@ -19,20 +19,36 @@ class EditorialScheduleRunController extends Controller
 
     public function index(Request $request): Response
     {
+        $filters = [
+            'search' => (string) $request->query('search', ''),
+            'status' => (string) $request->query('status', ''),
+            'schedule_id' => (string) $request->query('schedule_id', ''),
+            'scheduled_from' => (string) $request->query('scheduled_from', ''),
+            'scheduled_to' => (string) $request->query('scheduled_to', ''),
+            'show_archived' => $request->boolean('show_archived'),
+            'only_archived' => $request->boolean('only_archived'),
+        ];
+
         $query = EditorialScheduleRun::query()->with([
             'schedule:id,name,edition_type,frequency_type',
             'edition:id,title,language,scheduled_for',
             'script:id,title,status',
         ]);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
-        }
+        $query
+            ->when($filters['search'] !== '', fn ($q) => $q->whereHas('schedule', fn ($sq) => $sq->where('name', 'like', '%'.$filters['search'].'%')))
+            ->when($filters['status'] !== '', fn ($q) => $q->where('status', $filters['status']))
+            ->when($filters['schedule_id'] !== '', fn ($q) => $q->where('editorial_schedule_id', $filters['schedule_id']))
+            ->when($filters['scheduled_from'] !== '', fn ($q) => $q->whereDate('scheduled_for', '>=', $filters['scheduled_from']))
+            ->when($filters['scheduled_to'] !== '', fn ($q) => $q->whereDate('scheduled_for', '<=', $filters['scheduled_to']))
+            ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn ($q) => $q->where('status', '!=', 'archived'))
+            ->when($filters['only_archived'], fn ($q) => $q->where('status', 'archived'));
 
         return Inertia::render('Editor/EditorialScheduleRuns/Index', [
             'runs' => $query->latest()->paginate(20)->withQueryString(),
-            'filters' => $request->only('status'),
-            'statuses' => ['pending', 'prompt_ready', 'waiting_ai_response', 'response_received', 'script_created', 'completed', 'failed', 'cancelled'],
+            'filters' => $filters,
+            'statuses' => ['pending', 'prompt_ready', 'waiting_ai_response', 'response_received', 'script_created', 'completed', 'failed', 'cancelled', 'archived'],
+            'schedules' => EditorialSchedule::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -81,5 +97,26 @@ class EditorialScheduleRunController extends Controller
         ]);
 
         return back()->with('success', 'Run marked as completed.');
+    }
+
+    public function archive(EditorialScheduleRun $editorialScheduleRun): RedirectResponse
+    {
+        if ($editorialScheduleRun->status !== 'archived') {
+            $metadata = is_array($editorialScheduleRun->metadata) ? $editorialScheduleRun->metadata : [];
+            $metadata['previous_status'] = $editorialScheduleRun->status;
+            $editorialScheduleRun->update(['status' => 'archived', 'metadata' => $metadata]);
+        }
+
+        return back()->with('success', 'Run archived successfully.');
+    }
+
+    public function restore(EditorialScheduleRun $editorialScheduleRun): RedirectResponse
+    {
+        $metadata = is_array($editorialScheduleRun->metadata) ? $editorialScheduleRun->metadata : [];
+        $previousStatus = (string) ($metadata['previous_status'] ?? '');
+        $restored = $previousStatus !== '' && $previousStatus !== 'archived' ? $previousStatus : 'pending';
+        $editorialScheduleRun->update(['status' => $restored]);
+
+        return back()->with('success', 'Run restored successfully.');
     }
 }

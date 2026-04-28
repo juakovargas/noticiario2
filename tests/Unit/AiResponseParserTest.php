@@ -21,13 +21,28 @@ class AiResponseParserTest extends TestCase
         $this->assertSame('Verify last data point.', $parsed['notes']);
         $this->assertCount(1, $parsed['items']);
         $this->assertSame('Energy prices cool', $parsed['items'][0]['headline']);
+        $this->assertSame('Presenter script line.', $parsed['items'][0]['script']);
         $this->assertSame(['Reuters', 'https://example.com/source'], $parsed['items'][0]['source_hints']);
+        $this->assertNotContains('missing_sources', $parsed['warnings']);
+    }
+
+    #[Test]
+    public function it_parses_concrete_sample_with_four_news_items(): void
+    {
+        $text = "TITLE:\nBoletín\n\nINTRO:\nArrancamos.\n\nNEWS ITEMS:\n1. HEADLINE:\nUno\nSUMMARY:\nS1\nSCRIPT:\nTexto de guion 1\nSOURCE HINTS:\n- https://one.test\n\n2. HEADLINE:\nDos\nSUMMARY:\nS2\nSCRIPT:\nTexto de guion 2\nSOURCE HINTS:\n- EFE\n\nHEADLINE:\nTres\nSUMMARY:\nS3\nSCRIPT:\nTexto de guion 3\nSOURCE HINTS:\n- requiere verificación\n\nHEADLINE:\nCuatro\nSUMMARY:\nS4\nSCRIPT:\nTexto de guion 4\n\nOUTRO:\nCierre\n\nNOTES:\nNota final";
+
+        $parsed = (new AiResponseParser())->parse($text);
+
+        $this->assertCount(4, $parsed['items']);
+        $this->assertSame('Texto de guion 1', $parsed['items'][0]['script']);
+        $this->assertSame('Texto de guion 4', $parsed['items'][3]['script']);
+        $this->assertContains('missing_sources', $parsed['warnings']);
     }
 
     #[Test]
     public function it_parses_spanish_labels(): void
     {
-        $text = "TÍTULO:\nResumen de la tarde\n\nENTRADILLA:\nEstas son las noticias clave.\n\nNOTICIAS:\n1. TITULAR:\nSube el empleo\n\nRESUMEN:\nMejora del mercado laboral.\n\nGUION:\nGuion para presentador.\n\nENFOQUE EDITORIAL:\nImpacto social inmediato.\n\nFUENTES:\n- El País\n\nCIERRE:\nHasta aquí el boletín.\n\nNOTAS:\nPendiente confirmar cifra regional.";
+        $text = "TITULO:\nResumen de la tarde\n\nINTRODUCCION:\nEstas son las noticias clave.\n\nNOTICIAS:\n1. TITULAR:\nSube el empleo\n\nRESUMEN:\nMejora del mercado laboral.\n\nGUIÓN:\nGuion para presentador.\n\nENFOQUE EDITORIAL:\nImpacto social inmediato.\n\nPISTAS DE FUENTES:\n- El País\n\nCIERRE:\nHasta aquí el boletín.\n\nNOTAS:\nPendiente confirmar cifra regional.";
 
         $parsed = (new AiResponseParser())->parse($text);
 
@@ -39,14 +54,15 @@ class AiResponseParserTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_missing_sections_gracefully(): void
+    public function it_handles_missing_source_hints(): void
     {
-        $parsed = (new AiResponseParser())->parse("TITLE:\nQuick title");
+        $text = "TITLE:\nBrief\n\nINTRO:\nI\n\nNEWS ITEMS:\nHEADLINE:\nOnly\nSUMMARY:\nS\nSCRIPT:\nMain narration\n\nOUTRO:\nO";
 
-        $this->assertSame('Quick title', $parsed['title']);
-        $this->assertNull($parsed['intro']);
-        $this->assertNull($parsed['outro']);
-        $this->assertSame([], $parsed['items']);
+        $parsed = (new AiResponseParser())->parse($text);
+
+        $this->assertCount(1, $parsed['items']);
+        $this->assertSame([], $parsed['items'][0]['source_hints']);
+        $this->assertContains('missing_sources', $parsed['warnings']);
     }
 
     #[Test]
@@ -60,19 +76,6 @@ class AiResponseParserTest extends TestCase
         $this->assertNull($parsed['outro']);
         $this->assertSame($text, $parsed['body']);
         $this->assertSame([], $parsed['items']);
-    }
-
-    #[Test]
-    public function it_extracts_multiple_news_items(): void
-    {
-        $text = "TITLE:\nBulletin\n\nNEWS ITEMS:\n1. HEADLINE:\nFirst\n\nSUMMARY:\nOne\n\nSCRIPT:\nScript one\n\nSOURCE HINTS:\n- https://a.test\n\n2. HEADLINE:\nSecond\n\nSUMMARY:\nTwo\n\nSCRIPT:\nScript two\n\nSOURCE HINTS:\n- BBC\n\nOUTRO:\nEnd";
-
-        $parsed = (new AiResponseParser())->parse($text);
-
-        $this->assertCount(2, $parsed['items']);
-        $this->assertSame('First', $parsed['items'][0]['headline']);
-        $this->assertSame('Second', $parsed['items'][1]['headline']);
-        $this->assertSame(['https://a.test'], $parsed['items'][0]['source_hints']);
-        $this->assertSame(['BBC'], $parsed['items'][1]['source_hints']);
+        $this->assertContains('unstructured_response', $parsed['warnings']);
     }
 }

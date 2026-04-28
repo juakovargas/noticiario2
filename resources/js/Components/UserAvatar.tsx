@@ -5,6 +5,7 @@ type AvatarUser = {
     avatar_url?: string | null;
     avatarUrl?: string | null;
     initials?: string | null;
+    profile_image_id?: number | string | null;
 };
 
 interface UserAvatarProps {
@@ -21,16 +22,27 @@ const sizeClass: Record<NonNullable<UserAvatarProps['size']>, string> = {
     xl: 'h-24 w-24 text-2xl',
 };
 
+function getAvatarSrc(user?: AvatarUser | null): string | null {
+    const src = user?.avatar_url || user?.avatarUrl || null;
+
+    if (!src || src.trim() === '') {
+        return null;
+    }
+
+    return src;
+}
+
 export default function UserAvatar({ user, size = 'sm', className = '' }: UserAvatarProps): JSX.Element {
+    const avatarSrc = getAvatarSrc(user);
+    const cacheKey = user?.profile_image_id ?? 'no-image';
     const [imageFailed, setImageFailed] = useState(false);
-    const avatarSrc = user?.avatar_url ?? user?.avatarUrl ?? null;
 
     useEffect(() => {
         setImageFailed(false);
-    }, [avatarSrc]);
+    }, [avatarSrc, cacheKey]);
 
     const fallback = useMemo(() => {
-        if (user?.initials) {
+        if (user?.initials && user.initials.trim() !== '') {
             return user.initials.toUpperCase();
         }
 
@@ -46,10 +58,15 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
     if (avatarSrc && !imageFailed) {
         return (
             <img
+                key={`${avatarSrc}-${cacheKey}`}
                 src={avatarSrc}
                 alt={`${user?.name ?? 'User'} avatar`}
+                title={avatarSrc}
                 className={`${sizeClass[size]} rounded-full object-cover ${className}`}
-                onError={() => setImageFailed(true)}
+                onError={() => {
+                    console.error('UserAvatar image failed:', avatarSrc, user);
+                    setImageFailed(true);
+                }}
             />
         );
     }
@@ -57,6 +74,7 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
     return (
         <span
             aria-label="Avatar"
+            title={avatarSrc ?? fallback}
             className={`${sizeClass[size]} inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 ${className}`}
         >
             {fallback}

@@ -11,11 +11,6 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
     public function version(Request $request): ?string
@@ -25,9 +20,20 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $user = $request->user()?->loadMissing('profileImage');
+        $authUser = $request->user();
+
+        $user = $authUser
+            ? User::query()
+                ->with('profileImage')
+                ->whereKey($authUser->id)
+                ->first()
+            : null;
+
         $impersonatorId = $request->session()->get('impersonator_id');
-        $impersonator = $impersonatorId ? User::query()->find($impersonatorId) : null;
+
+        $impersonator = $impersonatorId
+            ? User::query()->find($impersonatorId)
+            : null;
 
         $availableLocales = [
             ['code' => 'en', 'name' => 'English', 'native_name' => 'English', 'flag_emoji' => '🇬🇧'],
@@ -56,36 +62,51 @@ class HandleInertiaRequests extends Middleware
 
         $seoProps = app(SeoSettingsResolver::class)->safeSeoProps();
 
+        $avatarUrl = $user?->avatar_url;
+
         return [
             ...parent::share($request),
+
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'roles' => $user->getRoleNames(),
-                    'permissions' => $user->getAllPermissions()->pluck('name'),
+                    'roles' => $user->getRoleNames()->values(),
+                    'permissions' => $user->getAllPermissions()->pluck('name')->values(),
                     'preferred_locale' => $user->preferred_locale,
                     'timezone' => $user->timezone,
                     'date_format' => $user->date_format,
                     'time_format' => $user->time_format,
-                    'avatar_url' => $user->avatar_url,
-                    'avatarUrl' => $user->avatar_url,
+                    'avatar_path' => $user->avatar_path,
+                    'avatar_url' => $avatarUrl,
+                    'avatarUrl' => $avatarUrl,
                     'initials' => $user->initials,
                     'profile_image_id' => $user->profile_image_id,
+                    'profile_image' => $user->profileImage ? [
+                        'id' => $user->profileImage->id,
+                        'disk' => $user->profileImage->disk,
+                        'path' => $user->profileImage->path,
+                        'url' => $user->profileImage->url,
+                        'public_url' => $user->profileImage->public_url,
+                    ] : null,
                 ] : null,
             ],
+
             'impersonation' => [
                 'active' => (bool) $impersonatorId,
                 'impersonator_id' => $impersonatorId,
                 'impersonator_name' => $impersonator?->name,
                 'current_user_name' => $user?->name,
             ],
+
             'i18n' => [
                 'locale' => app()->getLocale(),
                 'availableLocales' => $availableLocales,
             ],
+
             'seo' => $seoProps,
+
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

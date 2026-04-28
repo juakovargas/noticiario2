@@ -39,6 +39,10 @@ class MediaFile extends Model
         'metadata',
     ];
 
+    protected $appends = [
+        'public_url',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -63,6 +67,10 @@ class MediaFile extends Model
 
         if (! filled($this->disk) || ! filled($this->path)) {
             return null;
+        }
+
+        if ($this->disk === 'public') {
+            return asset(Storage::disk('public')->url($this->path));
         }
 
         return Storage::disk($this->disk)->url($this->path);

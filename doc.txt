@@ -1080,3 +1080,33 @@ Updated next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+ARCHIVING, STATUS MANAGEMENT AND LIST HYGIENE
+
+- Archived operational records are hidden by default from working lists.
+- Archive actions do not delete records and do not hard-delete workflow data.
+- Bulletin Prompt Runs now support status actions from list/show:
+  - archive -> status=archived
+  - restore -> recalculates status (draft, prompt_ready, response_received, script_created)
+  - mark completed -> status=completed
+  - cancel -> status=cancelled (only when no script exists)
+- Bulletin Prompt Runs index now includes filters for:
+  - search, status, bulletin type, prompt profile, creator, scheduled range
+  - show archived and only archived
+  - sortable list direction
+- Working list pattern:
+  - default: hide archived
+  - optional: show archived
+  - optional: only archived
+- Raw numeric IDs should not be the primary visible label in editorial lists.
+- Editor dashboard active counters now exclude archived prompt runs/scripts/editions.
+- Configuration entities should continue to use is_active as availability toggle (not archive semantics).
+- Operational entities should prefer status=archived when status-based workflow already exists.
+
+Updated next priorities:
+1. Continue improving pasted AI response parsing.
+2. Continue source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

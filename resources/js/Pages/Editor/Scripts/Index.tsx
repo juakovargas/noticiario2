@@ -38,6 +38,7 @@ const initialFilters = {
     approved: '',
     sort: 'created_at',
     direction: 'desc',
+    show_archived: '',
 };
 
 export default function Index({ scripts, filters, statuses, editions, languages }: Props): JSX.Element {
@@ -121,6 +122,8 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                             <option value="desc">{t('Descending')}</option>
                             <option value="asc">{t('Ascending')}</option>
                         </select>
+
+                        <label className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm"><input type="checkbox" checked={form.show_archived === '1'} onChange={(e) => setForm((prev) => ({ ...prev, show_archived: e.target.checked ? '1' : '' }))} /> {t('Show archived')}</label>
 
                         <div className="flex gap-2 lg:col-span-4">
                             <Button type="submit">{t('Apply filters')}</Button>

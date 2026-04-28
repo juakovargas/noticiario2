@@ -40,6 +40,7 @@ class EditionController extends Controller
             'scheduled_to' => (string) $request->query('scheduled_to', ''),
             'sort' => (string) $request->query('sort', 'scheduled_for'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'edition_type', 'scheduled_for', 'target_duration_seconds', 'created_at'];
@@ -118,6 +119,7 @@ class EditionController extends Controller
         $edition->load([
             'location:id,name,country_code',
             'newsItems' => fn ($query) => $query
+                ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
                 ->with(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code'])
                 ->orderBy('edition_news_item.sort_order'),
             'scripts:id,edition_id,title,status,language,estimated_duration_seconds,approved_at,approved_by',

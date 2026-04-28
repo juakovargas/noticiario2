@@ -205,6 +205,10 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/archive', [BulletinPromptRunController::class, 'archive'])->name('bulletin-prompt-runs.archive');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/restore', [BulletinPromptRunController::class, 'restore'])->name('bulletin-prompt-runs.restore');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/mark-completed', [BulletinPromptRunController::class, 'markCompleted'])->name('bulletin-prompt-runs.mark-completed');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/cancel', [BulletinPromptRunController::class, 'cancel'])->name('bulletin-prompt-runs.cancel');
         Route::resource('editorial-schedule-runs', EditorialScheduleRunController::class)->only(['index', 'show']);
         Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');

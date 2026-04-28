@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Editor;
 use App\Http\Controllers\Controller;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
+use App\Models\PromptProfile;
+use App\Models\User;
 use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
 use App\Services\PromptGeneration\BulletinPromptRunService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,13 +23,62 @@ class BulletinPromptRunController extends Controller
     ) {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'search' => (string) $request->query('search', ''),
+            'status' => (string) $request->query('status', ''),
+            'bulletin_type_id' => (string) $request->query('bulletin_type_id', ''),
+            'prompt_profile_id' => (string) $request->query('prompt_profile_id', ''),
+            'created_by' => (string) $request->query('created_by', ''),
+            'scheduled_from' => (string) $request->query('scheduled_from', ''),
+            'scheduled_to' => (string) $request->query('scheduled_to', ''),
+            'show_archived' => $request->boolean('show_archived'),
+            'only_archived' => $request->boolean('only_archived'),
+            'sort' => (string) $request->query('sort', 'updated_at'),
+            'direction' => (string) $request->query('direction', 'desc'),
+        ];
+
+        $allowedSorts = ['updated_at', 'scheduled_for', 'created_at', 'title', 'status'];
+        $sort = in_array($filters['sort'], $allowedSorts, true) ? $filters['sort'] : 'updated_at';
+        $direction = in_array($filters['direction'], ['asc', 'desc'], true) ? $filters['direction'] : 'desc';
+
+        $query = BulletinPromptRun::query()
+            ->with([
+                'bulletinType:id,name',
+                'promptProfile:id,name',
+                'script:id,title,status',
+                'createdBy:id,name,email,profile_image_id',
+            ])
+            ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn (Builder $q) => $q->where('status', '!=', 'archived'))
+            ->when($filters['only_archived'], fn (Builder $q) => $q->where('status', 'archived'))
+            ->when($filters['search'] !== '', function (Builder $q) use ($filters): void {
+                $search = $filters['search'];
+
+                $q->where(function (Builder $sq) use ($search): void {
+                    $sq->where('title', 'like', "%{$search}%")
+                        ->orWhere('generated_prompt', 'like', "%{$search}%")
+                        ->orWhere('ai_response_text', 'like', "%{$search}%")
+                        ->orWhereHas('bulletinType', fn (Builder $bt) => $bt->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($filters['status'] !== '', fn (Builder $q) => $q->where('status', $filters['status']))
+            ->when($filters['bulletin_type_id'] !== '', fn (Builder $q) => $q->where('bulletin_type_id', $filters['bulletin_type_id']))
+            ->when($filters['prompt_profile_id'] !== '', fn (Builder $q) => $q->where('prompt_profile_id', $filters['prompt_profile_id']))
+            ->when($filters['created_by'] !== '', fn (Builder $q) => $q->where('created_by', $filters['created_by']))
+            ->when($filters['scheduled_from'] !== '', fn (Builder $q) => $q->whereDate('scheduled_for', '>=', $filters['scheduled_from']))
+            ->when($filters['scheduled_to'] !== '', fn (Builder $q) => $q->whereDate('scheduled_for', '<=', $filters['scheduled_to']))
+            ->orderByRaw($sort === 'scheduled_for' ? 'scheduled_for is null asc' : '0 asc')
+            ->orderBy($sort, $direction)
+            ->orderByDesc('updated_at');
+
         return Inertia::render('Editor/BulletinPromptRuns/Index', [
-            'runs' => BulletinPromptRun::query()
-                ->with(['bulletinType:id,name', 'promptProfile:id,name', 'script:id,title,status'])
-                ->latest()
-                ->paginate(20),
+            'runs' => $query->paginate(20)->withQueryString(),
+            'filters' => $filters,
+            'statuses' => ['draft', 'prompt_ready', 'waiting_ai_response', 'response_received', 'script_created', 'completed', 'cancelled', 'failed', 'archived'],
+            'bulletinTypes' => BulletinType::query()->orderBy('name')->get(['id', 'name']),
+            'promptProfiles' => PromptProfile::query()->orderBy('name')->get(['id', 'name']),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -39,6 +91,7 @@ class BulletinPromptRunController extends Controller
             'promptProfile:id,name',
             'edition:id,title',
             'script:id,title,status',
+            'createdBy:id,name,email,profile_image_id',
         ]);
 
         return Inertia::render('Editor/BulletinPromptRuns/Show', [
@@ -94,5 +147,47 @@ class BulletinPromptRunController extends Controller
         $script = $this->service->createScript($bulletinPromptRun);
 
         return to_route('editor.scripts.show', $script)->with('success', 'Script created from prompt run.');
+    }
+
+    public function archive(BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $bulletinPromptRun->update(['status' => 'archived']);
+
+        return back()->with('success', 'Prompt run archived successfully.');
+    }
+
+    public function restore(BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $status = 'draft';
+
+        if ($bulletinPromptRun->script_id) {
+            $status = 'script_created';
+        } elseif (filled($bulletinPromptRun->ai_response_text)) {
+            $status = 'response_received';
+        } elseif (filled($bulletinPromptRun->generated_prompt)) {
+            $status = 'prompt_ready';
+        }
+
+        $bulletinPromptRun->update(['status' => $status]);
+
+        return back()->with('success', 'Prompt run restored successfully.');
+    }
+
+    public function markCompleted(BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $bulletinPromptRun->update(['status' => 'completed']);
+
+        return back()->with('success', 'Prompt run marked as completed.');
+    }
+
+    public function cancel(BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        if ($bulletinPromptRun->script_id) {
+            return back()->with('error', 'Prompt run cannot be cancelled after script creation.');
+        }
+
+        $bulletinPromptRun->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Prompt run cancelled.');
     }
 }

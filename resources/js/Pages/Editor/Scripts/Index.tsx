@@ -1,5 +1,6 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import Pagination from '@/Components/Pagination';
+import StatusBadge from '@/Components/StatusBadge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
@@ -64,10 +65,8 @@ export default function Index({ scripts, filters, statuses, editions, languages 
         });
     };
 
-    const destroy = (id: number): void => {
-        if (window.confirm('Delete this script?')) {
-            router.delete(route('editor.scripts.destroy', id));
-        }
+    const postAction = (action: string, id: number): void => {
+        router.post(route(`editor.scripts.${action}`, id), {}, { preserveScroll: true });
     };
 
     return (
@@ -154,17 +153,19 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                     <tr key={item.id} className="border-b border-slate-100">
                                         <td className="px-2 py-3 font-medium">{item.title}</td>
                                         <td className="px-2 py-3">{item.edition || '-'}</td>
-                                        <td className="px-2 py-3">{item.status}</td>
+                                        <td className="px-2 py-3"><StatusBadge status={item.status} /></td>
                                         <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
                                         <td className="px-2 py-3">{item.estimated_duration_seconds || '-'}</td>
-                                        <td className="px-2 py-3">{item.review_status}</td>
+                                        <td className="px-2 py-3"><StatusBadge status={item.review_status} /></td>
                                         <td className="px-2 py-3">{item.approved_at ? formatDateTime(item.approved_at) : t('Not approved')}</td>
                                         <td className="px-2 py-3">
                                             <div className="flex justify-end gap-2">
                                                 <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.show', item.id)}>{t('View')}</Link></Button>
                                                 <Button asChild size="sm" variant="secondary"><Link href={route('editor.scripts.edit', item.id)}>{t('Edit')}</Link></Button>
                                                 <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.review', item.id)}>{t('Review')}</Link></Button>
-                                                <Button size="sm" variant="destructive" onClick={() => destroy(item.id)}>{t('Delete')}</Button>
+                                                {item.status !== 'archived'
+                                                    ? <Button size="sm" variant="outline" onClick={() => postAction('archive', item.id)}>{t('Archive')}</Button>
+                                                    : <Button size="sm" variant="outline" onClick={() => postAction('restore', item.id)}>{t('Restore')}</Button>}
                                             </div>
                                         </td>
                                     </tr>

@@ -118,7 +118,7 @@ export default function Index({ runs, filters, statuses, bulletinTypes, promptPr
                     <th className="px-2 pb-3 text-right">{t('Actions')}</th>
                 </tr></thead><tbody>
                     {runs.data.length ? runs.data.map((item) => <tr className="border-b" key={item.id}>
-                        <td className="px-2 py-3"><div className="font-medium">{item.title}</div><div className="text-xs text-slate-500">ID: {item.id}</div></td>
+                        <td className="px-2 py-3"><div className="font-medium">{item.title}</div></td>
                         <td className="px-2 py-3">{item.bulletin_type?.name ?? '-'}</td>
                         <td className="px-2 py-3">{item.prompt_profile?.name ?? '-'}</td>
                         <td className="px-2 py-3"><StatusBadge status={item.status} /></td>

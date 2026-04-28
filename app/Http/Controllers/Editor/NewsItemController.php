@@ -217,6 +217,38 @@ class NewsItemController extends Controller
         return to_route('editor.news-items.index')->with('success', 'News item deleted successfully.');
     }
 
+    public function archive(NewsItem $newsItem): RedirectResponse
+    {
+        if ($newsItem->status !== 'archived') {
+            $metadata = is_array($newsItem->metadata) ? $newsItem->metadata : [];
+            $metadata['previous_status'] = $newsItem->status;
+
+            $newsItem->update([
+                'status' => 'archived',
+                'metadata' => $metadata,
+            ]);
+        }
+
+        return back()->with('success', 'News item archived successfully.');
+    }
+
+    public function restore(NewsItem $newsItem): RedirectResponse
+    {
+        $metadata = is_array($newsItem->metadata) ? $newsItem->metadata : [];
+        $previousStatus = $metadata['previous_status'] ?? null;
+        $safeStatuses = ['draft', 'collected', 'selected', 'rejected'];
+        $status = in_array($previousStatus, $safeStatuses, true) ? $previousStatus : 'collected';
+
+        unset($metadata['previous_status']);
+
+        $newsItem->update([
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'News item restored successfully.');
+    }
+
     private function formOptions(): array
     {
         return [

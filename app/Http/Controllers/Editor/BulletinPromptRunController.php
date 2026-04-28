@@ -151,24 +151,42 @@ class BulletinPromptRunController extends Controller
 
     public function archive(BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
-        $bulletinPromptRun->update(['status' => 'archived']);
+        if ($bulletinPromptRun->status !== 'archived') {
+            $metadata = is_array($bulletinPromptRun->metadata) ? $bulletinPromptRun->metadata : [];
+            $metadata['previous_status'] = $bulletinPromptRun->status;
+
+            $bulletinPromptRun->update([
+                'status' => 'archived',
+                'metadata' => $metadata,
+            ]);
+        }
 
         return back()->with('success', 'Prompt run archived successfully.');
     }
 
     public function restore(BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
-        $status = 'draft';
-
-        if ($bulletinPromptRun->script_id) {
+        $metadata = is_array($bulletinPromptRun->metadata) ? $bulletinPromptRun->metadata : [];
+        $previousStatus = $metadata['previous_status'] ?? null;
+        $safeStatuses = ['draft', 'prompt_ready', 'waiting_ai_response', 'response_received', 'script_created', 'completed', 'cancelled', 'failed'];
+        if (in_array($previousStatus, $safeStatuses, true)) {
+            $status = $previousStatus;
+        } elseif ($bulletinPromptRun->script_id) {
             $status = 'script_created';
         } elseif (filled($bulletinPromptRun->ai_response_text)) {
             $status = 'response_received';
         } elseif (filled($bulletinPromptRun->generated_prompt)) {
             $status = 'prompt_ready';
+        } else {
+            $status = 'draft';
         }
 
-        $bulletinPromptRun->update(['status' => $status]);
+        unset($metadata['previous_status']);
+
+        $bulletinPromptRun->update([
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
 
         return back()->with('success', 'Prompt run restored successfully.');
     }

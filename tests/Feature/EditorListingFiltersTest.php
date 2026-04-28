@@ -250,6 +250,48 @@ class EditorListingFiltersTest extends TestCase
             );
     }
 
+    public function test_operational_indexes_hide_archived_records_by_default(): void
+    {
+        $editor = $this->createEditor();
+
+        Script::factory()->create(['title' => 'Archived Script', 'status' => 'archived']);
+        Script::factory()->create(['title' => 'Active Script', 'status' => 'draft']);
+
+        Edition::factory()->create(['title' => 'Archived Edition', 'status' => 'archived']);
+        Edition::factory()->create(['title' => 'Active Edition', 'status' => 'planning']);
+
+        NewsItem::factory()->create(['title' => 'Archived Item', 'status' => 'archived']);
+        NewsItem::factory()->create(['title' => 'Active Item', 'status' => 'collected']);
+
+        $this->actingAs($editor)->get(route('editor.scripts.index'))->assertDontSee('Archived Script')->assertSee('Active Script');
+        $this->actingAs($editor)->get(route('editor.editions.index'))->assertDontSee('Archived Edition')->assertSee('Active Edition');
+        $this->actingAs($editor)->get(route('editor.news-items.index'))->assertDontSee('Archived Item')->assertSee('Active Item');
+    }
+
+    public function test_editor_can_archive_and_restore_operational_records(): void
+    {
+        $editor = $this->createEditor();
+        $script = Script::factory()->create(['status' => 'review']);
+        $edition = Edition::factory()->create(['status' => 'scripting']);
+        $newsItem = NewsItem::factory()->create(['status' => 'selected']);
+
+        $this->actingAs($editor)->post(route('editor.scripts.archive', $script))->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.editions.archive', $edition))->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.news-items.archive', $newsItem))->assertRedirect();
+
+        $this->assertSame('archived', $script->fresh()->status);
+        $this->assertSame('archived', $edition->fresh()->status);
+        $this->assertSame('archived', $newsItem->fresh()->status);
+
+        $this->actingAs($editor)->post(route('editor.scripts.restore', $script))->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.editions.restore', $edition))->assertRedirect();
+        $this->actingAs($editor)->post(route('editor.news-items.restore', $newsItem))->assertRedirect();
+
+        $this->assertSame('review', $script->fresh()->status);
+        $this->assertSame('scripting', $edition->fresh()->status);
+        $this->assertSame('selected', $newsItem->fresh()->status);
+    }
+
     public function test_news_items_and_editions_pages_return_paginated_data(): void
     {
         $editor = $this->createEditor();

@@ -21,7 +21,7 @@ class SourceReferenceFactory extends Factory
             'source_url' => fake()->url(),
             'source_type' => 'web',
             'verification_status' => 'pending',
-            'trust_level' => fake()->numberBetween(1, 100),
+            'trust_level' => fake()->numberBetween(0, 10),
         ];
     }
 }

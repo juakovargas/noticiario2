@@ -139,7 +139,7 @@ class ScriptController extends Controller
             'reviewedBy:id,name,email,profile_image_id',
             'rejectedBy:id,name,email,profile_image_id',
             'reviewItems',
-            'sourceReferences',
+            'sourceReferences.checkedBy:id,name,email,profile_image_id',
         ]);
 
         $sourceCounts = $script->sourceReferences
@@ -190,8 +190,28 @@ class ScriptController extends Controller
                     'verified' => $sourceCounts->get('verified', 0),
                     'pending' => $sourceCounts->get('pending', 0),
                     'weak' => $sourceCounts->get('weak', 0),
+                    'missing' => $sourceCounts->get('missing', 0),
+                    'broken' => $sourceCounts->get('broken', 0),
+                    'rejected' => $sourceCounts->get('rejected', 0),
                     'issues' => (int) ($sourceCounts->get('missing', 0) + $sourceCounts->get('broken', 0) + $sourceCounts->get('rejected', 0)),
                 ],
+                'source_references' => $script->sourceReferences
+                    ->whereNull('archived_at')
+                    ->map(fn ($reference) => [
+                        'id' => $reference->id,
+                        'title' => $reference->title,
+                        'source_name' => $reference->source_name,
+                        'source_url' => $reference->source_url,
+                        'verification_status' => $reference->verification_status,
+                        'checked_at' => $reference->checked_at?->toDateTimeString(),
+                        'checked_by' => $reference->checkedBy ? [
+                            'id' => $reference->checkedBy->id,
+                            'name' => $reference->checkedBy->name,
+                            'email' => $reference->checkedBy->email,
+                            'avatar_url' => $reference->checkedBy->avatar_url,
+                            'initials' => $reference->checkedBy->initials,
+                        ] : null,
+                    ])->values(),
             ],
         ]);
     }

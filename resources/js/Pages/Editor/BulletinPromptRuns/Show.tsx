@@ -47,7 +47,7 @@ function needsVerification(value: string): boolean {
     return /needs verification|requiere verificación|weak|fuente débil/i.test(value);
 }
 
-export default function Show({ run, promptContext }: any): JSX.Element {
+export default function Show({ run, promptContext, sourceReferences = [], sourceSummary = null }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime, formatDate, formatTime } = useDateFormatter();
     const form = useForm({ response_text: run.ai_response_text ?? '' });
@@ -130,6 +130,25 @@ export default function Show({ run, promptContext }: any): JSX.Element {
                 <CardContent className="pt-6">
                     <h3 className="mb-2 font-semibold">{t('Generated Prompt')}</h3>
                     <pre className="whitespace-pre-wrap rounded bg-slate-100 p-3 text-xs">{run.generated_prompt || '-'}</pre>
+                </CardContent>
+            </Card>
+
+
+            <Card className="mt-4">
+                <CardContent className="space-y-3 pt-6 text-sm">
+                    <h3 className="font-semibold">{t('Source verification')}</h3>
+                    <p>{t('Source References')}: {sourceSummary?.total ?? 0} · {t('Pending source')}: {sourceSummary?.pending ?? 0} · {t('Verified source')}: {sourceSummary?.verified ?? 0}</p>
+                    <p>{t('Weak source')}: {sourceSummary?.weak ?? 0} · {t('Missing source')}: {sourceSummary?.missing ?? 0} · {t('Broken source')}: {sourceSummary?.broken ?? 0} · {t('Rejected source')}: {sourceSummary?.rejected ?? 0}</p>
+                    {(sourceSummary?.unresolved ?? 0) > 0 ? <p className="text-amber-700">{t('Unresolved source issues')}: {sourceSummary.unresolved}</p> : null}
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.source-references.extract', run.id))}>{t('Extract source references')}</Button>
+                        <Button asChild variant="outline"><Link href={route('editor.source-references.index', { bulletin_prompt_run_id: run.id })}>{t('Manage sources')}</Link></Button>
+                    </div>
+                    {sourceReferences.length ? (
+                        <ul className="list-disc pl-5 text-xs">
+                            {sourceReferences.map((item: any) => <li key={item.id}>{item.title || item.source_name || t('Source Reference')} · {item.verification_status}</li>)}
+                        </ul>
+                    ) : <p className="text-slate-500">{t('No source references found')}</p>}
                 </CardContent>
             </Card>
 

@@ -63,6 +63,11 @@ class User extends Authenticatable
         return $this->hasMany(BulletinPromptRun::class, 'created_by');
     }
 
+    public function checkedSourceReferences(): HasMany
+    {
+        return $this->hasMany(SourceReference::class, 'checked_by');
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
         $profileImage = null;

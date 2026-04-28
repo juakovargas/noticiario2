@@ -41,7 +41,7 @@ export default function Show({ newsItem }: Props): JSX.Element {
                     <p><strong>{t('Category')}:</strong> {newsItem.category || '-'}</p>
                     <p><strong>{t('Location')}:</strong> {newsItem.location?.name || '-'}</p>
                     <p><strong>{t('Source URL')}:</strong> {newsItem.source_url ? <a className="text-blue-600 underline" href={newsItem.source_url} target="_blank" rel="noreferrer">{t('Open original')}</a> : '-'}</p>
-                    {newsItem.source_url ? <Button variant="outline" size="sm" onClick={() => router.post(route('editor.news-items.source-references.extract', newsItem.id))}>{t('Extract sources from news item')}</Button> : null}
+                    <Button variant="outline" size="sm" onClick={() => router.post(route('editor.news-items.source-references.extract', newsItem.id))}>{t('Extract sources from news item')}</Button>
                     <p><strong>{t('Status')}:</strong> {newsItem.status}</p>
                     <p><strong>{t('Published at')}:</strong> {formatDateTime(newsItem.published_at)}</p>
                     <p><strong>{t('Collected at')}:</strong> {formatDateTime(newsItem.collected_at)}</p>

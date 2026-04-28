@@ -33,6 +33,19 @@ class SourceReferenceWorkflowTest extends TestCase
         $this->actingAs($viewer)->get(route('editor.source-references.show', $reference))->assertForbidden();
     }
 
+    public function test_user_without_editor_access_cannot_access_source_reference_routes(): void
+    {
+        $user = $this->createUserWithPermissions([]);
+        $reference = SourceReference::factory()->create();
+
+        $this->actingAs($user)->get(route('editor.source-references.index'))->assertForbidden();
+        $this->actingAs($user)->put(route('editor.source-references.update', $reference), [
+            'source_type' => 'web',
+            'verification_status' => 'pending',
+            'trust_level' => 2,
+        ])->assertForbidden();
+    }
+
     public function test_editor_can_update_source_reference_and_set_checked_fields(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access', 'editor.dashboard.view']);
@@ -119,6 +132,28 @@ class SourceReferenceWorkflowTest extends TestCase
 
         $extractor->extractFromParsedResponse(['items' => [['source_hints' => ['https://example.com/beta', 'Local desk source']]]], null, $script);
         $this->assertGreaterThanOrEqual($first, SourceReference::query()->count());
+    }
+
+    public function test_extractor_extracts_domain_and_urls_from_hints_and_raw_text(): void
+    {
+        $script = Script::factory()->create([
+            'body' => "FUENTES:\nReuters https://www.reuters.com/world\nText with https://apnews.com/article/demo",
+            'metadata' => [],
+        ]);
+
+        $extractor = app(SourceReferenceExtractor::class);
+        $extractor->extractFromScript($script);
+
+        $this->assertDatabaseHas('source_references', [
+            'script_id' => $script->id,
+            'source_url' => 'https://www.reuters.com/world',
+            'source_domain' => 'reuters.com',
+        ]);
+        $this->assertDatabaseHas('source_references', [
+            'script_id' => $script->id,
+            'source_url' => 'https://apnews.com/article/demo',
+            'source_domain' => 'apnews.com',
+        ]);
     }
 
     public function test_editor_can_extract_sources_from_context_routes(): void

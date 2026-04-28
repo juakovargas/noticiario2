@@ -34,6 +34,7 @@ class SourceReferenceController extends Controller
             'script_id' => (string) $request->query('script_id', ''),
             'news_item_id' => (string) $request->query('news_item_id', ''),
             'bulletin_prompt_run_id' => (string) $request->query('bulletin_prompt_run_id', ''),
+            'source_domain' => (string) $request->query('source_domain', ''),
             'show_archived' => $request->boolean('show_archived'),
             'only_archived' => $request->boolean('only_archived'),
         ];
@@ -63,6 +64,7 @@ class SourceReferenceController extends Controller
             ->when($filters['script_id'] !== '', fn (Builder $query) => $query->where('script_id', $filters['script_id']))
             ->when($filters['news_item_id'] !== '', fn (Builder $query) => $query->where('news_item_id', $filters['news_item_id']))
             ->when($filters['bulletin_prompt_run_id'] !== '', fn (Builder $query) => $query->where('bulletin_prompt_run_id', $filters['bulletin_prompt_run_id']))
+            ->when($filters['source_domain'] !== '', fn (Builder $query) => $query->where('source_domain', 'like', '%'.$filters['source_domain'].'%'))
             ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn (Builder $query) => $query->withoutArchived())
             ->when($filters['only_archived'], fn (Builder $query) => $query->onlyArchived())
             ->latest('id')
@@ -96,6 +98,7 @@ class SourceReferenceController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'source_name' => ['nullable', 'string', 'max:255'],
             'source_url' => ['nullable', 'max:2000'],
+            'source_domain' => ['nullable', 'string', 'max:255'],
             'source_type' => ['required', Rule::in(SourceReference::SOURCE_TYPES)],
             'verification_status' => ['required', Rule::in(SourceReference::VERIFICATION_STATUSES)],
             'trust_level' => ['nullable', 'integer', 'min:0', 'max:10'],
@@ -105,6 +108,12 @@ class SourceReferenceController extends Controller
         if (($sourceReference->verification_status !== $data['verification_status']) && $data['verification_status'] !== 'pending') {
             $data['checked_by'] = $request->user()->id;
             $data['checked_at'] = now();
+        }
+        if (($data['source_domain'] ?? '') === '' && filled($data['source_url'] ?? null)) {
+            $host = parse_url((string) $data['source_url'], PHP_URL_HOST);
+            if (is_string($host) && $host !== '') {
+                $data['source_domain'] = strtolower(preg_replace('/^www\./i', '', $host) ?? $host);
+            }
         }
 
         $sourceReference->update($data);
@@ -161,6 +170,7 @@ class SourceReferenceController extends Controller
             'title' => $reference->title,
             'source_name' => $reference->source_name,
             'source_url' => $reference->source_url,
+            'source_domain' => $reference->source_domain,
             'source_type' => $reference->source_type,
             'verification_status' => $reference->verification_status,
             'trust_level' => $reference->trust_level,

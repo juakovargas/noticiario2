@@ -26,6 +26,7 @@ class SourceReference extends Model
         'title',
         'source_name',
         'source_url',
+        'source_domain',
         'source_type',
         'verification_status',
         'trust_level',

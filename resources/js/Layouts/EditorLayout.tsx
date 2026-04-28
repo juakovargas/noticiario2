@@ -1,5 +1,6 @@
 import FlashMessage from '@/Components/FlashMessage';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import PageContainer from '@/Components/Layout/PageContainer';
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
@@ -76,38 +77,36 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
     ];
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfeff,_transparent_55%),linear-gradient(145deg,_#f8fafc_30%,_#dbeafe_100%)] text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-            <div className="mx-auto flex min-h-screen max-w-7xl">
+        <div className="min-h-screen w-full bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+            <div className="flex min-h-screen w-full">
                 <aside
-                    className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-slate-200/80 bg-white/90 px-5 py-6 shadow-xl backdrop-blur transition-transform dark:border-slate-800 dark:bg-slate-900/95 md:static md:translate-x-0 md:shadow-none ${
+                    className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-slate-200/80 bg-white/95 px-5 py-6 shadow-xl backdrop-blur transition-transform dark:border-slate-800 dark:bg-slate-900/95 md:sticky md:top-0 md:translate-x-0 md:shadow-none ${
                         open ? 'translate-x-0' : '-translate-x-full'
                     }`}
                 >
                     <div className="mb-8 flex items-center justify-between">
-                        <Link href={route('editor.dashboard')} className="text-lg font-extrabold tracking-tight text-cyan-900">
+                        <Link href={route('editor.dashboard')} className="text-lg font-extrabold tracking-tight text-cyan-900 dark:text-cyan-300">
                             {t('Noticiario')} {t('Editor Panel')}
                         </Link>
-                        <button onClick={() => setOpen(false)} className="md:hidden">
+                        <button onClick={() => setOpen(false)} className="text-slate-600 dark:text-slate-200 md:hidden">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
                     <nav className="space-y-5">
                         {sections.map((section) => (
                             <div key={section.title}>
-                                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{section.title}</p>
+                                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{section.title}</p>
                                 <div className="space-y-1">
                                     {section.items.map((item) => {
-                                        const active =
-                                            route().current(item.routeName) ||
-                                            route().current(item.routeName.replace('.index', '.*'));
+                                        const active = route().current(item.routeName) || route().current(item.routeName.replace('.index', '.*'));
                                         return (
                                             <Link
                                                 key={item.routeName}
                                                 href={route(item.routeName)}
                                                 className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${
                                                     active
-                                                        ? 'bg-cyan-900 text-white'
-                                                        : 'text-slate-600 hover:bg-cyan-50 hover:text-cyan-900'
+                                                        ? 'bg-cyan-800 text-white dark:bg-cyan-400 dark:text-slate-900'
+                                                        : 'text-slate-600 hover:bg-cyan-50 hover:text-cyan-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-300'
                                                 }`}
                                             >
                                                 {item.label}
@@ -119,20 +118,20 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                         ))}
                     </nav>
                 </aside>
-                <div className="flex w-full flex-1 flex-col">
-                    <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/75 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
-                        <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-8">
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/85">
+                        <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-8 lg:px-10">
                             <button
-                                className="inline-flex items-center justify-center rounded-md border border-slate-300 p-2 md:hidden"
+                                className="inline-flex items-center justify-center rounded-md border border-slate-300 p-2 text-slate-700 dark:border-slate-700 dark:text-slate-200 md:hidden"
                                 onClick={() => setOpen(true)}
                             >
                                 <Menu className="h-4 w-4" />
                             </button>
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex min-w-0 items-center gap-2 text-sm">
                                 <UserAvatar user={user} size="sm" />
-                                <div>
-                                    <p className="font-semibold text-slate-900">{user?.name}</p>
-                                    <p className="text-slate-500">{t('Editor Panel')}</p>
+                                <div className="min-w-0">
+                                    <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{user?.name}</p>
+                                    <p className="truncate text-slate-500 dark:text-slate-400">{t('Editor Panel')}</p>
                                 </div>
                             </div>
                             <div className="ml-auto flex items-center gap-2">
@@ -150,9 +149,11 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                         </div>
                     </header>
                     {impersonation.active && (
-                        <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-sm text-amber-900 md:px-8">
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="font-medium">{t('You are impersonating')} {impersonation.current_user_name}</p>
+                        <div className="border-b border-amber-300/80 bg-amber-100 text-sm text-amber-950 dark:border-amber-500/40 dark:bg-amber-900/30 dark:text-amber-100">
+                            <div className="flex items-center justify-between gap-3 px-4 py-2 md:px-8 lg:px-10">
+                                <p className="font-medium">
+                                    {t('You are impersonating')} {impersonation.current_user_name}
+                                </p>
                                 <Button asChild size="sm" variant="secondary">
                                     <Link href={route('admin.impersonation.stop')} method="post" as="button">
                                         {t('Return to admin')}
@@ -162,11 +163,13 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                         </div>
                     )}
 
-                    <main className="flex-1 px-4 py-6 md:px-8">
-                        <div className="mb-4">
-                            <FlashMessage />
-                        </div>
-                        {children}
+                    <main className="min-w-0 flex-1">
+                        <PageContainer>
+                            <div className="mb-4">
+                                <FlashMessage />
+                            </div>
+                            {children}
+                        </PageContainer>
                     </main>
                 </div>
             </div>

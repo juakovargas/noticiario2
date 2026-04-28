@@ -1,4 +1,5 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
+import UserIdentity from '@/Components/UserIdentity';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
@@ -35,7 +36,7 @@ interface MediaFile {
     duration_seconds: number | null;
     checksum: string | null;
     metadata: Record<string, unknown> | null;
-    uploaded_by: { id: number; name: string; email: string } | null;
+    uploaded_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     created_at: string | null;
     updated_at: string | null;
 }
@@ -72,7 +73,7 @@ export default function MediaFilesShow({ mediaFile }: { mediaFile: MediaFile }):
                     <div><dt className="font-semibold">{t('Collection')}</dt><dd>{mediaFile.collection ?? '-'}</dd></div>
                     <div><dt className="font-semibold">{t('Visibility')}</dt><dd>{t(mediaFile.visibility === 'public' ? 'Public' : 'Private')}</dd></div>
                     <div><dt className="font-semibold">{t('Status')}</dt><dd>{t(mediaFile.status.charAt(0).toUpperCase() + mediaFile.status.slice(1))}</dd></div>
-                    <div><dt className="font-semibold">{t('Uploaded by')}</dt><dd>{mediaFile.uploaded_by?.name ?? '-'}</dd></div>
+                    <div><dt className="font-semibold">{t('Uploaded by')}</dt><dd>{mediaFile.uploaded_by ? <UserIdentity user={mediaFile.uploaded_by} subtitle={mediaFile.uploaded_by.email} avatarSize="xs" /> : '-'}</dd></div>
                     <div><dt className="font-semibold">{t('Public URL')}</dt><dd className="break-all">{mediaFile.public_url ?? '-'}</dd></div>
                     <div><dt className="font-semibold">{t('File exists')}</dt><dd>{mediaFile.file_exists ? t('Yes') : t('File missing')}</dd></div>
                 </dl>

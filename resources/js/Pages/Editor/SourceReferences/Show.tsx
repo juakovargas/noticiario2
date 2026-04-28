@@ -1,4 +1,5 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
+import UserIdentity from '@/Components/UserIdentity';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { useTranslations } from '@/i18n/useTranslations';
@@ -6,7 +7,7 @@ import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-interface SourceReference { id:number; title:string|null; source_name:string|null; source_url:string|null; source_type:string; verification_status:string; trust_level:number|null; notes:string|null; checked_by:string|null; checked_at:string|null; script:{id:number;title:string}|null; news_item:{id:number;title:string}|null; script_review_item:{id:number;title:string|null}|null; editorial_schedule_run:{id:number;status:string;scheduled_for:string|null}|null; }
+interface SourceReference { id:number; title:string|null; source_name:string|null; source_url:string|null; source_type:string; verification_status:string; trust_level:number|null; notes:string|null; checked_by:{ id:number; name:string; email:string | null; avatar_url?:string|null; initials?:string|null }|null; checked_at:string|null; script:{id:number;title:string}|null; news_item:{id:number;title:string}|null; script_review_item:{id:number;title:string|null}|null; editorial_schedule_run:{id:number;status:string;scheduled_for:string|null}|null; }
 interface Props { sourceReference: SourceReference; verificationStatuses:string[]; sourceTypes:string[] }
 
 export default function Show({ sourceReference, verificationStatuses, sourceTypes }: Props): JSX.Element {
@@ -28,7 +29,7 @@ export default function Show({ sourceReference, verificationStatuses, sourceType
                     <div><label className="mb-1 block text-sm font-medium">{t('Trust level')}</label><input className="w-full rounded border px-3 py-2" value={form.data.trust_level} onChange={(e)=>form.setData('trust_level', e.target.value)} /></div>
                 </div>
                 <div><label className="mb-1 block text-sm font-medium">{t('Source notes')}</label><textarea className="w-full rounded border px-3 py-2" rows={4} value={form.data.notes} onChange={(e)=>form.setData('notes', e.target.value)} /></div>
-                <p className="text-xs text-slate-500">{t('Checked by')}: {sourceReference.checked_by ?? '-'} · {t('Checked at')}: {formatDateTime(sourceReference.checked_at)}</p>
+                <div className="text-xs text-slate-500">{t('Checked by')}: {sourceReference.checked_by ? <UserIdentity user={sourceReference.checked_by} subtitle={sourceReference.checked_by.email} avatarSize="xs" className="inline-flex ml-1" /> : '-'} · {t('Checked at')}: {formatDateTime(sourceReference.checked_at)}</div>
                 <div className="flex flex-wrap gap-2"><Button type="submit">{t('Save verification')}</Button>{sourceReference.source_url ? <Button asChild variant="outline"><a href={sourceReference.source_url} target="_blank" rel="noreferrer">{t('Open source')}</a></Button> : null}<Button asChild variant="secondary"><Link href={route('editor.source-references.index')}>{t('Back to source references')}</Link></Button></div>
             </form>
         </CardContent></Card>

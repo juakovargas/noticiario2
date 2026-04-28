@@ -33,6 +33,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'profile_image_id' => $user->profile_image_id,
                     'is_active' => $user->is_active,
                     'created_at' => $user->created_at?->toDateTimeString(),
                     'roles' => $user->roles->pluck('name')->values(),
@@ -75,7 +76,7 @@ class UserController extends Controller
 
         if ($profileImageFile) {
             $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
-            $user->update(['profile_image_id' => $mediaFile->id]);
+            $user->forceFill(['profile_image_id' => $mediaFile->id])->save();
         }
 
         $user->syncRoles($data['roles'] ?? []);
@@ -155,6 +156,7 @@ class UserController extends Controller
 
         if ($profileImageFile) {
             $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
+            $user->forceFill(['profile_image_id' => $mediaFile->id])->save();
             $data['profile_image_id'] = $mediaFile->id;
         }
 

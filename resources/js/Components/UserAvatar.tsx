@@ -47,7 +47,7 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
         return (
             <img
                 src={avatarSrc}
-                alt={user?.name ? `${user.name} avatar` : 'Avatar'}
+                alt={`${user?.name ?? 'User'} avatar`}
                 className={`${sizeClass[size]} rounded-full object-cover ${className}`}
                 onError={() => setImageFailed(true)}
             />

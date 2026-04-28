@@ -1,5 +1,6 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import Pagination from '@/Components/Pagination';
+import UserIdentity from '@/Components/UserIdentity';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -20,7 +21,7 @@ interface MediaFileItem {
     human_size: string;
     collection: string | null;
     status: string;
-    uploaded_by: string | null;
+    uploaded_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     uploaded_by_id: number | null;
     created_at: string | null;
 }
@@ -137,7 +138,7 @@ export default function MediaFilesIndex({ mediaFiles, filters, mediaTypes, colle
                                     <td className="px-2 py-3">{file.mime_type ?? '-'}</td>
                                     <td className="px-2 py-3">{file.human_size}</td>
                                     <td className="px-2 py-3">{file.collection ?? '-'}</td>
-                                    <td className="px-2 py-3">{file.uploaded_by ?? '-'}</td>
+                                    <td className="px-2 py-3">{file.uploaded_by ? <UserIdentity user={file.uploaded_by} subtitle={file.uploaded_by.email} avatarSize="xs" /> : '-'}</td>
                                     <td className="px-2 py-3">{file.created_at ?? '-'}</td>
                                     <td className="px-2 py-3 text-right">
                                         <Button size="sm" asChild variant="outline"><Link href={route('admin.media-files.show', file.id)}>{t('Open file')}</Link></Button>

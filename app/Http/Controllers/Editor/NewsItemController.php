@@ -43,6 +43,7 @@ class NewsItemController extends Controller
             'published_to' => (string) $request->query('published_to', ''),
             'sort' => (string) $request->query('sort', 'published_at'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'editorial_priority', 'published_at', 'collected_at', 'created_at'];
@@ -52,6 +53,7 @@ class NewsItemController extends Controller
         $languageDisplayMap = $activeLanguages->keyBy('code');
 
         $newsItems = NewsItem::query()
+            ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
             ->with([
                 'source:id,name,type',
                 'category:id,name,color',
@@ -213,6 +215,38 @@ class NewsItemController extends Controller
         $newsItem->delete();
 
         return to_route('editor.news-items.index')->with('success', 'News item deleted successfully.');
+    }
+
+    public function archive(NewsItem $newsItem): RedirectResponse
+    {
+        if ($newsItem->status !== 'archived') {
+            $metadata = is_array($newsItem->metadata) ? $newsItem->metadata : [];
+            $metadata['previous_status'] = $newsItem->status;
+
+            $newsItem->update([
+                'status' => 'archived',
+                'metadata' => $metadata,
+            ]);
+        }
+
+        return back()->with('success', 'News item archived successfully.');
+    }
+
+    public function restore(NewsItem $newsItem): RedirectResponse
+    {
+        $metadata = is_array($newsItem->metadata) ? $newsItem->metadata : [];
+        $previousStatus = $metadata['previous_status'] ?? null;
+        $safeStatuses = ['draft', 'collected', 'selected', 'rejected'];
+        $status = in_array($previousStatus, $safeStatuses, true) ? $previousStatus : 'collected';
+
+        unset($metadata['previous_status']);
+
+        $newsItem->update([
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'News item restored successfully.');
     }
 
     private function formOptions(): array

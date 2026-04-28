@@ -1,5 +1,6 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import Pagination from '@/Components/Pagination';
+import StatusBadge from '@/Components/StatusBadge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
@@ -55,23 +56,13 @@ const initialFilters = {
     published_to: '',
     sort: 'published_at',
     direction: 'desc',
+    show_archived: '',
 };
 
 export default function Index({ newsItems, filters, statuses, languages, priorities, sources, categories, locations }: Props): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
     const [form, setForm] = useState({ ...initialFilters, ...filters });
-
-    const statusClasses = useMemo<Record<string, string>>(
-        () => ({
-            draft: 'bg-slate-100 text-slate-700',
-            collected: 'bg-blue-100 text-blue-700',
-            selected: 'bg-emerald-100 text-emerald-700',
-            rejected: 'bg-rose-100 text-rose-700',
-            archived: 'bg-amber-100 text-amber-800',
-        }),
-        [],
-    );
 
     const priorityClasses = useMemo<Record<number, string>>(
         () => ({
@@ -102,10 +93,8 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
         });
     };
 
-    const destroy = (id: number): void => {
-        if (window.confirm('Delete this news item?')) {
-            router.delete(route('editor.news-items.destroy', id));
-        }
+    const postAction = (action: string, id: number): void => {
+        router.post(route(`editor.news-items.${action}`, id), {}, { preserveScroll: true });
     };
 
     return (
@@ -185,6 +174,8 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
                             <option value="asc">{t('Ascending')}</option>
                         </select>
 
+                        <label className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm"><input type="checkbox" checked={form.show_archived === '1'} onChange={(e) => setForm((prev) => ({ ...prev, show_archived: e.target.checked ? '1' : '' }))} /> {t('Show archived')}</label>
+
                         <div className="flex gap-2 lg:col-span-4">
                             <Button type="submit">{t('Apply filters')}</Button>
                             <Button type="button" variant="secondary" onClick={onReset}>{t('Reset filters')}</Button>
@@ -221,11 +212,7 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
                                             </span>
                                         </td>
                                         <td className="px-2 py-3">{countryCodeToFlagEmoji(item.location?.country_code)} {item.location?.name || '-'}</td>
-                                        <td className="px-2 py-3">
-                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClasses[item.status] || 'bg-slate-100 text-slate-700'}`}>
-                                                {item.status}
-                                            </span>
-                                        </td>
+                                        <td className="px-2 py-3"><StatusBadge status={item.status} /></td>
                                         <td className="px-2 py-3">{formatDateTime(item.published_at)}</td>
                                         <td className="px-2 py-3">
                                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${priorityClasses[item.editorial_priority] || 'bg-slate-100 text-slate-700'}`}>
@@ -236,7 +223,9 @@ export default function Index({ newsItems, filters, statuses, languages, priorit
                                             <div className="flex justify-end gap-2">
                                                 <Button asChild size="sm" variant="outline"><Link href={route('editor.news-items.show', item.id)}>{t('View')}</Link></Button>
                                                 <Button asChild size="sm" variant="secondary"><Link href={route('editor.news-items.edit', item.id)}>{t('Edit')}</Link></Button>
-                                                <Button size="sm" variant="destructive" onClick={() => destroy(item.id)}>{t('Delete')}</Button>
+                                                {item.status !== 'archived'
+                                                    ? <Button size="sm" variant="outline" onClick={() => postAction('archive', item.id)}>{t('Archive')}</Button>
+                                                    : <Button size="sm" variant="outline" onClick={() => postAction('restore', item.id)}>{t('Restore')}</Button>}
                                             </div>
                                         </td>
                                     </tr>

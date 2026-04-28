@@ -949,7 +949,7 @@ Examples:
 Current next priorities:
 1. Manually test generated prompts with external AI.
 2. Tune bulletin type coverage windows.
-3. Improve pasted AI response parsing if needed.
+3. Improve pasted AI response parsing.
 4. Add source verification workflow if not complete.
 5. Add real AI provider integration.
 6. Add AI logs and cost control.
@@ -1028,3 +1028,149 @@ Troubleshooting avatar display:
 3. Verify the file exists under storage/app/public.
 4. Verify the /storage/... URL opens in browser.
 5. Verify Inertia props include auth.user.avatar_url.
+
+BULLETIN RESPONSE PARSING AND SCRIPT CREATION
+
+Expected external AI response format (structured mode):
+- TITLE
+- INTRO
+- NEWS ITEMS
+  - HEADLINE
+  - SUMMARY
+  - SCRIPT
+  - EDITORIAL ANGLE
+  - SOURCE HINTS
+- OUTRO
+- NOTES
+
+parsed_response JSON structure used by bulletin_prompt_runs:
+{
+  "title": "...",
+  "intro": "...",
+  "body": "...",
+  "items": [
+    {
+      "headline": "...",
+      "summary": "...",
+      "script": "...",
+      "editorial_angle": "...",
+      "source_hints": ["..."],
+      "raw": "..."
+    }
+  ],
+  "outro": "...",
+  "notes": "...",
+  "warnings": ["missing_title", "missing_intro", "no_script_blocks", "missing_sources", "unstructured_response"],
+  "raw": "..."
+}
+
+Implementation notes:
+- SCRIPT blocks are the narration source for final Script.body.
+- SUMMARY is editorial support and should not be used as final narration.
+- Parsed preview now shows title, intro, items, script blocks, source hints, outro and notes.
+- Source hints are displayed and linkified when URLs are present, but not auto-verified yet.
+- If response is unstructured, full response fallback is used as Script.body.
+- Existing scripts are never auto-overwritten by updating a prompt run response.
+- Optional future enhancement: create NewsItems directly from parsed response items.
+
+Updated next priorities:
+1. Manually test prompt and response parsing with external AI.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.
+
+ARCHIVING, STATUS MANAGEMENT AND LIST HYGIENE
+
+- Archived operational records are hidden by default from working lists.
+- Archive actions do not delete records and do not hard-delete workflow data.
+- Bulletin Prompt Runs now support status actions from list/show:
+  - archive -> status=archived
+  - restore -> recalculates status (draft, prompt_ready, response_received, script_created)
+  - mark completed -> status=completed
+  - cancel -> status=cancelled (only when no script exists)
+- Bulletin Prompt Runs index now includes filters for:
+  - search, status, bulletin type, prompt profile, creator, scheduled range
+  - show archived and only archived
+  - sortable list direction
+- Working list pattern:
+  - default: hide archived
+  - optional: show archived
+  - optional: only archived
+- Raw numeric IDs should not be the primary visible label in editorial lists.
+- Editor dashboard active counters now exclude archived prompt runs/scripts/editions.
+- Configuration entities should continue to use is_active as availability toggle (not archive semantics).
+- Operational entities should prefer status=archived when status-based workflow already exists.
+
+Updated next priorities:
+1. Continue improving pasted AI response parsing.
+2. Continue source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.
+
+TABLE LIST MANAGEMENT, ARCHIVING AND STATUS CLEANUP
+
+Operational records now use archive/restore as a working-list cleanup pattern (archive is NOT deletion):
+- bulletin_prompt_runs
+- scripts
+- editions
+- news_items
+
+Behavior:
+- Archive actions set status=archived and store metadata.previous_status when available.
+- Restore actions recover metadata.previous_status when valid, with safe fallbacks by module.
+- Archived records are hidden by default in operational index pages.
+- "Show archived" toggles include archived records in the list when needed.
+- Archive/restore does not delete records and does not clear generated prompt/response/script links.
+
+Bulletin Prompt Runs:
+- Added/kept operational filters: search, status, bulletin type, prompt profile, creator, scheduled range, show archived, only archived.
+- Added/kept state actions: archive, restore, mark completed, cancel.
+- Default list prioritizes active work and hides archived runs.
+
+Scripts, Editions, News Items:
+- Index pages hide archived records by default and support show_archived.
+- Added archive/restore row actions to remove completed work from active lists without deleting.
+- Status rendering is consistent via status badges.
+
+Configuration records strategy:
+- Configuration modules continue using active/inactive concepts where applicable.
+- No archive-delete workflow was added for configuration entities in this cleanup.
+
+Dashboards/counters:
+- Archived operational records are excluded from active-work counters in editor dashboards.
+
+Table UX conventions:
+- Raw IDs should not be the primary label in user-facing tables.
+- Primary labels use meaningful names/titles.
+- Important lists include practical status/relationship/date filters.
+
+Current next priorities:
+1. Improve pasted AI response parser and preview.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.
+
+GLOBAL TABLE LIST MANAGEMENT, ARCHIVING AND FILTERS
+- Completed inventory at docs/list-pages-audit.md.
+- Operational records use archive/restore (status=archived or archived_at/archived_by where status is not appropriate).
+- Configuration records continue with active/inactive toggles and filters.
+- Archived records are hidden by default and exposed with show_archived / only_archived patterns.
+- Archive actions do not delete records; restore brings records back to active workflow.
+- Prompt runs/scripts/editions/news items keep archive workflows; editorial schedule runs and editorial requests now also support archive/restore.
+- Source references now support archived_at/archived_by archive mode and archive visibility filters.
+- Raw #id values should not be the primary visual label in user-facing lists.
+- Dashboard active-work counters exclude archived records.
+
+Current next priorities:
+1. Improve pasted AI response parser and preview.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

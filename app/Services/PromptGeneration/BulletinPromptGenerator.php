@@ -22,18 +22,17 @@ class BulletinPromptGenerator
         $promptLanguage = $type->prompt_language ?: 'es';
 
         return $promptLanguage === 'en'
-            ? $this->generateEnglishPrompt($run, $type, $profile, $context)
-            : $this->generateSpanishPrompt($run, $type, $profile, $context);
+            ? $this->generateEnglishPrompt($type, $profile, $context)
+            : $this->generateSpanishPrompt($type, $profile, $context);
     }
 
-    private function generateSpanishPrompt(BulletinPromptRun $run, $type, $profile, array $context): string
+    private function generateSpanishPrompt($type, $profile, array $context): string
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
 
         $lines = [
             'Eres un redactor y guionista de informativos en vídeo para España.',
             'Tu tarea es escribir un guion periodístico claro, coherente y fácil de escuchar.',
-            'El texto será leído en voz alta en un informativo de actualidad.',
             'No inventes datos ni hechos.',
             '',
             'CONFIGURACIÓN DEL NOTICIARIO:',
@@ -43,10 +42,10 @@ class BulletinPromptGenerator
             '- Idioma final del guion: '.($type->language?->name ?? 'No especificado'),
             '- Duración objetivo (segundos): '.($type->target_duration_seconds ?? 'N/A'),
             '',
-            'BROADCAST TIMING:',
-            '- Broadcast date: '.$context['scheduled_for']->format('Y-m-d'),
-            '- Broadcast time: '.$context['scheduled_for']->format('H:i'),
-            '- Timezone: '.$context['timezone'],
+            'FECHA Y HORA DE EMISIÓN:',
+            '- Fecha de emisión: '.$context['scheduled_for']->format('Y-m-d'),
+            '- Hora de emisión: '.$context['scheduled_for']->format('H:i'),
+            '- Zona horaria: '.$context['timezone'],
             '',
             'VENTANA DE COBERTURA:',
             '- Modo de cobertura: '.$context['coverage_mode'],
@@ -56,23 +55,25 @@ class BulletinPromptGenerator
             '- Agenda futura: '.($type->include_future_agenda ? 'Incluir próximos eventos y marcarlos como agenda.' : 'No incluir agenda futura salvo necesidad editorial crítica.'),
             '- Contexto histórico: '.($type->include_historical_context ? 'Incluir contexto breve cuando ayude a entender la noticia.' : 'Usar contexto histórico mínimo.'),
             '',
-            'NEWS SELECTION RULES:',
-            '- Select the most relevant news for the configured location and category.',
-            '- Respect the coverage window.',
-            '- Prioritize recent confirmed information.',
-            '- Avoid outdated stories unless still developing.',
-            '- Do not include future agenda if include_future_agenda is false.',
-            '- If include_future_agenda is true, clearly identify future events as upcoming.',
+            'REGLAS DE SELECCIÓN DE NOTICIAS:',
+            '- Selecciona las noticias más relevantes para la ubicación y categoría configuradas.',
+            '- Respeta estrictamente la ventana de cobertura.',
+            '- Prioriza información reciente y confirmada.',
+            '- Evita historias desactualizadas salvo que sigan en desarrollo.',
             '',
-            'REQUISITOS DE FUENTES:',
-            '- Usa información actual si tu herramienta permite navegación web.',
-            '- No inventes hechos.',
-            '- Si una información no está confirmada, indícalo con cautela.',
-            '- Añade pistas de fuentes/URLs cuando sea posible.',
+            'REQUISITOS DE FUENTES Y CALIDAD:',
+            '- Prioriza fuentes reconocidas y verificables.',
+            '- Da preferencia a fuentes oficiales, agencias y medios de alta reputación.',
+            '- Ejemplos orientativos para España: EFE, Europa Press, RTVE, La Moncloa, BOE, ministerios e instituciones públicas, AEMET, INE, gobiernos autonómicos cuando aplique, y grandes medios nacionales.',
+            '- En deportes prioriza clubes oficiales, ligas/federaciones, UEFA/FIFA/LaLiga/RFEF; y medios deportivos reputados cuando sea útil (Marca, AS, Mundo Deportivo, Sport).',
+            '- En ciencia/salud prioriza instituciones oficiales, universidades, centros de investigación y autoridades sanitarias.',
+            '- Si usas una fuente poco conocida, marca claramente que requiere verificación.',
+            '- Incluye al menos una pista de fuente por noticia.',
+            '- Si no hay fuente fiable, escribe exactamente: "requiere verificación".',
             '',
-            'NEWS COUNT:',
-            '- Minimum news items: '.$minItems,
-            '- Maximum news items: '.$maxItems,
+            'NÚMERO DE NOTICIAS:',
+            '- Mínimo de noticias: '.$minItems,
+            '- Máximo de noticias: '.$maxItems,
             '',
             'PERSONALIDAD EDITORIAL (0-10):',
             '- Happiness level: '.($profile->happiness_level ?? 'N/A'),
@@ -83,37 +84,61 @@ class BulletinPromptGenerator
             '- Formality level: '.($profile->formality_level ?? 'N/A'),
             '- Source strictness level: '.($profile->source_strictness_level ?? 'N/A'),
             '',
-            'OBJETIVO EDITORIAL:',
-            'Resumir las noticias más relevantes cerradas durante la ventana de cobertura.',
-            '',
-            'OUTPUT MODE: '.$type->output_mode,
+            'MODO DE SALIDA: '.$type->output_mode,
         ];
 
         if ($type->output_mode === 'plain_script') {
             $lines = array_merge($lines, [
                 '- Entrega únicamente el guion final listo para presentador.',
-                '- Sin markdown, sin etiquetas, sin lista de fuentes salvo petición explícita.',
+                '- Sin markdown, sin tablas y sin bloques técnicos.',
             ]);
         } else {
             $lines = array_merge($lines, [
-                '- Responde con estructura explícita:',
+                '- Devuelve exactamente estos encabezados y en este orden:',
                 'TITLE:',
+                'Título breve del boletín completo.',
+                '',
                 'INTRO:',
+                'Texto de apertura listo para presentador.',
+                '',
                 'NEWS ITEMS:',
-                'HEADLINE:',
+                '1. HEADLINE:',
+                'Titular breve de la noticia.',
+                '',
                 'SUMMARY:',
+                'Resumen factual breve de apoyo editorial, no para locución final.',
+                '',
                 'SCRIPT:',
+                'Bloque principal de narración para presentador. Este bloque se usa para construir el guion final.',
+                '',
                 'EDITORIAL ANGLE:',
+                'Por qué importa esta noticia o cómo enmarcarla.',
+                '',
                 'SOURCE HINTS:',
+                '- Nombre de fuente y URL si está disponible.',
+                '- Si la fuente es débil o poco clara, marca "needs verification" o "requiere verificación".',
+                '',
                 'OUTRO:',
+                'Texto de cierre listo para presentador.',
+                '',
                 'NOTES:',
+                'Advertencias, incertidumbre, límites de fuentes y notas de verificación.',
+                '',
+                'REGLAS DE FORMATO IMPORTANTES:',
+                '- Los bloques SCRIPT son la narración principal.',
+                '- SUMMARY es solo apoyo interno/editorial.',
+                '- No pongas toda la narración únicamente en SUMMARY.',
+                '- Usa frases cortas y naturales para SCRIPT.',
+                '- Escribe SCRIPT en el idioma final del boletín.',
+                '- No uses tablas Markdown.',
+                '- Mantén los encabezados exactamente como se solicitaron.',
             ]);
         }
 
         return trim(implode("\n", $lines));
     }
 
-    private function generateEnglishPrompt(BulletinPromptRun $run, $type, $profile, array $context): string
+    private function generateEnglishPrompt($type, $profile, array $context): string
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
 
@@ -145,18 +170,16 @@ class BulletinPromptGenerator
             '- Select the most relevant news for the configured location and category.',
             '- Respect the coverage window.',
             '- Prioritize recent confirmed information.',
-            '- Avoid outdated stories unless still developing.',
-            '- Do not include future agenda if include_future_agenda is false.',
-            '- If include_future_agenda is true, clearly identify future events as upcoming.',
+            '',
+            'SOURCE QUALITY REQUIREMENTS:',
+            '- Prioritize recognized and verifiable sources.',
+            '- Prefer official sources, agencies, and major reputable media.',
+            '- Include at least one source hint per news item.',
+            '- If no reliable source is available, explicitly write "requires verification".',
             '',
             'NEWS COUNT:',
             '- Minimum news items: '.$minItems,
             '- Maximum news items: '.$maxItems,
-            '',
-            'FACT REQUIREMENTS:',
-            '- Use current information if your tool supports web browsing.',
-            '- Do not invent facts.',
-            '- If something is uncertain, mark it clearly.',
             '',
             'OUTPUT MODE: '.$type->output_mode,
         ];
@@ -165,8 +188,44 @@ class BulletinPromptGenerator
             $lines[] = '- Return only clean presenter-ready script text. No markdown.';
         } else {
             $lines = array_merge($lines, [
-                '- Return a structured response with:',
-                'TITLE, INTRO, NEWS ITEMS, HEADLINE, SUMMARY, SCRIPT, EDITORIAL ANGLE, SOURCE HINTS, OUTRO, NOTES.',
+                '- Return exactly these headings and keep this order:',
+                'TITLE:',
+                'Short title for the whole bulletin.',
+                '',
+                'INTRO:',
+                'Presenter-ready opening text.',
+                '',
+                'NEWS ITEMS:',
+                '1. HEADLINE:',
+                'Short headline for this item.',
+                '',
+                'SUMMARY:',
+                'Brief factual summary, not for narration.',
+                '',
+                'SCRIPT:',
+                'Presenter-ready narration text for this item. This is the main block used to build the final script.',
+                '',
+                'EDITORIAL ANGLE:',
+                'Why this item matters or how it should be framed.',
+                '',
+                'SOURCE HINTS:',
+                '- Source name and URL when available.',
+                '- If source is weak/unclear, mark as "needs verification".',
+                '',
+                'OUTRO:',
+                'Presenter-ready closing text.',
+                '',
+                'NOTES:',
+                'Warnings, uncertainty, source limitations, or verification notes.',
+                '',
+                'IMPORTANT FORMAT RULES:',
+                '- SCRIPT sections are the main narration blocks.',
+                '- SUMMARY is only internal/editorial support.',
+                '- Do not place the full narration only in SUMMARY.',
+                '- Use short natural sentences for SCRIPT.',
+                '- Write SCRIPT in the final bulletin language.',
+                '- Do not use Markdown tables.',
+                '- Keep headings exactly as requested.',
             ]);
         }
 

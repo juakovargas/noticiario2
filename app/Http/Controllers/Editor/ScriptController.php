@@ -34,6 +34,7 @@ class ScriptController extends Controller
             'approved' => (string) $request->query('approved', ''),
             'sort' => (string) $request->query('sort', 'created_at'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'language', 'estimated_duration_seconds', 'approved_at', 'created_at'];
@@ -42,6 +43,7 @@ class ScriptController extends Controller
 
         return Inertia::render('Editor/Scripts/Index', [
             'scripts' => Script::query()
+                ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
                 ->with([
                     'edition:id,title',
                     'reviewedBy:id,name,email,profile_image_id',
@@ -222,10 +224,46 @@ class ScriptController extends Controller
         return to_route('editor.scripts.index')->with('success', 'Script deleted successfully.');
     }
 
+    public function archive(Script $script): RedirectResponse
+    {
+        if ($script->status !== 'archived') {
+            $metadata = is_array($script->metadata) ? $script->metadata : [];
+            $metadata['previous_status'] = $script->status;
+
+            $script->update([
+                'status' => 'archived',
+                'metadata' => $metadata,
+            ]);
+        }
+
+        return back()->with('success', 'Script archived successfully.');
+    }
+
+    public function restore(Script $script): RedirectResponse
+    {
+        $metadata = is_array($script->metadata) ? $script->metadata : [];
+        $previousStatus = $metadata['previous_status'] ?? null;
+
+        $safeStatuses = ['draft', 'review', 'approved', 'rejected'];
+        $status = in_array($previousStatus, $safeStatuses, true)
+            ? $previousStatus
+            : ($script->approved_at ? 'approved' : 'draft');
+
+        unset($metadata['previous_status']);
+
+        $script->update([
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'Script restored successfully.');
+    }
+
     private function formOptions(): array
     {
         return [
             'editions' => Edition::query()
+                ->where('status', '!=', 'archived')
                 ->with(['location.defaultLanguage:id,code'])
                 ->orderBy('title')
                 ->get(['id', 'title', 'location_id'])

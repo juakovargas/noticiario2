@@ -142,12 +142,18 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'show'])->name('news-sources.import');
         Route::post('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'store'])->name('news-sources.import.store');
         Route::resource('news-items', NewsItemController::class);
+        Route::post('/news-items/{newsItem}/archive', [NewsItemController::class, 'archive'])->name('news-items.archive');
+        Route::post('/news-items/{newsItem}/restore', [NewsItemController::class, 'restore'])->name('news-items.restore');
         Route::resource('editions', EditionController::class);
+        Route::post('/editions/{edition}/archive', [EditionController::class, 'archive'])->name('editions.archive');
+        Route::post('/editions/{edition}/restore', [EditionController::class, 'restore'])->name('editions.restore');
         Route::get('/editions/{edition}/news-items', [EditionNewsItemController::class, 'index'])->name('editions.news-items.index');
         Route::post('/editions/{edition}/news-items', [EditionNewsItemController::class, 'store'])->name('editions.news-items.store');
         Route::put('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'update'])->name('editions.news-items.update');
         Route::delete('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'destroy'])->name('editions.news-items.destroy');
         Route::resource('scripts', ScriptController::class);
+        Route::post('/scripts/{script}/archive', [ScriptController::class, 'archive'])->name('scripts.archive');
+        Route::post('/scripts/{script}/restore', [ScriptController::class, 'restore'])->name('scripts.restore');
         Route::get('/source-references', [SourceReferenceController::class, 'index'])->name('source-references.index');
         Route::get('/source-references/{sourceReference}', [SourceReferenceController::class, 'show'])->name('source-references.show');
         Route::put('/source-references/{sourceReference}', [SourceReferenceController::class, 'update'])->name('source-references.update');
@@ -193,6 +199,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('editorial-templates', EditorialTemplateController::class);
         Route::resource('ai-prompt-templates', AiPromptTemplateController::class);
         Route::resource('editorial-requests', EditorialRequestController::class);
+        Route::post('/editorial-requests/{editorialRequest}/archive', [EditorialRequestController::class, 'archive'])->name('editorial-requests.archive');
+        Route::post('/editorial-requests/{editorialRequest}/restore', [EditorialRequestController::class, 'restore'])->name('editorial-requests.restore');
         Route::post('/editorial-requests/{editorialRequest}/run', [EditorialRequestController::class, 'run'])->name('editorial-requests.run');
         Route::post('/editorial-requests/{editorialRequest}/create-news-items', [EditorialRequestController::class, 'createNewsItems'])->name('editorial-requests.create-news-items');
         Route::post('/editorial-requests/{editorialRequest}/convert-to-edition', [EditorialRequestController::class, 'convertToEdition'])->name('editorial-requests.convert-to-edition');
@@ -205,12 +213,20 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/archive', [BulletinPromptRunController::class, 'archive'])->name('bulletin-prompt-runs.archive');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/restore', [BulletinPromptRunController::class, 'restore'])->name('bulletin-prompt-runs.restore');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/mark-completed', [BulletinPromptRunController::class, 'markCompleted'])->name('bulletin-prompt-runs.mark-completed');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/cancel', [BulletinPromptRunController::class, 'cancel'])->name('bulletin-prompt-runs.cancel');
         Route::resource('editorial-schedule-runs', EditorialScheduleRunController::class)->only(['index', 'show']);
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/archive', [EditorialScheduleRunController::class, 'archive'])->name('editorial-schedule-runs.archive');
+        Route::post('/editorial-schedule-runs/{editorialScheduleRun}/restore', [EditorialScheduleRunController::class, 'restore'])->name('editorial-schedule-runs.restore');
         Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/receive-response', [EditorialScheduleRunController::class, 'receiveResponse'])->name('editorial-schedule-runs.receive-response');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/create-script', [EditorialScheduleRunController::class, 'createScript'])->name('editorial-schedule-runs.create-script');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/complete', [EditorialScheduleRunController::class, 'complete'])->name('editorial-schedule-runs.complete');
+        Route::post('/source-references/{sourceReference}/archive', [SourceReferenceController::class, 'archive'])->name('source-references.archive');
+        Route::post('/source-references/{sourceReference}/restore', [SourceReferenceController::class, 'restore'])->name('source-references.restore');
     });
 
 Route::middleware(['auth', 'verified', 'permission:viewer.access'])

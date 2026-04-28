@@ -15,6 +15,7 @@ use App\Models\NewsItem;
 use App\Services\Ai\AiClientManager;
 use App\Services\Ai\PromptRenderer;
 use App\Support\GeneratesUniqueSlug;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,13 +33,36 @@ class EditorialRequestController extends Controller
     ) {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'search' => (string) $request->query('search', ''),
+            'status' => (string) $request->query('status', ''),
+            'location_id' => (string) $request->query('location_id', ''),
+            'news_category_id' => (string) $request->query('news_category_id', ''),
+            'language_id' => (string) $request->query('language_id', ''),
+            'show_archived' => $request->boolean('show_archived'),
+            'only_archived' => $request->boolean('only_archived'),
+        ];
+
         return Inertia::render('Editor/EditorialRequests/Index', [
             'requests' => EditorialRequest::query()
                 ->with(['aiProvider:id,name', 'aiPromptTemplate:id,name,type', 'location:id,name', 'newsCategory:id,name', 'language:id,code,name'])
+                ->when($filters['search'] !== '', fn (Builder $query) => $query->where('title', 'like', '%'.$filters['search'].'%'))
+                ->when($filters['status'] !== '', fn (Builder $query) => $query->where('status', $filters['status']))
+                ->when($filters['location_id'] !== '', fn (Builder $query) => $query->where('location_id', $filters['location_id']))
+                ->when($filters['news_category_id'] !== '', fn (Builder $query) => $query->where('news_category_id', $filters['news_category_id']))
+                ->when($filters['language_id'] !== '', fn (Builder $query) => $query->where('language_id', $filters['language_id']))
+                ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
+                ->when($filters['only_archived'], fn (Builder $query) => $query->where('status', 'archived'))
                 ->latest()
-                ->paginate(15),
+                ->paginate(15)
+                ->withQueryString(),
+            'filters' => $filters,
+            'statuses' => ['draft', 'ready', 'running', 'completed', 'failed', 'converted', 'archived'],
+            'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
+            'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -89,6 +113,27 @@ class EditorialRequestController extends Controller
         $editorialRequest->delete();
 
         return to_route('editor.editorial-requests.index')->with('success', 'Editorial request deleted successfully.');
+    }
+
+    public function archive(EditorialRequest $editorialRequest): RedirectResponse
+    {
+        if ($editorialRequest->status !== 'archived') {
+            $metadata = is_array($editorialRequest->metadata) ? $editorialRequest->metadata : [];
+            $metadata['previous_status'] = $editorialRequest->status;
+            $editorialRequest->update(['status' => 'archived', 'metadata' => $metadata]);
+        }
+
+        return back()->with('success', 'Editorial request archived successfully.');
+    }
+
+    public function restore(EditorialRequest $editorialRequest): RedirectResponse
+    {
+        $metadata = is_array($editorialRequest->metadata) ? $editorialRequest->metadata : [];
+        $previousStatus = (string) ($metadata['previous_status'] ?? '');
+        $restored = $previousStatus !== '' && $previousStatus !== 'archived' ? $previousStatus : 'draft';
+        $editorialRequest->update(['status' => $restored]);
+
+        return back()->with('success', 'Editorial request restored successfully.');
     }
 
     public function run(EditorialRequest $editorialRequest): RedirectResponse

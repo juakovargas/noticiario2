@@ -40,6 +40,7 @@ class EditionController extends Controller
             'scheduled_to' => (string) $request->query('scheduled_to', ''),
             'sort' => (string) $request->query('sort', 'scheduled_for'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'edition_type', 'scheduled_for', 'target_duration_seconds', 'created_at'];
@@ -47,6 +48,7 @@ class EditionController extends Controller
         $direction = in_array($filters['direction'], ['asc', 'desc'], true) ? $filters['direction'] : 'desc';
 
         $editions = Edition::query()
+            ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
             ->with('location:id,name,country_code,type')
             ->withCount(['newsItems', 'scripts'])
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
@@ -118,6 +120,7 @@ class EditionController extends Controller
         $edition->load([
             'location:id,name,country_code',
             'newsItems' => fn ($query) => $query
+                ->where('status', '!=', 'archived')
                 ->with(['source:id,name', 'category:id,name', 'category.translations:id,news_category_id,language_code,name', 'location:id,name,country_code'])
                 ->orderBy('edition_news_item.sort_order'),
             'scripts:id,edition_id,title,status,language,estimated_duration_seconds,approved_at,approved_by',
@@ -193,6 +196,38 @@ class EditionController extends Controller
         $edition->delete();
 
         return to_route('editor.editions.index')->with('success', 'Edition deleted successfully.');
+    }
+
+    public function archive(Edition $edition): RedirectResponse
+    {
+        if ($edition->status !== 'archived') {
+            $metadata = is_array($edition->metadata) ? $edition->metadata : [];
+            $metadata['previous_status'] = $edition->status;
+
+            $edition->update([
+                'status' => 'archived',
+                'metadata' => $metadata,
+            ]);
+        }
+
+        return back()->with('success', 'Edition archived successfully.');
+    }
+
+    public function restore(Edition $edition): RedirectResponse
+    {
+        $metadata = is_array($edition->metadata) ? $edition->metadata : [];
+        $previousStatus = $metadata['previous_status'] ?? null;
+        $safeStatuses = ['draft', 'planning', 'scripting', 'approved'];
+        $status = in_array($previousStatus, $safeStatuses, true) ? $previousStatus : 'planning';
+
+        unset($metadata['previous_status']);
+
+        $edition->update([
+            'status' => $status,
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'Edition restored successfully.');
     }
 
     private function formOptions(): array

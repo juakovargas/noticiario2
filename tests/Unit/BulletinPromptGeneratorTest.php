@@ -18,7 +18,7 @@ class BulletinPromptGeneratorTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function generated_prompt_includes_timing_coverage_count_and_quality_rules(): void
+    public function generated_spanish_prompt_is_consistent_and_explains_script_usage(): void
     {
         $location = Location::factory()->create(['name' => 'Spain']);
         $category = NewsCategory::factory()->create(['name' => 'General']);
@@ -52,21 +52,23 @@ class BulletinPromptGeneratorTest extends TestCase
 
         $prompt = app(BulletinPromptGenerator::class)->generate($run);
 
-        $this->assertStringContainsString('Broadcast date: 2026-04-29', $prompt);
-        $this->assertStringContainsString('Broadcast time: 08:00', $prompt);
-        $this->assertStringContainsString('Timezone: Europe/Madrid', $prompt);
-        $this->assertStringContainsString('Desde: 2026-04-28 08:00 Europe/Madrid', $prompt);
-        $this->assertStringContainsString('Hasta: 2026-04-29 07:30 Europe/Madrid', $prompt);
-        $this->assertStringNotContainsString('Scheduled date/time: N/A', $prompt);
-        $this->assertStringContainsString('Minimum news items: 4', $prompt);
-        $this->assertStringContainsString('Maximum news items: 5', $prompt);
-        $this->assertStringContainsString('OUTPUT MODE: structured_script', $prompt);
-        $this->assertStringContainsString('No inventes datos ni hechos', $prompt);
-        $this->assertStringContainsString('No incluir agenda futura', $prompt);
+        $this->assertStringContainsString('FECHA Y HORA DE EMISIÓN', $prompt);
+        $this->assertStringContainsString('Fecha de emisión: 2026-04-29', $prompt);
+        $this->assertStringContainsString('Hora de emisión: 08:00', $prompt);
+        $this->assertStringContainsString('Zona horaria: Europe/Madrid', $prompt);
+        $this->assertStringContainsString('Mínimo de noticias: 4', $prompt);
+        $this->assertStringContainsString('Máximo de noticias: 5', $prompt);
+        $this->assertStringContainsString('REGLAS DE SELECCIÓN DE NOTICIAS', $prompt);
+        $this->assertStringContainsString('NÚMERO DE NOTICIAS', $prompt);
+        $this->assertStringContainsString('MODO DE SALIDA: structured_script', $prompt);
+        $this->assertStringContainsString('Los bloques SCRIPT son la narración principal', $prompt);
+        $this->assertStringContainsString('Incluye al menos una pista de fuente por noticia', $prompt);
+        $this->assertStringNotContainsString('BROADCAST TIMING', $prompt);
+        $this->assertStringNotContainsString('NEWS SELECTION RULES', $prompt);
     }
 
     #[Test]
-    public function plain_script_mode_and_fallback_counts_are_included(): void
+    public function english_plain_prompt_includes_source_hint_requirements(): void
     {
         $type = BulletinType::query()->create([
             'name' => 'English',
@@ -89,6 +91,7 @@ class BulletinPromptGeneratorTest extends TestCase
         $this->assertStringContainsString('Minimum news items: 3', $prompt);
         $this->assertStringContainsString('Maximum news items: 4', $prompt);
         $this->assertStringContainsString('OUTPUT MODE: plain_script', $prompt);
+        $this->assertStringContainsString('Include at least one source hint per news item', $prompt);
         $this->assertStringContainsString('Do not invent facts.', $prompt);
     }
 }

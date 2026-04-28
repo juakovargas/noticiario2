@@ -28,6 +28,8 @@ class SourceReference extends Model
         'trust_level',
         'checked_by',
         'checked_at',
+        'archived_at',
+        'archived_by',
         'notes',
         'metadata',
     ];
@@ -37,6 +39,7 @@ class SourceReference extends Model
         return [
             'metadata' => 'array',
             'checked_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 

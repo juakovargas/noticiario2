@@ -4,6 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import UserAvatar from '@/Components/UserAvatar';
 import TextInput from '@/Components/TextInput';
 import { useTranslations } from '@/i18n/useTranslations';
+import { Appearance } from '@/lib/theme';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useMemo } from 'react';
@@ -104,7 +105,7 @@ export default function UpdateProfileInformation({
                     </div>
                     <div>
                         <InputLabel htmlFor="appearance" value={t('Appearance')} />
-                        <select id="appearance" className="mt-1 block w-full rounded-md border-gray-300" value={data.appearance} onChange={(e) => setData('appearance', e.target.value)}>
+                        <select id="appearance" className="mt-1 block w-full rounded-md border-gray-300" value={data.appearance} onChange={(e) => setData('appearance', e.target.value as Appearance)}>
                             <option value="light">{t('Light mode')}</option>
                             <option value="dark">{t('Dark mode')}</option>
                             <option value="system">{t('Use system setting')}</option>

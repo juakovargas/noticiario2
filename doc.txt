@@ -1,10 +1,24 @@
 PROJECT: NOTICIARIO
 
-IMPORTANT:
-Keep this file updated after every major branch or feature.
+## 1. PROJECT OVERVIEW
+
+Project name: Noticiario.
 
 Goal:
-Noticiario is a Laravel 12 + Inertia + React + TypeScript application for creating short digital news bulletins. The platform helps editors collect and organize news by location/topic, prepare editions, and build scripts. Future phases may include AI-assisted planning, audio/video generation, and publishing automation.
+Noticiario is a Laravel 12 + Inertia + React + TypeScript platform for creating short digital news bulletins from editorial planning to production-ready scripts.
+
+High-level workflow:
+1. Configure bulletin/schedule.
+2. Create run.
+3. Generate prompt.
+4. Generate or paste AI response.
+5. Parse response.
+6. Create script.
+7. Review/fact-check.
+8. Verify sources.
+9. Approve script.
+10. Prepare production metadata.
+11. Later audio/video/publishing.
 
 Architecture:
 - Laravel 12
@@ -14,67 +28,240 @@ Architecture:
 - Tailwind
 - MySQL
 - Spatie Laravel Permission
-- No Blade application pages
-- resources/views/app.blade.php is only the Inertia root view
-- React pages live in resources/js/Pages
-- React layouts live in resources/js/Layouts
 
-Panels:
+Restrictions:
+- No Blade application pages.
+- resources/views/app.blade.php is only the Inertia root view.
+- React pages live in resources/js/Pages.
+- React layouts live in resources/js/Layouts.
+
+## 2. PANELS AND ACCESS
+
 Admin:
 - URL: /admin
 - Permission: admin.access
-- Purpose: technical/system administration
-- Modules:
-  - Dashboard
-  - Users
-  - Roles
-  - Permissions
-  - Languages
-  - AI Providers (implemented)
-  - Impersonation/Login as user
+- Purpose: technical/system administration.
 
 Editor:
 - URL: /editor
 - Permission: editor.access
-- Purpose: main editorial workspace
-- Modules:
-  - Dashboard
-  - News Items
-  - News Sources
-  - News Categories
-  - Locations
-  - Editions
-  - Scripts
-  - Script Builder
-  - Editorial Templates
-  - AI Prompt Templates
-  - Editorial Requests
-  - Audio/Video/Publishing placeholders for future phases
+- Purpose: main editorial workspace.
 
 Viewer:
 - URL: /viewer
 - Permission: viewer.access
-- Purpose: read-only area
-- Modules:
-  - Dashboard
-  - Published Content
+- Purpose: read-only area.
 
-Auth and permissions:
-- Login redirects by permission:
-  - admin.access -> /admin
-  - editor.access -> /editor
-  - viewer.access -> /viewer
-- Editors must not access /admin
-- Viewers must not access /admin or /editor
-- Admin impersonation exists for support/testing
-- Impersonation is only for admin.access users
+Login redirects:
+- admin.access -> /admin
+- editor.access -> /editor
+- viewer.access -> /viewer
+
+Impersonation:
+- Admin-only.
 
 Demo users:
 - admin@example.com / password
 - editor@example.com / password
 - viewer@example.com / password
 
-Important commands:
+## 3. CURRENT IMPLEMENTED MODULES
+
+Admin modules:
+- Dashboard
+- Users
+- Roles
+- Permissions
+- Languages
+- Media Library
+- AI Providers
+- AI Request Logs
+- SEO & Tracking
+- Home Page Settings
+- Prompt Profiles
+- Impersonation
+
+Editor modules:
+- Dashboard
+- Editorial Workbench
+- World Map
+- Bulletin Types
+- Bulletin Prompt Runs
+- Editorial Schedules
+- Editorial Schedule Runs
+- Editorial Desk
+- Scripts
+- Script Review
+- Source References
+- News Items
+- News Sources
+- News Categories
+- Locations
+- Editions
+- Editorial Templates
+- AI Prompt Templates
+- Production metadata workflow
+
+Viewer modules:
+- Dashboard
+- Published Content
+- World Map
+- Read-only overview
+
+Public:
+- Configurable public home page
+- Latest completed/ready/published noticiarios
+- Platform badges
+
+## 4. CORE WORKFLOW
+
+A. Configuration:
+- Languages
+- Locations
+- Categories
+- Bulletin Types
+- Prompt Profiles
+- Editorial Schedules
+- Prompt Templates
+- Home settings
+- SEO/tracking settings
+- AI providers
+
+B. Operational workflow:
+1. Create or use editorial schedule / bulletin type.
+2. Create run.
+3. Generate prompt.
+4. Generate AI response through configured provider OR paste manual external AI response.
+5. Parse AI response.
+6. Create Script.
+7. Generate review items.
+8. Verify sources.
+9. Approve or reject script.
+10. Prepare production metadata.
+11. Mark ready for production.
+12. Later audio/video/publishing.
+
+## 5. IMPLEMENTED TECHNICAL FEATURES
+
+- Centralized date formatting: shared frontend helpers and locale-aware display across major panels.
+- User preferences and avatars: profile preferences and avatar display/storage pipeline are implemented.
+- Media file system: media library with persisted media records and public URL behavior.
+- Archive/status/list hygiene: archive and status flows across key editor/admin lists.
+- Global translation audit/rules: centralized UI translation usage and status/enum mapping conventions.
+- World map: available in Admin/Editor/Viewer modules.
+- SEO/tracking settings: configurable admin settings for metadata/tracking fields.
+- Configurable public home: content and CTA settings from admin.
+- User light/dark/system appearance preference: persisted appearance selection with system fallback.
+- AI provider integration: providers can be configured and used in operational workflow.
+- AI request logs: request logging module implemented in admin.
+- Source verification: source references and verification workflow implemented.
+- Script review: review flow and review items integrated with scripts.
+- Production metadata: production preparation metadata workflow implemented.
+
+## 6. TRANSLATION RULE
+
+Strict translation policy:
+- UI translations live in resources/js/i18n/translations.ts.
+- Active UI locales:
+  - en
+  - es
+  - fr
+- All visible React UI strings must use useTranslations().t().
+- Status/enum values must be mapped to translated labels.
+- Flash messages should be translatable keys where practical.
+- Database-backed visible content should include translations where supported.
+- Prompt templates should be language-specific where supported.
+
+Mandatory future branch rule:
+Every branch that adds or changes visible UI text must update:
+- resources/js/i18n/translations.ts
+- English, Spanish and French keys
+- database seed translations if content is database-backed
+- prompt templates in the correct language if templates/prompts are added
+
+No new visible English-only text should be merged.
+
+## 7. DOCUMENTATION UPDATE RULE
+
+Every future branch must update doc.txt by doing BOTH:
+A. Add what was implemented.
+B. Remove or update any old pending/limitation/priority statements that are no longer true.
+
+Do not only append new sections.
+Do not leave contradictory current priorities.
+Do not keep multiple competing roadmap blocks.
+
+At the end of every branch, doc.txt must contain one single current roadmap.
+
+## 8. CURRENT LIMITATIONS
+
+- No automatic schedule runner yet.
+- No queue worker foundation yet.
+- No full AI cost control/limits yet.
+- No audio production yet.
+- No video production yet.
+- No publishing automation yet.
+- No public advanced search yet.
+- No public map filtering yet.
+- No real publication URLs unless future publishing module persists them.
+- Source verification is still manual; no live URL checking, scraping or automatic fact-checking.
+- No audio/video processing yet.
+- No media picker/thumbnails/S3 yet.
+
+## 9. CURRENT ROADMAP
+
+1. feature/ai-logs-cost-control-advanced
+- Objective: add cost-control policies, usage limits, and richer AI log observability.
+- Expected result: safer operational AI usage and clearer financial oversight.
+- Why this order: it improves reliability and control before automation layers depend on AI volume.
+
+2. feature/automatic-schedule-runner
+- Objective: execute eligible editorial schedules automatically.
+- Expected result: schedule runs created/executed without manual trigger for supported modes.
+- Why this order: automation should start only after tighter AI usage controls are in place.
+
+3. feature/queue-worker-foundation
+- Objective: introduce queue infrastructure for asynchronous editorial pipeline jobs.
+- Expected result: background execution foundation for scalable workflow steps.
+- Why this order: schedule automation and media steps need queue primitives to scale safely.
+
+4. feature/audio-production-foundation
+- Objective: define base audio production pipeline for approved scripts.
+- Expected result: scripts can progress into structured audio generation stages.
+- Why this order: comes after automation/queue groundwork to avoid fragile synchronous processing.
+
+5. feature/video-production-foundation
+- Objective: define base video production pipeline aligned with script and metadata outputs.
+- Expected result: approved content can move into structured video generation stages.
+- Why this order: video builds on metadata and pipeline capabilities established by earlier steps.
+
+6. feature/publishing-foundation
+- Objective: implement publishing domain model and initial destination connectors.
+- Expected result: internal publication records and initial outbound publishing workflow.
+- Why this order: publishing should start once audio/video artifact pipelines exist.
+
+7. feature/public-viewer-content-and-search
+- Objective: improve public/viewer exploration with richer content discovery.
+- Expected result: broader public browsing and searchable published bulletin history.
+- Why this order: it depends on stabilized publishing and persisted publication outputs.
+
+8. feature/media-picker-and-assets
+- Objective: add reusable media picker, asset association UX, and richer media tooling.
+- Expected result: faster editorial/media reuse and stronger production asset management.
+- Why this order: best introduced after core publication content types are established.
+
+9. feature/live-source-checking-optional
+- Objective: provide optional live URL/source checks without replacing manual verification.
+- Expected result: editor-assist verification signals while preserving manual final judgment.
+- Why this order: optional enrichment can be layered after core editorial/publishing stability.
+
+10. feature/privacy-consent-and-public-seo-hardening
+- Objective: harden public compliance and SEO/privacy behavior.
+- Expected result: stronger production-grade public controls and safer analytics/search indexing posture.
+- Why this order: final hardening step once public surface and publishing flows are stable.
+
+## 10. DEVELOPMENT COMMANDS
+
 - php artisan migrate
 - php artisan db:seed
 - php artisan db:seed --class=DemoEditorialSeeder
@@ -85,1448 +272,21 @@ Important commands:
 - php artisan route:list --name=viewer
 - php artisan route:list --name=locale
 
-Current main entities:
-- users
-- roles
-- permissions
-- languages
-- locations
-- news_categories
-- news_category_translations
-- news_sources
-- news_items
-- editions
-- edition_news_item
-- scripts
-- editorial_templates
-- ai_providers
-- ai_prompt_templates
-- editorial_requests
-- editorial_request_candidates
+## 11. SAFE DEVELOPMENT RULES
 
-Languages:
-- languages table configures available languages
-- UI locale and editorial language are related but different
-- UI locale controls app interface language
-- Editorial language controls content language
-- Locations can have a default editorial language
-- Dates should be displayed with localized formatting
-- Do not show seconds in normal editorial UI
-
-Current development decisions:
-- Inertia + React app only (no Blade app pages)
-- Preserve existing auth/permission rules and panel access
-- Preserve admin/editor CRUD behavior and impersonation
-- Keep RSS support optional/secondary; not strategic core
-- No external API calls in this branch
-- No queue/scheduler/audio/video/publishing automation in this branch
-
-What has been done (feature/ui-date-formatting-project-doc):
-- Added centralized frontend date helpers in resources/js/lib/dates.ts:
-  - formatDate(value, locale?)
-  - formatDateTime(value, locale?)
-  - formatTime(value, locale?)
-  - locale map: en->en-GB, es->es-ES, fr->fr-FR
-  - safe fallback for null/invalid values
-  - no seconds in default listings
-- Added useDateFormatter hook in resources/js/lib/useDateFormatter.ts to read page.props.i18n.locale
-- Applied localized datetime display across key Admin/Editor listing & detail pages
-- Added datetime-local normalization helper (toDateTimeLocalInputValue) and used it in edit forms where backend timestamps may include seconds/space format
-- Updated frontend translation keys for date-time labels
-- Added this root context file: doc.txt
-
-In progress:
-- Keep date formatting adoption consistent for newly added pages/modules.
-
-Current next priorities:
-1. Confirm avatar display manually.
-2. Continue source verification workflow if not complete.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add audio/video/publishing later.
-
-AVATAR DISPLAY PIPELINE
-
-1. File is uploaded to:
-   storage/app/public/media/images/users/{id}/...
-
-2. media_files record stores:
-   - disk = public
-   - path = media/images/users/{id}/file.jpg
-   - url can be null
-
-3. users.profile_image_id must point to media_files.id.
-
-4. MediaFile public_url is generated from:
-   Storage::disk(disk)->url(path)
-
-5. User avatar_url uses:
-   - profileImage.public_url
-   - avatar_path fallback
-   - null fallback
-
-6. Inertia auth.user must include:
-   - avatar_url
-   - initials
-   - profile_image_id
-
-7. React layouts use:
-   - UserAvatar with auth.user.avatar_url
-
-8. Public files require:
-   php artisan storage:link
-
-Strategic decision:
-RSS is not the main product direction.
-RSS may remain optional/secondary, but main value should be AI-assisted editorial planning and automatic noticiario creation.
-
-Main target workflow:
-Editorial Request
--> AI/Web Research Brief
--> Candidate News Items
--> Edition
--> Script Builder / AI Script Draft
--> Human Review
--> Audio
--> Video
--> Publishing
-
-EDITORIAL SCHEDULES AND MANUAL AI WORKFLOW
-
-New database tables:
-- editorial_schedules
-  - Defines reusable schedule configurations (daily/weekly/once/custom), editorial context, language/location/category, timing, manual AI mode, and instruction blocks.
-- editorial_schedule_runs
-  - Represents concrete workflow executions created from schedules and linked to editions/scripts.
-
-Purpose:
-- Schedules let editors configure recurring and one-off noticiario planning templates.
-- Runs provide the operational unit for each execution cycle (prompt generation, manual AI response capture, and script draft creation).
-
-Manual AI mode workflow:
-1. Configure schedule.
-2. Create run.
-3. Generate prompt.
-4. Copy prompt to external AI.
-5. Paste AI response.
-6. Create script draft.
-
-Demo schedule seeds added:
-- Spain Morning Briefing (08:00 Europe/Madrid)
-- Spain Afternoon Briefing (15:00 Europe/Madrid)
-- Spain Night Recap (21:00 Europe/Madrid)
-- Madrid Local Morning (weekdays at 09:00 Europe/Madrid)
-- Spain Sports Evening (20:00 Europe/Madrid)
-- Super Bowl Special Demo (once, America/New_York)
-
-New routes/pages:
-- Editor routes:
-  - /editor/editorial-desk
-  - /editor/editorial-schedules (CRUD)
-  - /editor/editorial-schedule-runs (index/show)
-  - run workflow actions:
-    - create run
-    - generate prompt
-    - receive response
-    - create script
-    - complete run
-- React pages:
-  - resources/js/Pages/Editor/EditorialDesk/Index.tsx
-  - resources/js/Pages/Editor/EditorialSchedules/*
-  - resources/js/Pages/Editor/EditorialScheduleRuns/*
-
-Current limitations:
-- No automatic AI calls yet.
-- No cron/scheduler execution yet.
-- No queue workers yet.
-- No audio/video/publishing automation yet.
-
-Conventions and restrictions:
-- Do not create Blade application pages.
-- Do not use migrate:fresh on development DB.
-- Do not wipe/truncate developer data.
+- No migrate:fresh on developer DB.
+- Do not wipe/truncate data.
 - Do not expose API keys.
-- Do not store real API keys in database.
-- Use TypeScript/React pages for app UI.
-- Use Tailwind for styling.
-- Use centralized helpers for common formatting.
-- Preserve existing routes unless strictly necessary.
-
-
-EDITORIAL SCHEDULES, RUNS AND DASHBOARDS
-
-Database:
-- editorial_schedules: configurable recurring and one-off planning definitions with location/category/language/tone/timing and manual AI instructions.
-- editorial_schedule_runs: concrete executions linked to schedule, edition, optional request and script, with status lifecycle and prompt/response snapshots.
-
-Purpose:
-- Schedules define what should run and how the bulletin should be produced.
-- Runs track the operational lifecycle for each execution and maintain audit/context metadata.
-
-Manual AI mode:
-- Prompt is generated by the platform and copied manually into external AI tools.
-- Response is pasted manually back into the platform.
-- Platform converts response into draft script linked to edition/run.
-
-Dashboards:
-- Editor dashboard now acts as the operational desk overview with today's tasks and action queues.
-- Editorial Desk page provides a focused expanded workflow board.
-- Admin dashboard provides system/technical overview plus editorial health indicators.
-- Viewer dashboard provides read-only overview of completed scripts/runs and upcoming editions.
-
-Workflow:
-1. Configure schedule.
-2. Create run.
-3. Generate prompt.
-4. Copy prompt to external AI.
-5. Paste response.
-6. Create script draft.
-
-Demo data:
-- Demo schedules include Spain 08:00/15:00/21:00, Madrid weekdays 09:00, Spain sports 20:00, and Super Bowl special.
-- Demo runs include pending/prompt-ready/response-received/script-created examples for dashboard visibility.
-
-Routes/pages:
-- editor.dashboard (operational overview)
-- editor.editorial-desk.index
-- editor.editorial-schedules.*
-- editor.editorial-schedule-runs.index/show + action routes
-- admin.dashboard (system + editorial overview)
-- viewer.dashboard (read-only overview)
-
-Current limitations:
-- No automatic AI calls yet.
-- No cron/scheduler yet.
-- No queue workers yet.
-- No audio/video/publishing automation yet.
-
-PROMPT QUALITY AND AI RESPONSE PARSING
-
-What was improved:
-- Editorial schedule run prompt generation now includes stronger guidance for factuality, recency, source hints, uncertainty handling, short presenter-ready paragraphs, and strict response structure.
-- The default expected external AI response format is now structured plain text:
-  - TITLE
-  - INTRO
-  - NEWS ITEMS with repeated HEADLINE/SUMMARY/SCRIPT/EDITORIAL ANGLE/SOURCE HINTS blocks
-  - OUTRO
-  - NOTES
-- Prompt language instruction now explicitly tells the external AI to answer in the configured schedule language.
-
-AiResponseParser service:
-- New service: app/Services/EditorialScheduling/AiResponseParser.php
-- Method: parse(string $responseText): array
-- Handles English and Spanish label variants, including:
-  - TITLE / TÍTULO
-  - INTRO / INTRODUCTION / ENTRADILLA
-  - NEWS ITEMS / ITEMS / NOTICIAS
-  - HEADLINE / TITULAR
-  - SUMMARY / RESUMEN
-  - SCRIPT / GUION
-  - EDITORIAL ANGLE / ENFOQUE EDITORIAL
-  - SOURCE HINTS / FUENTES
-  - OUTRO / CIERRE
-  - NOTES / NOTAS
-- Deterministic and tolerant parser behavior.
-- Safe fallback for unstructured responses:
-  - title=null, intro=null, outro=null, items=[]
-  - body=full response text
-
-Storage on editorial_schedule_runs:
-- Added nullable JSON fields:
-  - parsed_response
-  - parser_warnings
-- On AI response save:
-  - ai_response_text is stored
-  - response is parsed and stored in parsed_response
-  - warnings are saved when structure is missing
-  - response_received_at is set
-  - status becomes response_received
-
-Script creation from parsed response:
-- If parsed_response contains useful structure:
-  - script.title uses parsed title (fallback to edition title)
-  - script.intro/outro are filled from parsed content
-  - script.body is assembled from parsed items for presenter-ready flow
-  - metadata includes parsed_response_used, news_item_count, and flattened source_hints
-- If parsing is weak/unstructured:
-  - fallback to previous behavior with full ai_response_text in body
-  - parsed_response_used=false
-- Existing script duplication is avoided (if script already exists for run, it is reused).
-
-Editorial Run UI preview:
-- Run show page now includes parsed response preview:
-  - parsed title/intro/body/outro/notes
-  - parsed items with headline/summary/script/editorial angle/source hints
-  - parser warnings
-  - raw response fallback preview
-- Includes clear fallback messaging when no structured sections are detected.
-
-Prompt template seeds:
-- Updated seeded templates using updateOrCreate without deleting existing templates:
-  - Manual AI Research And Script Prompt
-  - Spanish Noticiario Prompt
-  - Sports Special Prompt
-- expected_output_format updated to structured_text for these templates.
-
-Demo data updates:
-- Demo schedule run seeding now includes a generated prompt snapshot, structured sample ai_response_text, and parsed_response snapshot for a manual workflow example.
-- Seeding remains idempotent via updateOrCreate.
-
-Optional extraction of candidate news items:
-- Not implemented in this branch to keep scope safe and preserve current CRUD stability.
-- Next incremental step: add manual action to create News Items from parsed_response with duplicate guard.
-
-Current limitations:
-- no real AI API calls yet
-- no automatic fact-checking yet
-- no source verification yet
-- no audio/video/publishing yet
-
-Current next priorities:
-1. Improve/manual test prompt quality with real external AI tools.
-2. Add source verification/fact-checking workflow.
-3. Add optional real AI provider integration.
-4. Add automatic schedule execution later.
-5. Add audio/video/publishing after editorial workflow is stable.
-
-SEO AND TRACKING SETTINGS
-
-Database:
-- Added seo_settings table for global SEO and tracking configuration.
-- This table is intended to keep one active/global row.
-
-Admin module:
-- Added Admin > SEO & Tracking page:
-  - Route: /admin/seo-settings
-  - Permission: admin.access only
-- Editors/viewers cannot access this module.
-
-Configurable SEO defaults:
-- site_name
-- default_title
-- title_suffix
-- default_description
-- default_keywords
-- canonical_base_url
-- default_robots
-- default_og_image
-- default_twitter_card
-- enable_indexing
-
-Search verification tokens:
-- google_site_verification
-- bing_site_verification
-
-Tracking IDs:
-- google_tag_manager_id
-- google_analytics_id
-- microsoft_clarity_id
-- meta_pixel_id
-- tiktok_pixel_id
-
-Custom script injection:
-- custom_head_scripts
-- custom_body_start_scripts
-- custom_body_end_scripts
-- enable_custom_scripts toggle
-
-Safety defaults and guardrails:
-- Only admin.access can manage SEO/tracking settings.
-- Tracking is disabled by default.
-- Custom scripts are disabled by default.
-- Do not store private API keys in this module.
-
-Injection location:
-- SEO/meta/tracking/custom scripts are injected from resources/views/app.blade.php.
-- This file is the Inertia root view (not a Blade application page).
-
-Operational notes:
-- The app safely handles missing seo_settings table during fresh installs/tests.
-- Demo seeders create/update one safe default SEO row with tracking/custom scripts disabled.
-
-Future considerations:
-- Cookie consent / privacy compliance
-- GDPR tracking consent
-- CSP/security headers
-- Per-environment tracking configuration
-- Page-specific SEO overrides
-
-Current modules list update:
-- Admin modules now include SEO & Tracking configuration.
-
-Current next priorities update:
-1. Stabilize editorial schedule + run workflow with stronger QA.
-2. Add page-level SEO override strategy for public content pages.
-3. Add privacy consent framework before enabling production tracking by default.
-4. Continue improving prompt/template quality and editorial automation reliability.
-
-MANUAL FACT-CHECK AND SCRIPT REVIEW
-
-Overview:
-- Added a manual editorial review and fact-check layer on top of existing script status flow.
-- This workflow is designed for human review before any automated AI/audio/video/publishing steps.
-
-Scripts review fields:
-- Added review_status (default: pending).
-- Added review_notes and fact_check_notes.
-- Added reviewed_by/reviewed_at.
-- Added rejected_by/rejected_at/rejection_reason.
-- Kept existing status + approved_by/approved_at behavior and used review_status as a parallel editorial layer.
-
-script_review_items table:
-- New granular review table linked to scripts.
-- Supports optional link to news_items.
-- Stores type, content, source_hints, verification_status, verification_notes, required_action, reviewer/timestamp, and metadata.
-
-Purpose of review items:
-- Allow editors to review each script section independently.
-- Support fact-check and source completeness checks at block/item level.
-- Enable clear manual workflow before final script approval.
-
-Review statuses:
-- pending
-- in_review
-- needs_sources
-- needs_changes
-- verified
-- approved
-- rejected
-
-Verification statuses:
-- pending
-- verified
-- needs_source
-- needs_changes
-- rejected
-- not_applicable
-
-Required actions:
-- add_source
-- rewrite
-- remove
-- check_date
-- check_claim
-- none
-
-ScriptReviewItemGenerator service:
-- New service: app/Services/EditorialReview/ScriptReviewItemGenerator.php
-- Deterministically generates review items without AI/external calls.
-- Prefers parsed metadata items when available.
-- Otherwise splits body by double new lines and falls back safely.
-- Optionally links edition news items to review items.
-- Prevents duplicate generation unless force regeneration is requested.
-
-Script Review page:
-- New page: Editor/Scripts/Review
-- Includes script header/status summary, counters, script-level review notes, per-item verification controls, and workflow actions.
-- Supports generate items, mark in review, mark verified, approve, and reject (with required reason).
-
-Approval/rejection workflow:
-- Verified only when unresolved blocking item states are absent.
-- Approval allowed when review_status=verified or all items are verified/not_applicable.
-- Rejection requires rejection_reason.
-- Approval/rejection also updates legacy script status to preserve previous workflow compatibility.
-
-Relationship with AI-generated/manual scripts:
-- Works for manually written scripts and scripts created from manual AI response parsing.
-- No AI call is required for review item generation.
-
-Current limitations:
-- no automatic fact-checking yet
-- no external source verification yet
-- no AI review yet
-- no audio/video/publishing yet
-
-Current next priorities:
-1. Improve review workflow based on manual testing.
-2. Add real source verification/fact-checking support.
-3. Add optional real AI provider integration.
-4. Add automatic schedule execution later.
-5. Add audio/video/publishing after editorial workflow is stable.
-
-SOURCE VERIFICATION WORKFLOW
-
-Overview:
-- Added a manual source verification workflow for scripts, script review items, and news items.
-- This workflow is fully manual: no external calls, no scraping, and no automatic URL verification.
-
-source_references table:
-- New table: source_references
-- Stores editor-managed source references tied to:
-  - news_items (optional)
-  - scripts (optional)
-  - script_review_items (optional)
-  - editorial_schedule_runs (optional)
-- Includes title, source_name, source_url, source_type, verification_status, trust_level, checked_by/checked_at, notes, metadata, timestamps, and soft deletes.
-
-Purpose of source references:
-- Track the specific references editors use to validate claims.
-- Make source quality visible during script review and approval.
-- Surface weak/missing/broken/rejected references before approval.
-
-Source types:
-- web
-- official
-- agency
-- social
-- rss
-- manual
-- unknown
-
-Verification statuses:
-- pending
-- verified
-- weak
-- missing
-- broken
-- rejected
-- not_required
-
-Trust level:
-- Numeric editorial trust score (manual).
-- Intended for desk-level confidence scoring and prioritization.
-
-Model relations:
-- Script hasMany sourceReferences.
-- ScriptReviewItem hasMany sourceReferences.
-- NewsItem hasMany sourceReferences.
-- EditorialScheduleRun hasMany sourceReferences.
-- SourceReference belongsTo checkedBy user.
-
-SourceReferenceExtractor service:
-- New service: app/Services/EditorialReview/SourceReferenceExtractor.php
-- Extracts source hints from:
-  - script metadata and text
-  - script review item source_hints/content
-  - parsed response structures and source sections (SOURCE HINTS, FUENTES, SOURCES)
-- Extracts URLs via regex.
-- Deduplicates safe re-runs and avoids duplicate inserts.
-
-Source References pages:
-- Editor/SourceReferences/Index
-- Editor/SourceReferences/Show
-- Supports filtering, listing, detail/edit form, verification updates, and linked content navigation.
-
-Script Review integration:
-- Review page now shows linked source references per review item.
-- Added extract source actions for scripts and review items.
-- Approval now blocks when source references include missing/broken/rejected states.
-
-Script Show and News Item integration:
-- Script show includes source summary and quick actions to extract/manage sources.
-- News item show surfaces source references and allows creating a source reference from source_url.
-
-Dashboard integration:
-- Added source verification cards:
-  - Sources pending verification
-  - Weak sources
-  - Missing sources
-  - Broken/rejected sources
-  - Scripts blocked by sources
-
-Current limitations:
-- no automatic URL checking
-- no scraping
-- no external API calls
-- no automatic fact-checking yet
-
-Current next priorities:
-1. Improve source verification workflow based on manual testing.
-2. Add optional live URL checking later.
-3. Add real AI provider integration.
-4. Add automatic schedule execution later.
-5. Add audio/video/publishing after editorial workflow is stable.
-
-USER PREFERENCES AND AVATAR
-
-Overview:
-- Added user profile preference fields and avatar support.
-- Preferences now support preferred locale, timezone, and date/time display preferences.
-
-User fields:
-- preferred_locale (nullable)
-- timezone (nullable)
-- avatar_path (nullable)
-- date_format (nullable)
-- time_format (nullable)
-
-Locale resolution order:
-1. session locale
-2. authenticated user preferred_locale
-3. app/default locale
-
-Profile page updates:
-- Profile now supports editing:
-  - name
-  - email
-  - preferred locale
-  - timezone
-  - date format
-  - time format
-  - avatar upload (jpg/jpeg/png/webp, max 2MB)
-- If avatar is not set, the UI uses initials fallback.
-
-Admin user management updates:
-- Admin user list now displays avatar/initials, preferred locale, and timezone.
-- Admin create/edit supports preferred locale, timezone, date/time format preferences, and optional avatar upload.
-
-Layout avatar display:
-- Admin, Editor, and Viewer layouts now display user avatar or initials in the top bar.
-- Works with impersonation context because top-bar user data is shared through auth props.
-
-Storage note:
-- Avatar URLs are served from public storage.
-- Run: php artisan storage:link
-
-SOURCE VERIFICATION WORKFLOW
-
-Current limitations (confirmed):
-- no automatic URL checking
-- no scraping
-- no external API calls
-- no automatic fact-checking yet
-
-Current next priorities:
-1. Improve source verification workflow based on manual testing.
-2. Add optional live URL checking later.
-3. Add real AI provider integration.
-4. Add AI request logs and cost control.
-5. Add automatic schedule execution later.
-6. Add audio/video/publishing after editorial workflow is stable.
-
-USER MANAGEMENT
-
-Admin Users CRUD:
-- Admin users listing includes avatar/initials, name, email, role badges, preferred locale, timezone, status, created date, and actions for edit/impersonate/delete.
-- Admin Users Edit page uses Inertia React form with proper method spoofing and multipart FormData support, fixing missing name/email on save.
-- Admin Users Create/Edit support:
-  - name
-  - email
-  - password / confirm password
-  - roles
-  - direct permissions
-  - preferred_locale
-  - timezone
-  - date_format
-  - time_format
-  - avatar upload
-  - active status
-- Role helper text is shown in Create/Edit UI:
-  - superadmin: full system access
-  - admin: technical administration and access to editor/viewer panels
-  - editor: editorial workspace access
-  - viewer: read-only panel access
-
-User preference fields:
-- preferred_locale
-- timezone
-- avatar_path
-- date_format
-- time_format
-
-Role management from admin:
-- Admin can update user roles from user edit/create pages.
-- Safety rule added: avoid removing last admin-like access (admin/superadmin/super-admin) from the final admin-like user.
-
-Basic roles and access:
-- Roles ensured via seeder (idempotent):
-  - superadmin
-  - admin
-  - editor
-  - viewer
-- Core panel permissions:
-  - admin.access
-  - editor.access
-  - viewer.access
-- Role access mapping:
-  - superadmin/admin -> admin/editor/viewer
-  - editor -> editor
-  - viewer -> viewer
-- Legacy role compatibility kept for existing super-admin naming.
-
-Impersonation/login as user:
-- Preserved existing admin impersonation behavior and routes.
-
-Current next priorities:
-1. Finish/fix user management and preferences.
-2. Continue source verification workflow if not complete.
-3. Add real AI provider integration.
-4. Add AI run logs and cost control.
-5. Add automatic schedule execution later.
-6. Add audio/video/publishing after editorial workflow is stable.
-
-[2026-04-27] PROFILE/LAYOUT + LOCALE HARDENING UPDATE
-
-USER PROFILE, PREFERENCES AND AVATAR
-- Shared Inertia auth.user includes safe user fields used by layouts and profile forms:
-  id, name, email, roles, permissions, preferred_locale, timezone, avatar_url, initials, date_format, time_format.
-- Added/updated reusable frontend avatar component:
-  resources/js/Components/UserAvatar.tsx
-  - Supports props: user, size (sm|md|lg), className.
-  - Shows image when avatar_url exists.
-  - If image fails to load, falls back to initials.
-  - If no avatar_url, falls back to initials directly.
-- Admin/Editor/Viewer layouts now consistently show avatar/initials and include a visible "My profile" link to profile.edit.
-- Editors/viewers/admins can update own preferences through /profile (auth protected route).
-- Avatar upload remains public-disk based. If avatar URLs do not resolve in local environments, ensure:
-  php artisan storage:link
-
-Locale resolution and persistence
-- locale.update behavior:
-  - validates locale against active locales.
-  - stores locale in session.
-  - if authenticated user exists and users.preferred_locale column exists, persists preferred_locale.
-- Per-request locale priority:
-  1) session locale
-  2) authenticated user preferred_locale
-  3) default active language from languages table (is_default, or first active by sort order)
-  4) config('app.locale')
-  5) en
-- Includes safe fallback behavior during transient migration states.
-
-SOURCE VERIFICATION WORKFLOW
-- Existing source verification workflow remains preserved in this branch:
-  source_references model/table, extractor service, editor pages, script/review integrations, and dashboard counters.
-- This branch keeps all current limitations:
-  - no automatic URL checking
-  - no scraping
-  - no external API calls
-  - no automatic fact-checking yet
-
-Current next priorities:
-1. Improve source verification workflow based on manual testing.
-2. Add optional live URL checking later.
-3. Add real AI provider integration.
-4. Add AI request logs and cost control.
-5. Add automatic schedule execution later.
-6. Add audio/video/publishing after editorial workflow is stable.
-
-PROFILE, AVATAR AND USER PREFERENCES
-
-- Profile editing flow was fixed for multipart submissions by using method spoofing (_method=patch) and forceFormData from Inertia so name/email are always submitted together with avatar uploads.
-- User preference fields supported and persisted:
-  - preferred_locale
-  - timezone
-  - avatar_path
-  - date_format
-  - time_format
-- Avatar storage now uses a centralized service:
-  - app/Services/UserAvatarService.php
-  - storage path: avatars/users/{user_id}/filename.ext on the public disk
-  - old avatar cleanup on replace is guarded to only delete inside the expected user avatar folder
-- User model exposes:
-  - avatar_url (public disk URL only when stored file exists)
-  - initials fallback from user name
-- Shared avatar rendering is standardized through:
-  - resources/js/Components/UserAvatar.tsx
-- Profile page is panel-aware and can render inside the corresponding panel shell:
-  - Admin link: profile.edit?panel=admin
-  - Editor link: profile.edit?panel=editor
-  - Viewer link: profile.edit?panel=viewer
-- Locale resolution priority:
-  1. session locale
-  2. authenticated user preferred_locale
-  3. default language from languages table
-  4. config app locale
-  5. en
-- Local development note:
-  - run php artisan storage:link for public avatar URLs.
-
-ADMIN USER MANAGEMENT
-
-- Admin user edit supports robust updates for name/email/roles/permissions/preferences and avatar file uploads.
-- Admin avatar upload uses UserAvatarService and persists users.avatar_path correctly.
-- Roles management remains intact; role sync and direct-permission sync are preserved.
-- Basic roles documented and preserved:
-  - superadmin
-  - admin
-  - editor
-  - viewer
-- Admin create/edit pages now include dynamic Effective permissions help based on selected roles:
-  - union of selected-role permissions
-  - panel access summary (Admin/Editor/Viewer)
-- Last-admin lockout protection is preserved and now also checks direct admin.access capability patterns when evaluating admin-like users.
-
-Current next priorities:
-1. Confirm profile/avatar/user edit fixes manually.
-2. Continue source verification workflow if not completed.
-3. Add real AI provider integration.
-4. Add AI request logs and cost control.
-5. Add automatic schedule execution later.
-6. Add audio/video/publishing after editorial workflow is stable.
-
-## BULLETIN TYPES AND PROMPT GENERATION
-
-### New tables
-- `bulletin_types`: configurable noticiario types (location/category/language, edition style, default prompt profile, timing defaults).
-- `prompt_profiles`: editorial personality profiles with 0-10 parameters for happiness, optimism, seriousness, humor, irony, formality, negativity/controversy tolerance, and source strictness.
-- `bulletin_prompt_runs`: execution records for the manual external AI workflow, with generated prompt, pasted AI response, parsed response, and links to edition/script.
-
-### New modules
-- Admin prompt profile management (`/admin/prompt-profiles`) to define and maintain editorial personality presets.
-- Editor bulletin type management (`/editor/bulletin-types`) to define bulletin product variants.
-- Editor prompt run workflow (`/editor/bulletin-prompt-runs`) for manual copy/paste AI drafting.
-
-### Manual external AI workflow
-1. Select bulletin type.
-2. Create prompt run.
-3. Generate prompt.
-4. Copy prompt to external AI.
-5. Paste response.
-6. Create script.
-
-### Editorial personality parameters
-- happiness
-- optimism
-- seriousness
-- humor
-- irony
-- formality
-- negativity tolerance
-- controversy tolerance
-- source strictness
-
-### Current limitations
-- no real AI calls yet
-- no audio/video yet
-- no publishing yet
-
-### Updated next priorities
-1. Manually test bulletin prompt quality.
-2. Improve prompt profiles based on real AI output.
-3. Add source verification workflow if not complete.
-4. Add real AI provider integration.
-5. Add AI run logs and cost control.
-6. Add automatic schedule execution later.
-7. Add audio/video/publishing after editorial workflow is stable.
-
-## BULLETIN PROMPT TIME WINDOW AND QUALITY
-
-- Bulletin types now include explicit prompt timing and quality fields:
-  - coverage_mode
-  - coverage_starts_offset_minutes
-  - coverage_ends_offset_minutes
-  - coverage_description
-  - include_future_agenda
-  - include_historical_context
-  - min_news_items
-  - max_news_items
-  - prompt_language
-  - output_mode
-- Coverage modes:
-  - previous_period
-  - today_so_far
-  - yesterday
-  - last_24_hours
-  - next_24_hours
-  - custom
-  - none
-- Coverage offsets are always relative to `scheduled_for`.
-- `scheduled_for` fallback behavior:
-  1. use explicitly submitted run datetime when provided
-  2. else use bulletin type default_schedule_time in default timezone for current day
-  3. else use current datetime
-- Prompt generation now enforces broadcast timing context in all normal runs:
-  - broadcast date
-  - broadcast time
-  - timezone
-  - coverage window mode/from/to
-- `prompt_language` controls the language used to instruct the external AI.
-- Bulletin language remains the target language of the final script output.
-- Output modes:
-  - `plain_script`: ask only for presenter-ready clean text
-  - `structured_script`: ask for structured sections (TITLE/INTRO/NEWS ITEMS/etc.)
-- News count guidance:
-  - use configured min/max when present
-  - otherwise infer from duration: 60s => 3-4, 90s => 4-5, 180s => 5-8, above => 7-10
-
-Examples:
-- Morning: previous day 08:00 to today 07:30.
-- Afternoon: today 08:00 to 14:30.
-- Night: today 15:00 to 20:30.
-- Preview: next 24 hours.
-
-Current next priorities:
-1. Manually test generated prompts with external AI.
-2. Tune bulletin type coverage windows.
-3. Improve pasted AI response parsing.
-4. Add source verification workflow if not complete.
-5. Add real AI provider integration.
-6. Add AI logs and cost control.
-7. Add audio/video/publishing later.
-
-## MEDIA FILE SYSTEM
-
-- Added central `media_files` table to track uploaded files and metadata.
-- Added `users.profile_image_id` (nullable FK to `media_files.id`) for profile image associations.
-- Kept `users.avatar_path` for backward compatibility.
-- Avatar resolution now prefers:
-  1. `users.profile_image_id` media URL
-  2. legacy `avatar_path` URL fallback
-  3. initials fallback
-- Added `App\Models\MediaFile` with uploader relation, URL accessor, and helper methods.
-- Added `App\Services\Media\MediaFileService` for:
-  - storing uploaded files
-  - replacing user profile images
-  - archiving/deleting media records safely
-  - capturing metadata (mime, extension, size, checksum, width/height when possible)
-- Profile image upload flow now stores records in `media_files` and sets `users.profile_image_id`.
-- Admin user edit/create avatar upload flow now stores records in `media_files` and sets `users.profile_image_id`.
-- Added a simple Admin Media Library module:
-  - `/admin/media-files`
-  - list with filters and preview
-  - details page with metadata and safe editable fields
-- User avatar display was reinforced through the reusable `UserAvatar` React component.
-- Admin, Editor, and Viewer layout headers continue showing avatar/initials correctly.
-
-### Public disk setup
-- Public media URLs rely on Laravel public disk and the storage symlink.
-- Run `php artisan storage:link` in local/production.
-- If the symlink is missing, UI falls back to initials when image loading fails.
-
-### Allowed media types (current)
-- Images: jpg, jpeg, png, webp, gif
-- Documents: pdf, txt, doc, docx
-- Audio: mp3, wav, m4a, ogg
-- Video: mp4, mov, webm
-
-### Current limitations
-- no image cropping yet
-- no thumbnails/conversions yet
-- no media picker yet
-- no S3 yet
-- no audio/video processing yet
-
-Current next priorities:
-1. Confirm media/avatar uploads manually.
-2. Replace old avatar_path usage fully later.
-3. Add media picker for editor content later.
-4. Add source verification workflow if not complete.
-5. Add real AI provider integration.
-6. Add audio/video/publishing later.
-
-MEDIA AVATAR DISPLAY PIPELINE
-
-- Uploaded profile assets are stored in media_files.
-- users.profile_image_id references media_files.id for the active profile image.
-- users.avatar_path is kept as legacy fallback only.
-- MediaFile public_url is generated from disk/path when url is null.
-- Inertia shared auth.user includes avatar_url, initials, and profile_image_id.
-- UserAvatar component is used in:
-  - AdminLayout
-  - EditorLayout
-  - ViewerLayout
-  - Admin Users Index
-  - Profile Edit
-  - Admin User Edit
-- Public disk delivery depends on symlink setup:
-  - php artisan storage:link
-
-Troubleshooting avatar display:
-1. Verify users.profile_image_id is set.
-2. Verify media_files.path and media_files.disk are correct.
-3. Verify the file exists under storage/app/public.
-4. Verify the /storage/... URL opens in browser.
-5. Verify Inertia props include auth.user.avatar_url.
-
-BULLETIN RESPONSE PARSING AND SCRIPT CREATION
-
-Expected external AI response format (structured mode):
-- TITLE
-- INTRO
-- NEWS ITEMS
-  - HEADLINE
-  - SUMMARY
-  - SCRIPT
-  - EDITORIAL ANGLE
-  - SOURCE HINTS
-- OUTRO
-- NOTES
-
-parsed_response JSON structure used by bulletin_prompt_runs:
-{
-  "title": "...",
-  "intro": "...",
-  "body": "...",
-  "items": [
-    {
-      "headline": "...",
-      "summary": "...",
-      "script": "...",
-      "editorial_angle": "...",
-      "source_hints": ["..."],
-      "raw": "..."
-    }
-  ],
-  "outro": "...",
-  "notes": "...",
-  "warnings": ["missing_title", "missing_intro", "no_script_blocks", "missing_sources", "unstructured_response"],
-  "raw": "..."
-}
-
-Implementation notes:
-- SCRIPT blocks are the narration source for final Script.body.
-- SUMMARY is editorial support and should not be used as final narration.
-- Parsed preview now shows title, intro, items, script blocks, source hints, outro and notes.
-- Source hints are displayed and linkified when URLs are present, but not auto-verified yet.
-- If response is unstructured, full response fallback is used as Script.body.
-- Existing scripts are never auto-overwritten by updating a prompt run response.
-- Optional future enhancement: create NewsItems directly from parsed response items.
-
-Updated next priorities:
-1. Manually test prompt and response parsing with external AI.
-2. Improve source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
-ARCHIVING, STATUS MANAGEMENT AND LIST HYGIENE
-
-- Archived operational records are hidden by default from working lists.
-- Archive actions do not delete records and do not hard-delete workflow data.
-- Bulletin Prompt Runs now support status actions from list/show:
-  - archive -> status=archived
-  - restore -> recalculates status (draft, prompt_ready, response_received, script_created)
-  - mark completed -> status=completed
-  - cancel -> status=cancelled (only when no script exists)
-- Bulletin Prompt Runs index now includes filters for:
-  - search, status, bulletin type, prompt profile, creator, scheduled range
-  - show archived and only archived
-  - sortable list direction
-- Working list pattern:
-  - default: hide archived
-  - optional: show archived
-  - optional: only archived
-- Raw numeric IDs should not be the primary visible label in editorial lists.
-- Editor dashboard active counters now exclude archived prompt runs/scripts/editions.
-- Configuration entities should continue to use is_active as availability toggle (not archive semantics).
-- Operational entities should prefer status=archived when status-based workflow already exists.
-
-Updated next priorities:
-1. Continue improving pasted AI response parsing.
-2. Continue source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
-TABLE LIST MANAGEMENT, ARCHIVING AND STATUS CLEANUP
-
-Operational records now use archive/restore as a working-list cleanup pattern (archive is NOT deletion):
-- bulletin_prompt_runs
-- scripts
-- editions
-- news_items
-
-Behavior:
-- Archive actions set status=archived and store metadata.previous_status when available.
-- Restore actions recover metadata.previous_status when valid, with safe fallbacks by module.
-- Archived records are hidden by default in operational index pages.
-- "Show archived" toggles include archived records in the list when needed.
-- Archive/restore does not delete records and does not clear generated prompt/response/script links.
-
-Bulletin Prompt Runs:
-- Added/kept operational filters: search, status, bulletin type, prompt profile, creator, scheduled range, show archived, only archived.
-- Added/kept state actions: archive, restore, mark completed, cancel.
-- Default list prioritizes active work and hides archived runs.
-
-Scripts, Editions, News Items:
-- Index pages hide archived records by default and support show_archived.
-- Added archive/restore row actions to remove completed work from active lists without deleting.
-- Status rendering is consistent via status badges.
-
-Configuration records strategy:
-- Configuration modules continue using active/inactive concepts where applicable.
-- No archive-delete workflow was added for configuration entities in this cleanup.
-
-Dashboards/counters:
-- Archived operational records are excluded from active-work counters in editor dashboards.
-
-Table UX conventions:
-- Raw IDs should not be the primary label in user-facing tables.
-- Primary labels use meaningful names/titles.
-- Important lists include practical status/relationship/date filters.
-
-Current next priorities:
-1. Improve pasted AI response parser and preview.
-2. Improve source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
-GLOBAL TABLE LIST MANAGEMENT, ARCHIVING AND FILTERS
-- Completed inventory at docs/list-pages-audit.md.
-- Operational records use archive/restore (status=archived or archived_at/archived_by where status is not appropriate).
-- Configuration records continue with active/inactive toggles and filters.
-- Archived records are hidden by default and exposed with show_archived / only_archived patterns.
-- Archive actions do not delete records; restore brings records back to active workflow.
-- Prompt runs/scripts/editions/news items keep archive workflows; editorial schedule runs and editorial requests now also support archive/restore.
-- Source references now support archived_at/archived_by archive mode and archive visibility filters.
-- Raw #id values should not be the primary visual label in user-facing lists.
-- Dashboard active-work counters exclude archived records.
-
-Current next priorities:
-1. Improve pasted AI response parser and preview.
-2. Improve source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
-BULLETIN RESPONSE PARSING AND SCRIPT CREATION
-
-Expected external AI response format (canonical headings for parser stability):
-- TITLE
-- INTRO
-- NEWS ITEMS
-- HEADLINE
-- SUMMARY
-- SCRIPT
-- EDITORIAL ANGLE
-- SOURCE HINTS
-- OUTRO
-- NOTES
-
-Key behavior:
-- SCRIPT blocks are the narration source for final Script.body.
-- SUMMARY is editorial support and is not used as final narration unless SCRIPT blocks are unavailable.
-- Processed preview now shows parsed bulletin title, intro, each item (headline/summary/script/editorial angle/source hints), outro, notes, and parser warnings.
-- Save AI Response action is placed directly with the response textarea to speed up manual paste/processing workflow.
-
-parsed_response JSON structure (saved on bulletin_prompt_runs.parsed_response):
-- title: string|null
-- intro: string|null
-- items: [{headline, summary, script, editorial_angle, source_hints[], raw}]
-- outro: string|null
-- notes: string|null
-- warnings: string[]
-- raw: string
-- body: string (compatibility helper; script body fallback)
-
-Fallback behavior:
-- If no structured sections are detected, parser returns warning unstructured_response and keeps full raw response.
-- Script creation falls back to full ai_response_text/raw response when no SCRIPT blocks are available.
-- Existing scripts are never overwritten by updating the response or re-triggering script creation.
-
-Parser warnings currently used:
-- missing_title
-- missing_intro
-- no_script_blocks
-- missing_sources
-- unstructured_response
-
-Source hints:
-- Source hints are displayed in preview and URL hints are clickable.
-- Verification-related hints (needs verification / requiere verificación / weak / fuente débil) are visually marked.
-- Source hints are displayed but not automatically verified in this branch.
-
-Optional next extension:
-- Create News Items from parsed response can be added safely as a follow-up step with duplicate protection keyed by run/headline.
-
-Updated next priorities:
-1. Manually test response parsing with external AI outputs.
-2. Improve source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
-SOURCE VERIFICATION WORKFLOW
-
-Database:
-- source_references table stores manual source tracking and verification metadata.
-- Links supported:
-  - bulletin_prompt_run_id
-  - script_id
-  - news_item_id
-  - edition_id
-  - script_review_item_id
-- Verification fields:
-  - source_type: official, agency, media, web, social, rss, manual, unknown
-  - verification_status: pending, verified, weak, missing, broken, rejected, not_required
-  - trust_level: 0-10, nullable
-  - checked_by / checked_at
-- Archive fields:
-  - archived_at / archived_by
-  - archived records hidden by default and available via show_archived/only_archived filters
-
-Service:
-- app/Services/EditorialReview/SourceReferenceExtractor.php
-- Capabilities:
-  - extraction from bulletin prompt runs (parsed_response + response text)
-  - extraction from scripts (metadata + body text)
-  - extraction from news items
-  - extraction from parsed AI response payloads
-  - URL extraction from text and source blocks (SOURCE HINTS / SOURCES / FUENTES / PISTAS DE FUENTES)
-  - deduplication by URL + context, or normalized source label + context
-- No external URL checks, scraping, or API calls.
-
-Editor UI:
-- Source References pages:
-  - /editor/source-references
-  - /editor/source-references/{id}
-- Extract actions:
-  - /editor/bulletin-prompt-runs/{id}/source-references/extract
-  - /editor/scripts/{id}/source-references/extract
-  - /editor/news-items/{id}/source-references/extract
-- Integrations:
-  - Bulletin Prompt Run show includes source verification summary/list and extraction shortcut
-  - Script show includes source verification summary/list and unresolved warning
-  - News Item show can extract/link source references
-  - Dashboard counters include source verification metrics excluding archived references
-
-Current limitations:
-- no live URL checking
-- no automatic fact-checking
-- no scraping
-- no external API calls
-
-Updated next priorities:
-1. Manually test source verification with real prompt responses.
-2. Add real AI provider integration.
-3. Add AI logs and cost control.
-4. Add automatic schedule execution.
-5. Add audio/video/publishing later.
-
-WORLD BULLETIN MAP
-
-Purpose:
-- Show where Noticiario has active bulletin coverage by location for Admin, Editor, and Viewer panels.
-- Keep first version simple and practical for editorial visibility.
-
-Panels:
-- Admin world map: technical overview of mapped locations, active bulletin counts, pending/completed prompt counters, grouped location table.
-- Editor world map: active editorial coverage view with direct links to bulletin types and prompt runs by location.
-- Viewer world map: read-only coverage and available content counters.
-
-Location coordinate fields:
-- latitude
-- longitude
-- map_zoom
-- marker_color
-- marker_label
-- show_on_map
-
-BulletinMapService:
-- app/Services/Maps/BulletinMapService.php
-- Methods:
-  - getAdminMapData()
-  - getEditorMapData()
-  - getViewerMapData()
-- Builds location markers from bulletin types + prompt runs grouped by location.
-- Excludes locations without coordinates and show_on_map=false.
-- Excludes inactive bulletin types by default for editor/viewer.
-- Excludes archived prompt runs from active counters.
-
-Marker color logic:
-- green: has completed/script_created activity and no pending states.
-- amber: has pending states (draft/prompt_ready/waiting_ai_response/response_received).
-- red: has failed or cancelled run states.
-- blue/gray: configured but no recent run data.
-
-Current limitations:
-- no geocoding API
-- coordinates are manual
-- no advanced GIS
-- publication status is approximate until publishing module exists
-- viewer map uses completed/script_created availability signals where possible
-
-Updated next priorities:
-1. Test map with real bulletin locations.
-2. Improve source verification workflow.
-3. Add real AI provider integration.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video/publishing later.
-
----
-SOURCE VERIFICATION WORKFLOW
-- source_references table supports editorial source tracking linked to bulletin_prompt_runs, scripts, news_items, editions, and script_review_items when available.
-- Verification model includes source_type, verification_status, trust_level (0-10), checked_by/checked_at, and archive metadata via archived_at/archived_by.
-- SourceReferenceExtractor service (app/Services/EditorialReview/SourceReferenceExtractor.php) extracts source hints from parsed responses, script metadata, review items, and raw text URL patterns.
-- Extraction is idempotent per context (deduplicated by URL or normalized name), stores metadata.raw_hint, and now derives source_domain when URL exists.
-- Editor workflow includes extraction actions from Bulletin Prompt Runs, Scripts, Script Review Items, and News Items, plus Source References index/show pages for manual verification.
-- Prompt run and script pages include source verification summaries and quick links to manage sources.
-- Script approval flow keeps source blocking rules for missing/broken/rejected sources.
-- Archive/list behavior follows the existing show_archived / only_archived pattern (archive is non-destructive, restore supported).
-
-Current limitations:
-- No live URL health checks.
-- No automatic fact-checking.
-- No scraping.
-- No external API calls.
-
-Updated next priorities:
-1. Manually test source verification with real prompt responses.
-2. Add real AI provider integration.
-3. Add AI logs and cost control.
-4. Add automatic schedule execution.
-5. Add audio/video/publishing later.
-
-REAL AI PROVIDER INTEGRATION
-- Added AI provider upgrades in `ai_providers` with `api_key_env_name`, provider runtime settings (model, timeout, tokens, temperature), limits, and token-cost fields.
-- API keys are not stored in the database/frontend; credentials are resolved from environment variables using the configured env key name.
-- Supported provider types currently targeted in this branch: `openai`, `openrouter`, `ollama`, `custom_openai_compatible` (plus existing `mock` compatibility).
-- Added editor action on Bulletin Prompt Runs: "Generate AI Response".
-- Action flow: generated_prompt -> provider call -> ai_response_text save -> parsed_response generation -> existing preview remains in use.
-- Manual copy/paste and Save AI Response flow remains available and unchanged.
-- Added `ai_request_logs` table for request observability: status, token usage, estimated cost, duration, previews, and error metadata.
-- Failure handling keeps existing response content intact and logs request failures safely without exposing secrets.
-
-Current limitations
-- No automatic scheduler execution in this branch.
-- No queue worker foundation in this branch.
-- No batch AI generation in this branch.
-- No audio/video/publishing automation in this branch.
-- Source verification remains manual/editorial.
-
-Next priorities
-1. Test one real provider in local `.env` using a safe API key.
-2. Improve AI request logs and cost control.
-3. Add automatic schedule execution.
-4. Add queue worker foundation.
-5. Add audio/video foundation.
-6. Add video/publishing later.
-
-EDITORIAL WORKFLOW CLARITY AND SCRIPT PRODUCTION METADATA
-
-Purpose:
-- Added a workflow-first editor experience so editors immediately know what action comes next.
-- Added a dedicated workbench for operational guidance (not just CRUD/statistics).
-
-Workflow steps now emphasized:
-1. Bulletin Type
-2. Prompt Run
-3. Prompt
-4. AI Response
-5. Script
-6. Review/fact-check
-7. Production metadata
-8. Audio/video later
-
-Navigation separation:
-- Workspace / Trabajo: Dashboard, Editorial Workbench, World Map.
-- Production Workflow / Flujo de producción: Bulletin Types, Prompt Runs, Scripts, Source verification, Editions.
-- Content / Contenido: News Items, News Sources, Categories, Locations.
-- Publishing preparation / Preparación de publicación: publications placeholders.
-- Configuration / Configuración: templates and schedule/config modules.
-
-Prompt Run <-> Script relationship:
-- scripts.bulletin_prompt_run_id added (nullable, FK -> bulletin_prompt_runs.id, nullOnDelete).
-- bulletin_prompt_runs.script_id remains in place.
-- script creation from prompt run now sets both references.
-- Script page displays explicit origin context (prompt run, bulletin type, prompt profile, prompt/response timestamps).
-- Prompt Run page includes linked script clarity and workflow timeline badges.
-
-New scripts production metadata fields:
-- final_title
-- production_name
-- public_description
-- short_description
-- hashtags (json array)
-- social_copy
-- target_platforms (json array)
-- seo_title
-- seo_description
-- production_status
-- ready_for_production_at
-- ready_for_production_by
-
-Production readiness requirements:
-- Final title OR production name required.
-- Public description OR short description required.
-- At least one hashtag required.
-- At least one target platform required.
-- When valid and marked ready:
-  - production_status = ready_for_production
-  - ready_for_production_at set to now
-  - ready_for_production_by set to current user
-
-Current limitations:
-- no audio generation yet
-- no video generation yet
-- no publishing automation yet
-
-Updated current next priorities:
-1. Manually test Workbench workflow.
-2. Finish/improve source verification if needed.
-3. Add real AI provider integration if not completed.
-4. Add AI logs and cost control.
-5. Add automatic schedule execution.
-6. Add audio/video foundation.
-
-GLOBAL TRANSLATION AUDIT
-
-UI translation source:
-- resources/js/i18n/translations.ts
-
-Active UI locales:
-- en
-- es
-- fr
-
-Rules:
-- All visible React UI strings must use useTranslations().t().
-- Status/enum values must be mapped through translated labels (no raw enum output in UI badges/lists).
-- Flash messages should be translatable keys where possible.
-- Database-backed visible content should include translations when supported.
-- Prompt templates should be language-specific where supported by language_id/locale.
-
-TRANSLATION RULE
-Every branch that adds or changes visible UI text must update:
-- resources/js/i18n/translations.ts
-- English, Spanish and French keys
-- database seed translations if content is database-backed
-- prompt templates in the correct language if templates/prompts are added
-
-No new visible English-only text should be merged.
-
-Updated current next priorities:
-1. Keep translations updated in every branch.
-2. Continue workflow/source/AI roadmap.
-3. Add real AI provider integration if not completed.
-4. Add AI logs/cost control.
-5. Add automatic schedule execution.
-6. Add audio/video foundation.
-
-USER THEME AND CONFIGURABLE PUBLIC HOME
-
-Implemented in this branch:
-- Added users.appearance field (nullable string, max 20) with allowed values:
-  - light
-  - dark
-  - system
-- Added ThemeSwitcher component (resources/js/Components/ThemeSwitcher.tsx).
-- Theme uses Tailwind dark mode class strategy (darkMode: 'class').
-- Appearance preference is saved per authenticated user via PATCH /preferences/appearance.
-- Shared Inertia auth.user now includes appearance.
-- Added home_page_settings table with locale-aware, configurable public home content fields.
-- Added Admin > Home Page Settings module (CRUD):
-  - /admin/home-page-settings
-  - create/edit/update/store routes and pages
-- Replaced default public landing with Inertia public home page powered by HomeController and Home settings.
-- Public home now displays latest noticiarios only when ready/completed/published and excludes archived items.
-- Public home includes supported platforms section for social/video destinations.
-
-Current limitations after this branch:
-- No real publication URLs yet unless future publishing module persists final links.
-- No public advanced search yet.
-- No public map filtering yet.
-
-Current project status confirmations:
-- Implemented modules include admin/editor/viewer panels, user preferences, avatars/media, world map, SEO settings, editorial schedules/runs, manual fact-check workflow, source references.
-- Source verification workflow exists in manual/editorial mode (not fully automated fact-checking).
-- Real AI provider integration exists as infrastructure (providers/clients/logs) with guarded/manual workflows.
-- Translation coverage/audit is ongoing and should continue each branch.
-- Production metadata exists on scripts (production_status, ready_for_production, publication prep fields).
-
-Updated roadmap after this branch:
-1. Keep translations updated in every branch.
-2. Continue source verification workflow if not completed.
-3. Add real AI provider integration if not completed in production mode.
-4. Add AI logs/cost control improvements.
-5. Add automatic schedule execution.
-6. Add audio/video foundation.
-7. Add publishing foundation.
+- Do not store real API keys in DB/frontend.
+- Preserve auth/permission behavior.
+- Preserve routes unless strictly necessary.
+- Update translations and doc.txt in every branch.
+
+## 12. CURRENT UI/THEME STATUS
+
+- User appearance preference exists and supports light, dark and system modes.
+- Admin, Editor and Viewer shells have been globally polished to better use full screen width.
+- Header, sidebar and main content now share consistent light/dark visual treatment.
+- Shared feedback and status components include dark-mode readable variants.
+- Public home has aligned dark/light cards, sections and spacing.
+- Future branches must keep dark mode compatibility for every new page/component.

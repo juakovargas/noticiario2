@@ -1110,3 +1110,48 @@ Updated next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+TABLE LIST MANAGEMENT, ARCHIVING AND STATUS CLEANUP
+
+Operational records now use archive/restore as a working-list cleanup pattern (archive is NOT deletion):
+- bulletin_prompt_runs
+- scripts
+- editions
+- news_items
+
+Behavior:
+- Archive actions set status=archived and store metadata.previous_status when available.
+- Restore actions recover metadata.previous_status when valid, with safe fallbacks by module.
+- Archived records are hidden by default in operational index pages.
+- "Show archived" toggles include archived records in the list when needed.
+- Archive/restore does not delete records and does not clear generated prompt/response/script links.
+
+Bulletin Prompt Runs:
+- Added/kept operational filters: search, status, bulletin type, prompt profile, creator, scheduled range, show archived, only archived.
+- Added/kept state actions: archive, restore, mark completed, cancel.
+- Default list prioritizes active work and hides archived runs.
+
+Scripts, Editions, News Items:
+- Index pages hide archived records by default and support show_archived.
+- Added archive/restore row actions to remove completed work from active lists without deleting.
+- Status rendering is consistent via status badges.
+
+Configuration records strategy:
+- Configuration modules continue using active/inactive concepts where applicable.
+- No archive-delete workflow was added for configuration entities in this cleanup.
+
+Dashboards/counters:
+- Archived operational records are excluded from active-work counters in editor dashboards.
+
+Table UX conventions:
+- Raw IDs should not be the primary label in user-facing tables.
+- Primary labels use meaningful names/titles.
+- Important lists include practical status/relationship/date filters.
+
+Current next priorities:
+1. Improve pasted AI response parser and preview.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

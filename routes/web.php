@@ -142,12 +142,18 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'show'])->name('news-sources.import');
         Route::post('/news-sources/{newsSource}/import', [NewsSourceImportController::class, 'store'])->name('news-sources.import.store');
         Route::resource('news-items', NewsItemController::class);
+        Route::post('/news-items/{newsItem}/archive', [NewsItemController::class, 'archive'])->name('news-items.archive');
+        Route::post('/news-items/{newsItem}/restore', [NewsItemController::class, 'restore'])->name('news-items.restore');
         Route::resource('editions', EditionController::class);
+        Route::post('/editions/{edition}/archive', [EditionController::class, 'archive'])->name('editions.archive');
+        Route::post('/editions/{edition}/restore', [EditionController::class, 'restore'])->name('editions.restore');
         Route::get('/editions/{edition}/news-items', [EditionNewsItemController::class, 'index'])->name('editions.news-items.index');
         Route::post('/editions/{edition}/news-items', [EditionNewsItemController::class, 'store'])->name('editions.news-items.store');
         Route::put('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'update'])->name('editions.news-items.update');
         Route::delete('/editions/{edition}/news-items/{newsItem}', [EditionNewsItemController::class, 'destroy'])->name('editions.news-items.destroy');
         Route::resource('scripts', ScriptController::class);
+        Route::post('/scripts/{script}/archive', [ScriptController::class, 'archive'])->name('scripts.archive');
+        Route::post('/scripts/{script}/restore', [ScriptController::class, 'restore'])->name('scripts.restore');
         Route::get('/source-references', [SourceReferenceController::class, 'index'])->name('source-references.index');
         Route::get('/source-references/{sourceReference}', [SourceReferenceController::class, 'show'])->name('source-references.show');
         Route::put('/source-references/{sourceReference}', [SourceReferenceController::class, 'update'])->name('source-references.update');

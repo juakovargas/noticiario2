@@ -60,8 +60,8 @@ export default function Show({ run, promptContext }: any): JSX.Element {
 
     return (
         <EditorLayout>
-            <Head title={`${t('Prompt Run')} #${run.id}`} />
-            <AdminPageHeader title={`${t('Prompt Run')} #${run.id}`} description={t('Copy this prompt into your preferred AI tool')} />
+            <Head title={run.title || t('Prompt Run')} />
+            <AdminPageHeader title={run.title || t('Prompt Run')} description={t('Copy this prompt into your preferred AI tool')} />
 
             {run.status === 'archived' && (
                 <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">

@@ -62,11 +62,15 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        if ($this->profileImage) {
-            return $this->profileImage->public_url;
+        $profileImage = $this->relationLoaded('profileImage')
+            ? $this->getRelation('profileImage')
+            : ($this->profile_image_id ? $this->profileImage()->first() : null);
+
+        if ($profileImage?->public_url) {
+            return $profileImage->public_url;
         }
 
-        if (! $this->avatar_path) {
+        if (! filled($this->avatar_path)) {
             return null;
         }
 

@@ -58,15 +58,17 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $data = $request->safe()->except(['avatar', 'remove_avatar', 'panel']);
+        $data = $request->safe()->except(['avatar', 'profile_image', 'remove_avatar', 'panel']);
 
         if ($request->boolean('remove_avatar') && $user->profileImage) {
             $this->mediaFileService->archiveMediaFile($user->profileImage);
             $data['profile_image_id'] = null;
         }
 
-        if ($request->hasFile('avatar')) {
-            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+        $profileImageFile = $request->file('profile_image') ?? $request->file('avatar');
+
+        if ($profileImageFile) {
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
             $data['profile_image_id'] = $mediaFile->id;
         }
 

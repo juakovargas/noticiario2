@@ -1,18 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type AvatarUser = {
     name?: string | null;
     avatar_url?: string | null;
+    avatarUrl?: string | null;
     initials?: string | null;
 };
 
 interface UserAvatarProps {
     user?: AvatarUser | null;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
 }
 
 const sizeClass: Record<NonNullable<UserAvatarProps['size']>, string> = {
+    xs: 'h-6 w-6 text-[10px]',
     sm: 'h-8 w-8 text-xs',
     md: 'h-10 w-10 text-sm',
     lg: 'h-16 w-16 text-lg',
@@ -21,6 +23,11 @@ const sizeClass: Record<NonNullable<UserAvatarProps['size']>, string> = {
 
 export default function UserAvatar({ user, size = 'sm', className = '' }: UserAvatarProps): JSX.Element {
     const [imageFailed, setImageFailed] = useState(false);
+    const avatarSrc = user?.avatar_url ?? user?.avatarUrl ?? null;
+
+    useEffect(() => {
+        setImageFailed(false);
+    }, [avatarSrc]);
 
     const fallback = useMemo(() => {
         if (user?.initials) {
@@ -36,10 +43,10 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
         return (nameParts.map((part) => part[0]).join('').slice(0, 2) || 'U').toUpperCase();
     }, [user?.initials, user?.name]);
 
-    if (user?.avatar_url && !imageFailed) {
+    if (avatarSrc && !imageFailed) {
         return (
             <img
-                src={user.avatar_url}
+                src={avatarSrc}
                 alt={user?.name ? `${user.name} avatar` : 'Avatar'}
                 className={`${sizeClass[size]} rounded-full object-cover ${className}`}
                 onError={() => setImageFailed(true)}

@@ -7,6 +7,7 @@ use App\Models\MediaFile;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -77,6 +78,11 @@ class MediaFileController extends Controller
                 'disk' => $mediaFile->disk,
                 'directory' => $mediaFile->directory,
                 'path' => $mediaFile->path,
+                'public_url' => $mediaFile->public_url,
+                'file_exists' => filled($mediaFile->path) && filled($mediaFile->disk)
+                    ? Storage::disk($mediaFile->disk)->exists($mediaFile->path)
+                    : false,
+                'storage_link_required' => $mediaFile->disk === 'public',
                 'mime_type' => $mediaFile->mime_type,
                 'extension' => $mediaFile->extension,
                 'size_bytes' => $mediaFile->size_bytes,

@@ -71,8 +71,10 @@ class UserController extends Controller
             'time_format' => $data['time_format'] ?? null,
         ]);
 
-        if ($request->hasFile('avatar')) {
-            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+        $profileImageFile = $request->file('profile_image') ?? $request->file('avatar');
+
+        if ($profileImageFile) {
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
             $user->update(['profile_image_id' => $mediaFile->id]);
         }
 
@@ -101,13 +103,15 @@ class UserController extends Controller
                 'date_format' => $user->date_format,
                 'time_format' => $user->time_format,
                 'avatar_url' => $user->avatar_url,
+                'initials' => $user->initials,
+                'profile_image_id' => $user->profile_image_id,
             ],
         ]);
     }
 
     public function edit(User $user): Response
     {
-        $user->load(['roles:id,name', 'permissions:id,name']);
+        $user->load(['roles:id,name', 'permissions:id,name', 'profileImage']);
 
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
@@ -123,6 +127,7 @@ class UserController extends Controller
                 'time_format' => $user->time_format,
                 'avatar_url' => $user->avatar_url,
                 'initials' => $user->initials,
+                'profile_image_id' => $user->profile_image_id,
             ],
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
             'rolesWithPermissions' => $this->rolesWithPermissions(),
@@ -146,8 +151,10 @@ class UserController extends Controller
             $data['profile_image_id'] = null;
         }
 
-        if ($request->hasFile('avatar')) {
-            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $request->file('avatar'), $request->user());
+        $profileImageFile = $request->file('profile_image') ?? $request->file('avatar');
+
+        if ($profileImageFile) {
+            $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
             $data['profile_image_id'] = $mediaFile->id;
         }
 

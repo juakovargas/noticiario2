@@ -974,3 +974,27 @@ Current next priorities:
 4. Add source verification workflow if not complete.
 5. Add real AI provider integration.
 6. Add audio/video/publishing later.
+
+MEDIA AVATAR DISPLAY PIPELINE
+
+- Uploaded profile assets are stored in media_files.
+- users.profile_image_id references media_files.id for the active profile image.
+- users.avatar_path is kept as legacy fallback only.
+- MediaFile public_url is generated from disk/path when url is null.
+- Inertia shared auth.user includes avatar_url, initials, and profile_image_id.
+- UserAvatar component is used in:
+  - AdminLayout
+  - EditorLayout
+  - ViewerLayout
+  - Admin Users Index
+  - Profile Edit
+  - Admin User Edit
+- Public disk delivery depends on symlink setup:
+  - php artisan storage:link
+
+Troubleshooting avatar display:
+1. Verify users.profile_image_id is set.
+2. Verify media_files.path and media_files.disk are correct.
+3. Verify the file exists under storage/app/public.
+4. Verify the /storage/... URL opens in browser.
+5. Verify Inertia props include auth.user.avatar_url.

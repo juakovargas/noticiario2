@@ -10,7 +10,9 @@ export interface User {
     date_format?: string | null;
     time_format?: string | null;
     avatar_url?: string | null;
-    initials?: string;
+    avatarUrl?: string | null;
+    initials?: string | null;
+    profile_image_id?: number | null;
 }
 
 export interface AvailableLocale {

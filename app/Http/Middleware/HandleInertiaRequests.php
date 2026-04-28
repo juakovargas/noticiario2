@@ -78,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                     'timezone' => $user->timezone,
                     'date_format' => $user->date_format,
                     'time_format' => $user->time_format,
+                    'appearance' => $user->appearance,
                     'avatar_path' => $user->avatar_path,
                     'avatar_url' => $avatarUrl,
                     'avatarUrl' => $avatarUrl,

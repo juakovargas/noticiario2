@@ -9,6 +9,7 @@ export interface User {
     timezone?: string | null;
     date_format?: string | null;
     time_format?: string | null;
+    appearance?: 'light' | 'dark' | 'system' | null;
     avatar_url?: string | null;
     avatarUrl?: string | null;
     initials?: string | null;

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'profile_image_id',
         'date_format',
         'time_format',
+        'appearance',
     ];
 
     protected $hidden = [

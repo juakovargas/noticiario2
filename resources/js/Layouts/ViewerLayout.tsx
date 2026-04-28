@@ -1,5 +1,6 @@
 import FlashMessage from '@/Components/FlashMessage';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
@@ -18,8 +19,8 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
     const { t } = useTranslations();
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#dcfce7,_transparent_45%),linear-gradient(135deg,_#f8fafc_30%,_#e2e8f0_100%)] text-slate-800">
-            <header className="border-b border-slate-200/70 bg-white/80 backdrop-blur">
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#dcfce7,_transparent_45%),linear-gradient(135deg,_#f8fafc_30%,_#e2e8f0_100%)] text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+            <header className="border-b border-slate-200/70 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
                     <div>
                         <p className="text-lg font-bold tracking-tight text-emerald-900">
@@ -74,6 +75,7 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
 
                     <div className="flex items-center gap-3">
                         <LanguageSwitcher />
+                        <ThemeSwitcher />
                         <div className="hidden items-center gap-2 md:flex">
                             <UserAvatar user={page.props.auth.user} size="sm" />
                             <p className="text-sm text-slate-600">{page.props.auth.user?.name}</p>

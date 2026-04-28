@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AiRequestLogController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\MediaFileController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\HomePageSettingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeoSettingController;
 use App\Http\Controllers\Admin\PromptProfileController;
@@ -37,18 +38,15 @@ use App\Http\Controllers\Editor\SourceReferenceController;
 use App\Http\Controllers\Editor\WorldMapController as EditorWorldMapController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PreferenceController;
+use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use App\Http\Controllers\Viewer\DashboardController as ViewerDashboardController;
 use App\Http\Controllers\Viewer\WorldMapController as ViewerWorldMapController;
 use App\Support\AuthRedirect;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
-});
+Route::get('/', [PublicHomeController::class, 'index'])->name('home');
 
 Route::get('/dashboard', function () {
     $user = request()->user();
@@ -74,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/preferences/appearance', [PreferenceController::class, 'updateAppearance'])->name('preferences.appearance.update');
 });
 
 Route::middleware(['auth', 'verified', 'permission:admin.access'])
@@ -134,6 +133,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
 
         Route::get('/seo-settings', [SeoSettingController::class, 'edit'])->name('seo-settings.edit');
         Route::put('/seo-settings', [SeoSettingController::class, 'update'])->name('seo-settings.update');
+        Route::resource('home-page-settings', HomePageSettingController::class)->except('show');
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])

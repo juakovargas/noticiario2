@@ -949,7 +949,7 @@ Examples:
 Current next priorities:
 1. Manually test generated prompts with external AI.
 2. Tune bulletin type coverage windows.
-3. Improve pasted AI response parsing if needed.
+3. Improve pasted AI response parsing.
 4. Add source verification workflow if not complete.
 5. Add real AI provider integration.
 6. Add AI logs and cost control.

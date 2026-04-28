@@ -39,9 +39,21 @@ class BulletinPromptRunController extends Controller
             'direction' => (string) $request->query('direction', 'desc'),
         ];
 
-        $allowedSorts = ['updated_at', 'scheduled_for', 'created_at', 'title', 'status'];
-        $sort = in_array($filters['sort'], $allowedSorts, true) ? $filters['sort'] : 'updated_at';
-        $direction = in_array($filters['direction'], ['asc', 'desc'], true) ? $filters['direction'] : 'desc';
+        $allowedSorts = [
+            'updated_at',
+            'scheduled_for',
+            'created_at',
+            'title',
+            'status',
+        ];
+
+        $sort = in_array($filters['sort'], $allowedSorts, true)
+            ? $filters['sort']
+            : 'updated_at';
+
+        $direction = in_array($filters['direction'], ['asc', 'desc'], true)
+            ? $filters['direction']
+            : 'desc';
 
         $query = BulletinPromptRun::query()
             ->with([
@@ -50,8 +62,14 @@ class BulletinPromptRunController extends Controller
                 'script:id,title,status',
                 'createdBy:id,name,email,profile_image_id',
             ])
-            ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn (Builder $q) => $q->where('status', '!=', 'archived'))
-            ->when($filters['only_archived'], fn (Builder $q) => $q->where('status', 'archived'))
+            ->when(
+                ! $filters['show_archived'] && ! $filters['only_archived'],
+                fn (Builder $q) => $q->where('status', '!=', 'archived')
+            )
+            ->when(
+                $filters['only_archived'],
+                fn (Builder $q) => $q->where('status', 'archived')
+            )
             ->when($filters['search'] !== '', function (Builder $q) use ($filters): void {
                 $search = $filters['search'];
 
@@ -62,23 +80,64 @@ class BulletinPromptRunController extends Controller
                         ->orWhereHas('bulletinType', fn (Builder $bt) => $bt->where('name', 'like', "%{$search}%"));
                 });
             })
-            ->when($filters['status'] !== '', fn (Builder $q) => $q->where('status', $filters['status']))
-            ->when($filters['bulletin_type_id'] !== '', fn (Builder $q) => $q->where('bulletin_type_id', $filters['bulletin_type_id']))
-            ->when($filters['prompt_profile_id'] !== '', fn (Builder $q) => $q->where('prompt_profile_id', $filters['prompt_profile_id']))
-            ->when($filters['created_by'] !== '', fn (Builder $q) => $q->where('created_by', $filters['created_by']))
-            ->when($filters['scheduled_from'] !== '', fn (Builder $q) => $q->whereDate('scheduled_for', '>=', $filters['scheduled_from']))
-            ->when($filters['scheduled_to'] !== '', fn (Builder $q) => $q->whereDate('scheduled_for', '<=', $filters['scheduled_to']))
-            ->orderByRaw($sort === 'scheduled_for' ? 'scheduled_for is null asc' : '0 asc')
-            ->orderBy($sort, $direction)
-            ->orderByDesc('updated_at');
+            ->when(
+                $filters['status'] !== '',
+                fn (Builder $q) => $q->where('status', $filters['status'])
+            )
+            ->when(
+                $filters['bulletin_type_id'] !== '',
+                fn (Builder $q) => $q->where('bulletin_type_id', $filters['bulletin_type_id'])
+            )
+            ->when(
+                $filters['prompt_profile_id'] !== '',
+                fn (Builder $q) => $q->where('prompt_profile_id', $filters['prompt_profile_id'])
+            )
+            ->when(
+                $filters['created_by'] !== '',
+                fn (Builder $q) => $q->where('created_by', $filters['created_by'])
+            )
+            ->when(
+                $filters['scheduled_from'] !== '',
+                fn (Builder $q) => $q->whereDate('scheduled_for', '>=', $filters['scheduled_from'])
+            )
+            ->when(
+                $filters['scheduled_to'] !== '',
+                fn (Builder $q) => $q->whereDate('scheduled_for', '<=', $filters['scheduled_to'])
+            );
+
+        if ($sort === 'scheduled_for') {
+            $query->orderByRaw('scheduled_for is null asc');
+        }
+
+        $query->orderBy($sort, $direction);
+
+        if ($sort !== 'updated_at') {
+            $query->orderByDesc('updated_at');
+        }
 
         return Inertia::render('Editor/BulletinPromptRuns/Index', [
             'runs' => $query->paginate(20)->withQueryString(),
             'filters' => $filters,
-            'statuses' => ['draft', 'prompt_ready', 'waiting_ai_response', 'response_received', 'script_created', 'completed', 'cancelled', 'failed', 'archived'],
-            'bulletinTypes' => BulletinType::query()->orderBy('name')->get(['id', 'name']),
-            'promptProfiles' => PromptProfile::query()->orderBy('name')->get(['id', 'name']),
-            'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'statuses' => [
+                'draft',
+                'prompt_ready',
+                'waiting_ai_response',
+                'response_received',
+                'script_created',
+                'completed',
+                'cancelled',
+                'failed',
+                'archived',
+            ],
+            'bulletinTypes' => BulletinType::query()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'promptProfiles' => PromptProfile::query()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'users' => User::query()
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 

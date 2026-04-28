@@ -69,6 +69,7 @@ class ProfileController extends Controller
 
         if ($profileImageFile) {
             $mediaFile = $this->mediaFileService->replaceUserProfileImage($user, $profileImageFile, $request->user());
+            $user->forceFill(['profile_image_id' => $mediaFile->id])->save();
             $data['profile_image_id'] = $mediaFile->id;
         }
 

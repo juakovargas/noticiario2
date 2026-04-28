@@ -24,11 +24,11 @@ class ScriptReviewController extends Controller
         $script->load([
             'edition:id,title',
             'reviewItems.newsItem:id,title',
-            'reviewItems.reviewedBy:id,name',
+            'reviewItems.reviewedBy:id,name,email,profile_image_id',
             'reviewItems.sourceReferences:id,script_review_item_id,verification_status,title,source_name',
-            'reviewedBy:id,name',
-            'approvedBy:id,name',
-            'rejectedBy:id,name',
+            'reviewedBy:id,name,email,profile_image_id',
+            'approvedBy:id,name,email,profile_image_id',
+            'rejectedBy:id,name,email,profile_image_id',
             'sourceReferences:id,script_id,verification_status',
         ]);
 
@@ -47,9 +47,27 @@ class ScriptReviewController extends Controller
                 'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
                 'approved_at' => $script->approved_at?->toDateTimeString(),
                 'rejected_at' => $script->rejected_at?->toDateTimeString(),
-                'reviewed_by' => $script->reviewedBy?->name,
-                'approved_by' => $script->approvedBy?->name,
-                'rejected_by' => $script->rejectedBy?->name,
+                'reviewed_by' => $script->reviewedBy ? [
+                    'id' => $script->reviewedBy->id,
+                    'name' => $script->reviewedBy->name,
+                    'email' => $script->reviewedBy->email,
+                    'avatar_url' => $script->reviewedBy->avatar_url,
+                    'initials' => $script->reviewedBy->initials,
+                ] : null,
+                'approved_by' => $script->approvedBy ? [
+                    'id' => $script->approvedBy->id,
+                    'name' => $script->approvedBy->name,
+                    'email' => $script->approvedBy->email,
+                    'avatar_url' => $script->approvedBy->avatar_url,
+                    'initials' => $script->approvedBy->initials,
+                ] : null,
+                'rejected_by' => $script->rejectedBy ? [
+                    'id' => $script->rejectedBy->id,
+                    'name' => $script->rejectedBy->name,
+                    'email' => $script->rejectedBy->email,
+                    'avatar_url' => $script->rejectedBy->avatar_url,
+                    'initials' => $script->rejectedBy->initials,
+                ] : null,
                 'review_items' => $script->reviewItems->map(fn (ScriptReviewItem $item) => [
                     'id' => $item->id,
                     'sort_order' => $item->sort_order,
@@ -61,7 +79,13 @@ class ScriptReviewController extends Controller
                     'verification_notes' => $item->verification_notes,
                     'required_action' => $item->required_action,
                     'reviewed_at' => $item->reviewed_at?->toDateTimeString(),
-                    'reviewed_by' => $item->reviewedBy?->name,
+                    'reviewed_by' => $item->reviewedBy ? [
+                        'id' => $item->reviewedBy->id,
+                        'name' => $item->reviewedBy->name,
+                        'email' => $item->reviewedBy->email,
+                        'avatar_url' => $item->reviewedBy->avatar_url,
+                        'initials' => $item->reviewedBy->initials,
+                    ] : null,
                     'news_item' => $item->newsItem ? ['id' => $item->newsItem->id, 'title' => $item->newsItem->title] : null,
                     'metadata' => $item->metadata,
                     'source_references' => $item->sourceReferences->map(fn (SourceReference $reference) => [

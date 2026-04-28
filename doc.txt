@@ -139,12 +139,42 @@ In progress:
 - Keep date formatting adoption consistent for newly added pages/modules.
 
 Current next priorities:
-1. Finish manual AI schedule workflow.
-2. Improve prompt quality and template rendering.
-3. Add real AI provider integration later.
-4. Add source verification/fact-checking before automatic generation.
-5. Add automatic scheduler/queues only after manual workflow is stable.
-6. Add audio/video/publishing later.
+1. Confirm avatar display manually.
+2. Continue source verification workflow if not complete.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add audio/video/publishing later.
+
+AVATAR DISPLAY PIPELINE
+
+1. File is uploaded to:
+   storage/app/public/media/images/users/{id}/...
+
+2. media_files record stores:
+   - disk = public
+   - path = media/images/users/{id}/file.jpg
+   - url can be null
+
+3. users.profile_image_id must point to media_files.id.
+
+4. MediaFile public_url is generated from:
+   Storage::disk(disk)->url(path)
+
+5. User avatar_url uses:
+   - profileImage.public_url
+   - avatar_path fallback
+   - null fallback
+
+6. Inertia auth.user must include:
+   - avatar_url
+   - initials
+   - profile_image_id
+
+7. React layouts use:
+   - UserAvatar with auth.user.avatar_url
+
+8. Public files require:
+   php artisan storage:link
 
 Strategic decision:
 RSS is not the main product direction.

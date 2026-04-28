@@ -34,7 +34,7 @@ class SourceReferenceController extends Controller
         ];
 
         $sourceReferences = SourceReference::query()
-            ->with(['script:id,title', 'newsItem:id,title', 'scriptReviewItem:id,title', 'checkedBy:id,name'])
+            ->with(['script:id,title', 'newsItem:id,title', 'scriptReviewItem:id,title', 'checkedBy:id,name,email,profile_image_id'])
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                 $search = $filters['search'];
                 $query->where(function (Builder $subQuery) use ($search): void {
@@ -72,7 +72,7 @@ class SourceReferenceController extends Controller
             'newsItem:id,title',
             'scriptReviewItem:id,title',
             'editorialScheduleRun:id,status,scheduled_for',
-            'checkedBy:id,name',
+            'checkedBy:id,name,email,profile_image_id',
         ]);
 
         return Inertia::render('Editor/SourceReferences/Show', [
@@ -161,7 +161,13 @@ class SourceReferenceController extends Controller
             'verification_status' => $reference->verification_status,
             'trust_level' => $reference->trust_level,
             'checked_at' => $reference->checked_at?->toDateTimeString(),
-            'checked_by' => $reference->checkedBy?->name,
+            'checked_by' => $reference->checkedBy ? [
+                'id' => $reference->checkedBy->id,
+                'name' => $reference->checkedBy->name,
+                'email' => $reference->checkedBy->email,
+                'avatar_url' => $reference->checkedBy->avatar_url,
+                'initials' => $reference->checkedBy->initials,
+            ] : null,
             'notes' => $reference->notes,
             'script' => $reference->script ? ['id' => $reference->script->id, 'title' => $reference->script->title] : null,
             'news_item' => $reference->newsItem ? ['id' => $reference->newsItem->id, 'title' => $reference->newsItem->title] : null,

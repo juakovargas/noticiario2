@@ -24,7 +24,7 @@ class MediaFileController extends Controller
         ]);
 
         $mediaFiles = MediaFile::query()
-            ->with('uploadedBy:id,name')
+            ->with('uploadedBy:id,name,email,profile_image_id')
             ->when($filters['search'] ?? null, function ($query, $search): void {
                 $query->where(function ($subQuery) use ($search): void {
                     $subQuery->where('original_name', 'like', "%{$search}%")
@@ -50,7 +50,13 @@ class MediaFileController extends Controller
                 'human_size' => $mediaFile->humanSize(),
                 'collection' => $mediaFile->collection,
                 'status' => $mediaFile->status,
-                'uploaded_by' => $mediaFile->uploadedBy?->name,
+                'uploaded_by' => $mediaFile->uploadedBy ? [
+                    'id' => $mediaFile->uploadedBy->id,
+                    'name' => $mediaFile->uploadedBy->name,
+                    'email' => $mediaFile->uploadedBy->email,
+                    'avatar_url' => $mediaFile->uploadedBy->avatar_url,
+                    'initials' => $mediaFile->uploadedBy->initials,
+                ] : null,
                 'uploaded_by_id' => $mediaFile->uploaded_by,
                 'created_at' => $mediaFile->created_at?->toDateTimeString(),
             ]);

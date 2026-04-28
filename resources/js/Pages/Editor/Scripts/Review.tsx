@@ -1,4 +1,5 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
+import UserIdentity from '@/Components/UserIdentity';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
@@ -18,7 +19,7 @@ interface ReviewItem {
     verification_notes: string | null;
     required_action: string | null;
     reviewed_at: string | null;
-    reviewed_by: string | null;
+    reviewed_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     news_item: { id: number; title: string } | null;
     source_references: Array<{ id: number; title: string | null; source_name: string | null; verification_status: string }>;
 }
@@ -37,9 +38,9 @@ interface ScriptData {
     reviewed_at: string | null;
     approved_at: string | null;
     rejected_at: string | null;
-    reviewed_by: string | null;
-    approved_by: string | null;
-    rejected_by: string | null;
+    reviewed_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
+    approved_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
+    rejected_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     review_items: ReviewItem[];
     source_summary: { total: number; missing: number };
 }
@@ -118,7 +119,7 @@ export default function Review({ script, reviewStatuses, verificationStatuses, r
                     <p><strong>{t('Review status')}:</strong> <Badge className={statusClass[script.review_status]}>{statusLabel(script.review_status, t)}</Badge></p>
                     <p><strong>{t('Language')}:</strong> {script.language ?? '-'}</p>
                     <p><strong>{t('Estimated Duration')}:</strong> {script.estimated_duration_seconds ?? '-'}</p>
-                    <p><strong>{t('Reviewed by')}:</strong> {script.reviewed_by ?? '-'}</p>
+                    <div><strong>{t('Reviewed by')}:</strong> {script.reviewed_by ? <UserIdentity user={script.reviewed_by} subtitle={script.reviewed_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
                     <p><strong>{t('Reviewed at')}:</strong> {formatDateTime(script.reviewed_at)}</p>
                     <p><strong>{t('Approved at')}:</strong> {formatDateTime(script.approved_at)}</p>
                     <div className="md:col-span-2 flex flex-wrap gap-2">
@@ -234,7 +235,9 @@ function ReviewItemCard({ scriptId, item, verificationStatuses, requiredActions 
             </div>
             <p className="mb-2 whitespace-pre-wrap text-sm text-slate-700">{item.content || '-'}</p>
             <p className="text-xs text-slate-500"><strong>{t('Linked news item')}:</strong> {item.news_item?.title ?? '-'}</p>
-            <p className="text-xs text-slate-500"><strong>{t('Reviewed by')}:</strong> {item.reviewed_by ?? '-'} · <strong>{t('Reviewed at')}:</strong> {formatDateTime(item.reviewed_at)}</p>
+            <div className="text-xs text-slate-500">
+                <strong>{t('Reviewed by')}:</strong> {item.reviewed_by ? <UserIdentity user={item.reviewed_by} subtitle={item.reviewed_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'} · <strong>{t('Reviewed at')}:</strong> {formatDateTime(item.reviewed_at)}
+            </div>
             <div className="mt-2 text-xs text-slate-600"><strong>{t('Source hints')}:</strong> {item.source_hints.length ? item.source_hints.join(' · ') : '-'}</div>
             <div className="mt-2 text-xs text-slate-600">
                 <strong>{t('Source References')}:</strong>{' '}

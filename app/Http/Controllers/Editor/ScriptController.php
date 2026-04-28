@@ -42,7 +42,12 @@ class ScriptController extends Controller
 
         return Inertia::render('Editor/Scripts/Index', [
             'scripts' => Script::query()
-                ->with(['edition:id,title', 'reviewedBy:id,name', 'approvedBy:id,name', 'rejectedBy:id,name'])
+                ->with([
+                    'edition:id,title',
+                    'reviewedBy:id,name,email,profile_image_id',
+                    'approvedBy:id,name,email,profile_image_id',
+                    'rejectedBy:id,name,email,profile_image_id',
+                ])
                 ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                     $search = $filters['search'];
                     $query->where(function (Builder $subQuery) use ($search): void {
@@ -73,11 +78,29 @@ class ScriptController extends Controller
                     'estimated_duration_seconds' => $script->estimated_duration_seconds,
                     'review_status' => $script->review_status ?? 'pending',
                     'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
-                    'reviewed_by' => $script->reviewedBy?->name,
+                    'reviewed_by' => $script->reviewedBy ? [
+                        'id' => $script->reviewedBy->id,
+                        'name' => $script->reviewedBy->name,
+                        'email' => $script->reviewedBy->email,
+                        'avatar_url' => $script->reviewedBy->avatar_url,
+                        'initials' => $script->reviewedBy->initials,
+                    ] : null,
                     'approved_at' => $script->approved_at?->toDateTimeString(),
-                    'approved_by' => $script->approvedBy?->name,
+                    'approved_by' => $script->approvedBy ? [
+                        'id' => $script->approvedBy->id,
+                        'name' => $script->approvedBy->name,
+                        'email' => $script->approvedBy->email,
+                        'avatar_url' => $script->approvedBy->avatar_url,
+                        'initials' => $script->approvedBy->initials,
+                    ] : null,
                     'rejected_at' => $script->rejected_at?->toDateTimeString(),
-                    'rejected_by' => $script->rejectedBy?->name,
+                    'rejected_by' => $script->rejectedBy ? [
+                        'id' => $script->rejectedBy->id,
+                        'name' => $script->rejectedBy->name,
+                        'email' => $script->rejectedBy->email,
+                        'avatar_url' => $script->rejectedBy->avatar_url,
+                        'initials' => $script->rejectedBy->initials,
+                    ] : null,
                 ]),
             'filters' => $filters,
             'statuses' => ['draft', 'review', 'approved', 'rejected', 'archived'],
@@ -108,7 +131,14 @@ class ScriptController extends Controller
 
     public function show(Script $script): Response
     {
-        $script->load(['edition:id,title', 'approvedBy:id,name', 'reviewedBy:id,name', 'rejectedBy:id,name', 'reviewItems', 'sourceReferences']);
+        $script->load([
+            'edition:id,title',
+            'approvedBy:id,name,email,profile_image_id',
+            'reviewedBy:id,name,email,profile_image_id',
+            'rejectedBy:id,name,email,profile_image_id',
+            'reviewItems',
+            'sourceReferences',
+        ]);
 
         $sourceCounts = $script->sourceReferences
             ->groupBy('verification_status')
@@ -128,11 +158,29 @@ class ScriptController extends Controller
                 'estimated_duration_seconds' => $script->estimated_duration_seconds,
                 'review_status' => $script->review_status ?? 'pending',
                 'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
-                'reviewed_by' => $script->reviewedBy?->name,
+                'reviewed_by' => $script->reviewedBy ? [
+                    'id' => $script->reviewedBy->id,
+                    'name' => $script->reviewedBy->name,
+                    'email' => $script->reviewedBy->email,
+                    'avatar_url' => $script->reviewedBy->avatar_url,
+                    'initials' => $script->reviewedBy->initials,
+                ] : null,
                 'approved_at' => $script->approved_at?->toDateTimeString(),
-                'approved_by' => $script->approvedBy?->name,
+                'approved_by' => $script->approvedBy ? [
+                    'id' => $script->approvedBy->id,
+                    'name' => $script->approvedBy->name,
+                    'email' => $script->approvedBy->email,
+                    'avatar_url' => $script->approvedBy->avatar_url,
+                    'initials' => $script->approvedBy->initials,
+                ] : null,
                 'rejected_at' => $script->rejected_at?->toDateTimeString(),
-                'rejected_by' => $script->rejectedBy?->name,
+                'rejected_by' => $script->rejectedBy ? [
+                    'id' => $script->rejectedBy->id,
+                    'name' => $script->rejectedBy->name,
+                    'email' => $script->rejectedBy->email,
+                    'avatar_url' => $script->rejectedBy->avatar_url,
+                    'initials' => $script->rejectedBy->initials,
+                ] : null,
                 'rejection_reason' => $script->rejection_reason,
                 'review_items_count' => $script->reviewItems->count(),
                 'source_summary' => [

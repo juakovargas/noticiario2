@@ -1,4 +1,5 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
+import UserIdentity from '@/Components/UserIdentity';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import EditorLayout from '@/Layouts/EditorLayout';
@@ -18,11 +19,11 @@ interface Script {
     outro: string | null;
     estimated_duration_seconds: number | null;
     reviewed_at: string | null;
-    reviewed_by: string | null;
+    reviewed_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     approved_at: string | null;
-    approved_by: string | null;
+    approved_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     rejected_at: string | null;
-    rejected_by: string | null;
+    rejected_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     rejection_reason: string | null;
     review_items_count: number;
     source_summary: { total: number; verified: number; pending: number; weak: number; issues: number };
@@ -50,11 +51,11 @@ export default function Show({ script }: Props): JSX.Element {
                     <p><strong>{t('Body')}:</strong> {script.body || '-'}</p>
                     <p><strong>{t('Outro')}:</strong> {script.outro || '-'}</p>
                     <p><strong>{t('Estimated Duration')}:</strong> {script.estimated_duration_seconds || '-'} seconds</p>
-                    <p><strong>{t('Reviewed by')}:</strong> {script.reviewed_by || '-'}</p>
+                    <div><strong>{t('Reviewed by')}:</strong> {script.reviewed_by ? <UserIdentity user={script.reviewed_by} subtitle={script.reviewed_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
                     <p><strong>{t('Reviewed at')}:</strong> {formatDateTime(script.reviewed_at)}</p>
-                    <p><strong>{t('Approved by')}:</strong> {script.approved_by || '-'}</p>
+                    <div><strong>{t('Approved by')}:</strong> {script.approved_by ? <UserIdentity user={script.approved_by} subtitle={script.approved_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
                     <p><strong>{t('Approved at')}:</strong> {formatDateTime(script.approved_at)}</p>
-                    <p><strong>{t('Rejected by')}:</strong> {script.rejected_by || '-'}</p>
+                    <div><strong>{t('Rejected by')}:</strong> {script.rejected_by ? <UserIdentity user={script.rejected_by} subtitle={script.rejected_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
                     <p><strong>{t('Rejected at')}:</strong> {formatDateTime(script.rejected_at)}</p>
                     <p><strong>{t('Rejection reason')}:</strong> {script.rejection_reason || '-'}</p>
                     <p><strong>{t('Total review items')}:</strong> {script.review_items_count}</p>

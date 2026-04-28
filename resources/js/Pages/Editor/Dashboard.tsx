@@ -91,6 +91,7 @@ export default function Dashboard({ stats, todayRuns, pendingPromptRuns, waiting
             <div className="mb-6 flex flex-wrap gap-2">
                 <Button asChild><Link href={route('editor.bulletin-types.index')}>{t('Open Bulletin Types')}</Link></Button>
                 <Button asChild variant="outline"><Link href={route('editor.bulletin-prompt-runs.index')}>{t('Prompt Runs')}</Link></Button>
+                <Button asChild variant="outline"><Link href={route('editor.world-map.index')}>{t('World Map')}</Link></Button>
                 <Button asChild><Link href={route('editor.editorial-schedules.create')}>Create Schedule</Link></Button>
                 <Button asChild variant="outline"><Link href={route('editor.editorial-schedule-runs.index')}>Open Editorial Runs</Link></Button>
                 <Button asChild variant="outline"><Link href={route('editor.editorial-schedules.index')}>Open Editorial Schedules</Link></Button>

@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Com
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import ViewerLayout from '@/Layouts/ViewerLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useTranslations } from '@/i18n/useTranslations';
 
 type Props = {
     recentCompletedScripts: Array<{ id: number; title: string; status: string; updated_at: string | null }>;
@@ -11,6 +12,7 @@ type Props = {
 
 export default function Dashboard({ recentCompletedScripts, recentCompletedRuns, upcomingEditions }: Props): JSX.Element {
     const { formatDateTime } = useDateFormatter();
+    const { t } = useTranslations();
 
     return (
         <ViewerLayout title="Viewer Dashboard">
@@ -21,6 +23,11 @@ export default function Dashboard({ recentCompletedScripts, recentCompletedRuns,
                 <Card>
                     <CardHeader><CardTitle>Published Content</CardTitle><CardDescription>Read-only published content area.</CardDescription></CardHeader>
                     <CardContent><Link href={route('viewer.published-content')} className="text-sm font-medium text-emerald-700 hover:text-emerald-900">Open placeholder page</Link></CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>{t('World Map')}</CardTitle><CardDescription>{t('View available content by location')}</CardDescription></CardHeader>
+                    <CardContent><Link href={route('viewer.world-map.index')} className="text-sm font-medium text-emerald-700 hover:text-emerald-900">{t('Open')}</Link></CardContent>
                 </Card>
 
                 <Card>

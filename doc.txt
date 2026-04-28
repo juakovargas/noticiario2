@@ -1289,3 +1289,54 @@ Updated next priorities:
 3. Add AI logs and cost control.
 4. Add automatic schedule execution.
 5. Add audio/video/publishing later.
+
+WORLD BULLETIN MAP
+
+Purpose:
+- Show where Noticiario has active bulletin coverage by location for Admin, Editor, and Viewer panels.
+- Keep first version simple and practical for editorial visibility.
+
+Panels:
+- Admin world map: technical overview of mapped locations, active bulletin counts, pending/completed prompt counters, grouped location table.
+- Editor world map: active editorial coverage view with direct links to bulletin types and prompt runs by location.
+- Viewer world map: read-only coverage and available content counters.
+
+Location coordinate fields:
+- latitude
+- longitude
+- map_zoom
+- marker_color
+- marker_label
+- show_on_map
+
+BulletinMapService:
+- app/Services/Maps/BulletinMapService.php
+- Methods:
+  - getAdminMapData()
+  - getEditorMapData()
+  - getViewerMapData()
+- Builds location markers from bulletin types + prompt runs grouped by location.
+- Excludes locations without coordinates and show_on_map=false.
+- Excludes inactive bulletin types by default for editor/viewer.
+- Excludes archived prompt runs from active counters.
+
+Marker color logic:
+- green: has completed/script_created activity and no pending states.
+- amber: has pending states (draft/prompt_ready/waiting_ai_response/response_received).
+- red: has failed or cancelled run states.
+- blue/gray: configured but no recent run data.
+
+Current limitations:
+- no geocoding API
+- coordinates are manual
+- no advanced GIS
+- publication status is approximate until publishing module exists
+- viewer map uses completed/script_created availability signals where possible
+
+Updated next priorities:
+1. Test map with real bulletin locations.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

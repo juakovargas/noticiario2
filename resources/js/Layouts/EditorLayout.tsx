@@ -29,6 +29,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
             title: t('Workspace'),
             items: [
                 { label: t('Dashboard'), routeName: 'editor.dashboard' },
+                { label: t('World Map'), routeName: 'editor.world-map.index' },
                 { label: t('Editorial Desk'), routeName: 'editor.editorial-desk.index' },
                 { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' },
             ],

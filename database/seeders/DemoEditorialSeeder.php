@@ -56,6 +56,10 @@ class DemoEditorialSeeder extends Seeder
             'timezone' => 'UTC',
             'sort_order' => 0,
             'default_language_id' => $languages->get('en')?->id,
+            'latitude' => 20.0000000,
+            'longitude' => 0.0000000,
+            'map_zoom' => 2,
+            'show_on_map' => true,
         ]);
 
         $spain = $this->upsertLocation('Spain', [
@@ -65,6 +69,10 @@ class DemoEditorialSeeder extends Seeder
             'timezone' => 'Europe/Madrid',
             'sort_order' => 10,
             'default_language_id' => $languages->get('es')?->id,
+            'latitude' => 40.4167750,
+            'longitude' => -3.7037900,
+            'map_zoom' => 5,
+            'show_on_map' => true,
         ]);
 
         $france = $this->upsertLocation('France', [
@@ -74,6 +82,10 @@ class DemoEditorialSeeder extends Seeder
             'timezone' => 'Europe/Paris',
             'sort_order' => 20,
             'default_language_id' => $languages->get('fr')?->id,
+            'latitude' => 46.2276380,
+            'longitude' => 2.2137490,
+            'map_zoom' => 5,
+            'show_on_map' => true,
         ]);
 
         $us = $this->upsertLocation('United States', [
@@ -83,6 +95,10 @@ class DemoEditorialSeeder extends Seeder
             'timezone' => 'America/New_York',
             'sort_order' => 30,
             'default_language_id' => $languages->get('en')?->id,
+            'latitude' => 37.0902400,
+            'longitude' => -95.7128910,
+            'map_zoom' => 4,
+            'show_on_map' => true,
         ]);
 
         $madrid = $this->upsertLocation('Madrid', [
@@ -92,6 +108,10 @@ class DemoEditorialSeeder extends Seeder
             'timezone' => 'Europe/Madrid',
             'sort_order' => 11,
             'default_language_id' => $languages->get('es')?->id,
+            'latitude' => 40.4167750,
+            'longitude' => -3.7037900,
+            'map_zoom' => 8,
+            'show_on_map' => true,
         ]);
 
         $barcelona = $this->upsertLocation('Barcelona', [

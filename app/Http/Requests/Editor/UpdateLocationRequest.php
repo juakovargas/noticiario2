@@ -26,6 +26,12 @@ class UpdateLocationRequest extends FormRequest
             'country_code' => ['nullable', 'string', 'max:10'],
             'timezone' => ['nullable', 'string', 'max:255'],
             'default_language_id' => ['nullable', 'exists:languages,id'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'map_zoom' => ['nullable', 'integer', 'between:1,18'],
+            'marker_color' => ['nullable', 'string', 'max:30'],
+            'marker_label' => ['nullable', 'string', 'max:255'],
+            'show_on_map' => ['boolean'],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

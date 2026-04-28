@@ -19,15 +19,22 @@ class BulletinTypeController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'location_id' => (string) $request->query('location_id', ''),
+        ];
+
         return Inertia::render('Editor/BulletinTypes/Index', [
             'bulletinTypes' => BulletinType::query()
                 ->with(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'promptProfile:id,name'])
+                ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
                 ->orderByDesc('is_active')
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->paginate(20),
+                ->paginate(20)
+                ->withQueryString(),
+            'filters' => $filters,
         ]);
     }
 

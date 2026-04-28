@@ -151,11 +151,45 @@ class BulletinPromptRunController extends Controller
             'edition:id,title',
             'script:id,title,status',
             'createdBy:id,name,email,profile_image_id',
+            'sourceReferences.checkedBy:id,name,email,profile_image_id',
         ]);
+
+
+        $sourceCounts = $bulletinPromptRun->sourceReferences
+            ->whereNull('archived_at')
+            ->groupBy('verification_status')
+            ->map->count();
 
         return Inertia::render('Editor/BulletinPromptRuns/Show', [
             'run' => $bulletinPromptRun,
             'promptContext' => $this->coverageWindowResolver->resolve($bulletinPromptRun),
+            'sourceReferences' => $bulletinPromptRun->sourceReferences
+                ->whereNull('archived_at')
+                ->map(fn ($reference) => [
+                    'id' => $reference->id,
+                    'title' => $reference->title,
+                    'source_name' => $reference->source_name,
+                    'source_url' => $reference->source_url,
+                    'verification_status' => $reference->verification_status,
+                    'checked_at' => $reference->checked_at?->toDateTimeString(),
+                    'checked_by' => $reference->checkedBy ? [
+                        'id' => $reference->checkedBy->id,
+                        'name' => $reference->checkedBy->name,
+                        'email' => $reference->checkedBy->email,
+                        'avatar_url' => $reference->checkedBy->avatar_url,
+                        'initials' => $reference->checkedBy->initials,
+                    ] : null,
+                ])->values(),
+            'sourceSummary' => [
+                'total' => $sourceCounts->sum(),
+                'pending' => $sourceCounts->get('pending', 0),
+                'verified' => $sourceCounts->get('verified', 0),
+                'weak' => $sourceCounts->get('weak', 0),
+                'missing' => $sourceCounts->get('missing', 0),
+                'broken' => $sourceCounts->get('broken', 0),
+                'rejected' => $sourceCounts->get('rejected', 0),
+                'unresolved' => (int) ($sourceCounts->get('pending', 0) + $sourceCounts->get('weak', 0) + $sourceCounts->get('missing', 0) + $sourceCounts->get('broken', 0) + $sourceCounts->get('rejected', 0)),
+            ],
         ]);
     }
 

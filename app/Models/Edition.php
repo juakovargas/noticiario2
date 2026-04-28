@@ -60,4 +60,9 @@ class Edition extends Model
     {
         return $this->hasMany(BulletinPromptRun::class);
     }
+
+    public function sourceReferences(): HasMany
+    {
+        return $this->hasMany(SourceReference::class);
+    }
 }

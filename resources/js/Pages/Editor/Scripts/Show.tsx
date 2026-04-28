@@ -26,7 +26,8 @@ interface Script {
     rejected_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
     rejection_reason: string | null;
     review_items_count: number;
-    source_summary: { total: number; verified: number; pending: number; weak: number; issues: number };
+    source_summary: { total: number; verified: number; pending: number; weak: number; missing: number; broken: number; rejected: number; issues: number };
+    source_references: Array<{ id:number; title:string|null; source_name:string|null; source_url:string|null; verification_status:string; checked_at:string|null; checked_by:{ id:number; name:string; email:string|null; avatar_url?:string|null; initials?:string|null }|null }>;
 }
 
 interface Props {
@@ -62,14 +63,24 @@ export default function Show({ script }: Props): JSX.Element {
                     <div className="rounded border border-slate-200 bg-slate-50 p-3">
                         <p><strong>{t('Source verification')}:</strong></p>
                         <p>{t('Source References')}: {script.source_summary.total}</p>
-                        <p>{t('Verified')}: {script.source_summary.verified} · {t('Pending')}: {script.source_summary.pending} · {t('Weak source')}: {script.source_summary.weak}</p>
-                        <p>{t('Missing sources')}: {script.source_summary.issues}</p>
+                        <p>{t('Verified source')}: {script.source_summary.verified} · {t('Pending source')}: {script.source_summary.pending} · {t('Weak source')}: {script.source_summary.weak}</p>
+                        <p>{t('Missing source')}: {script.source_summary.missing} · {t('Broken source')}: {script.source_summary.broken} · {t('Rejected source')}: {script.source_summary.rejected}</p>
                         {script.source_summary.issues > 0 ? <p className="text-rose-700">{t('This script has unresolved source issues')}</p> : null}
+                    </div>
+
+                    <div className="rounded border border-slate-200 p-3">
+                        <p className="mb-2 font-medium">{t('Linked content')}</p>
+                        {script.source_references.length ? script.source_references.map((reference) => (
+                            <p key={reference.id} className="text-xs">
+                                <Link className="text-cyan-700 underline" href={route('editor.source-references.show', reference.id)}>{reference.title || reference.source_name || t('Source Reference')}</Link>
+                                {' · '}{reference.verification_status}
+                            </p>
+                        )) : <p className="text-xs text-slate-500">{t('No source references found')}</p>}
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="secondary"><Link href={route('editor.scripts.index')}>{t('Back')}</Link></Button>
                         <Button asChild variant="outline"><Link href={route('editor.scripts.review', script.id)}>{t('Review')}</Link></Button>
-                        <Button variant="outline" onClick={() => router.post(route('editor.scripts.source-references.extract', script.id))}>{t('Extract sources')}</Button>
+                        <Button variant="outline" onClick={() => router.post(route('editor.scripts.source-references.extract', script.id))}>{t('Extract sources from script')}</Button>
                         <Button asChild variant="outline"><Link href={route('editor.source-references.index', { script_id: script.id })}>{t('Manage sources')}</Link></Button>
                     </div>
                 </CardContent>

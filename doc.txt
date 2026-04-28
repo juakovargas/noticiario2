@@ -1232,3 +1232,60 @@ Updated next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+SOURCE VERIFICATION WORKFLOW
+
+Database:
+- source_references table stores manual source tracking and verification metadata.
+- Links supported:
+  - bulletin_prompt_run_id
+  - script_id
+  - news_item_id
+  - edition_id
+  - script_review_item_id
+- Verification fields:
+  - source_type: official, agency, media, web, social, rss, manual, unknown
+  - verification_status: pending, verified, weak, missing, broken, rejected, not_required
+  - trust_level: 0-10, nullable
+  - checked_by / checked_at
+- Archive fields:
+  - archived_at / archived_by
+  - archived records hidden by default and available via show_archived/only_archived filters
+
+Service:
+- app/Services/EditorialReview/SourceReferenceExtractor.php
+- Capabilities:
+  - extraction from bulletin prompt runs (parsed_response + response text)
+  - extraction from scripts (metadata + body text)
+  - extraction from news items
+  - extraction from parsed AI response payloads
+  - URL extraction from text and source blocks (SOURCE HINTS / SOURCES / FUENTES / PISTAS DE FUENTES)
+  - deduplication by URL + context, or normalized source label + context
+- No external URL checks, scraping, or API calls.
+
+Editor UI:
+- Source References pages:
+  - /editor/source-references
+  - /editor/source-references/{id}
+- Extract actions:
+  - /editor/bulletin-prompt-runs/{id}/source-references/extract
+  - /editor/scripts/{id}/source-references/extract
+  - /editor/news-items/{id}/source-references/extract
+- Integrations:
+  - Bulletin Prompt Run show includes source verification summary/list and extraction shortcut
+  - Script show includes source verification summary/list and unresolved warning
+  - News Item show can extract/link source references
+  - Dashboard counters include source verification metrics excluding archived references
+
+Current limitations:
+- no live URL checking
+- no automatic fact-checking
+- no scraping
+- no external API calls
+
+Updated next priorities:
+1. Manually test source verification with real prompt responses.
+2. Add real AI provider integration.
+3. Add AI logs and cost control.
+4. Add automatic schedule execution.
+5. Add audio/video/publishing later.

@@ -66,7 +66,7 @@ class DashboardController extends Controller
             ->get();
 
         $scriptsBlockedBySources = Script::query()
-            ->whereHas('sourceReferences', fn (Builder $query) => $query->whereIn('verification_status', ['missing', 'broken', 'rejected']))
+            ->whereHas('sourceReferences', fn (Builder $query) => $query->withoutArchived()->whereIn('verification_status', ['missing', 'broken', 'rejected']))
             ->select(['id', 'title', 'status', 'review_status'])
             ->orderByDesc('updated_at')
             ->limit(10)
@@ -94,11 +94,11 @@ class DashboardController extends Controller
                 'scriptsPendingReview' => Script::query()->where('status', '!=', 'archived')->where('review_status', 'pending')->count(),
                 'scriptsNeedingSources' => Script::query()->where('status', '!=', 'archived')->where('review_status', 'needs_sources')->count(),
                 'scriptsApprovedToday' => Script::query()->whereDate('approved_at', $today)->count(),
-                'sourcesPendingVerification' => SourceReference::query()->where('verification_status', 'pending')->count(),
-                'weakSources' => SourceReference::query()->where('verification_status', 'weak')->count(),
-                'missingSources' => SourceReference::query()->where('verification_status', 'missing')->count(),
-                'brokenRejectedSources' => SourceReference::query()->whereIn('verification_status', ['broken', 'rejected'])->count(),
-                'scriptsBlockedBySources' => Script::query()->where('status', '!=', 'archived')->whereHas('sourceReferences', fn (Builder $query) => $query->whereIn('verification_status', ['missing', 'broken', 'rejected']))->count(),
+                'sourcesPendingVerification' => SourceReference::query()->withoutArchived()->where('verification_status', 'pending')->count(),
+                'weakSources' => SourceReference::query()->withoutArchived()->where('verification_status', 'weak')->count(),
+                'missingSources' => SourceReference::query()->withoutArchived()->where('verification_status', 'missing')->count(),
+                'brokenRejectedSources' => SourceReference::query()->withoutArchived()->whereIn('verification_status', ['broken', 'rejected'])->count(),
+                'scriptsBlockedBySources' => Script::query()->where('status', '!=', 'archived')->whereHas('sourceReferences', fn (Builder $query) => $query->withoutArchived()->whereIn('verification_status', ['missing', 'broken', 'rejected']))->count(),
             ],
             'todayRuns' => $todayRunsQuery->orderBy('scheduled_for')->get(),
             'pendingPromptRuns' => $pendingPromptRuns,

@@ -157,9 +157,10 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/source-references', [SourceReferenceController::class, 'index'])->name('source-references.index');
         Route::get('/source-references/{sourceReference}', [SourceReferenceController::class, 'show'])->name('source-references.show');
         Route::put('/source-references/{sourceReference}', [SourceReferenceController::class, 'update'])->name('source-references.update');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/source-references/extract', [SourceReferenceController::class, 'extractFromBulletinPromptRun'])->name('bulletin-prompt-runs.source-references.extract');
         Route::post('/scripts/{script}/source-references/extract', [SourceReferenceController::class, 'extractFromScript'])->name('scripts.source-references.extract');
         Route::post('/script-review-items/{scriptReviewItem}/source-references/extract', [SourceReferenceController::class, 'extractFromScriptReviewItem'])->name('script-review-items.source-references.extract');
-        Route::post('/news-items/{newsItem}/source-references', [SourceReferenceController::class, 'createFromNewsItem'])->name('news-items.source-references.store');
+        Route::post('/news-items/{newsItem}/source-references/extract', [SourceReferenceController::class, 'extractFromNewsItem'])->name('news-items.source-references.extract');
         Route::get('/scripts/{script}/review', [ScriptReviewController::class, 'show'])->name('scripts.review');
         Route::post('/scripts/{script}/review/generate-items', [ScriptReviewController::class, 'generateItems'])->name('scripts.review.generate-items');
         Route::put('/scripts/{script}/review', [ScriptReviewController::class, 'update'])->name('scripts.review.update');

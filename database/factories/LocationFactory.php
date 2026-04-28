@@ -24,6 +24,12 @@ class LocationFactory extends Factory
             'country_code' => 'US',
             'timezone' => 'America/New_York',
             'default_language_id' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'map_zoom' => null,
+            'marker_color' => null,
+            'marker_label' => null,
+            'show_on_map' => true,
             'is_active' => true,
             'sort_order' => 0,
         ];

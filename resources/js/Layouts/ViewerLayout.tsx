@@ -4,7 +4,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { Eye, LayoutGrid } from 'lucide-react';
+import { Eye, LayoutGrid, Map } from 'lucide-react';
 import { PropsWithChildren } from 'react';
 import { PageProps } from '@/types';
 
@@ -40,6 +40,20 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                             <span className="inline-flex items-center gap-1">
                                 <LayoutGrid className="h-4 w-4" />
                                 {t('Dashboard')}
+                            </span>
+                        </Link>
+
+                        <Link
+                            href={route('viewer.world-map.index')}
+                            className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                                route().current('viewer.world-map.*')
+                                    ? 'bg-emerald-900 text-white'
+                                    : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-900'
+                            }`}
+                        >
+                            <span className="inline-flex items-center gap-1">
+                                <Map className="h-4 w-4" />
+                                {t('World Map')}
                             </span>
                         </Link>
 

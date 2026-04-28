@@ -20,6 +20,12 @@ class Location extends Model
         'country_code',
         'timezone',
         'default_language_id',
+        'latitude',
+        'longitude',
+        'map_zoom',
+        'marker_color',
+        'marker_label',
+        'show_on_map',
         'is_active',
         'sort_order',
     ];
@@ -27,6 +33,10 @@ class Location extends Model
     protected function casts(): array
     {
         return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'map_zoom' => 'integer',
+            'show_on_map' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
@@ -56,4 +66,10 @@ class Location extends Model
     {
         return $this->hasMany(Edition::class);
     }
+
+    public function bulletinTypes(): HasMany
+    {
+        return $this->hasMany(BulletinType::class);
+    }
 }
+

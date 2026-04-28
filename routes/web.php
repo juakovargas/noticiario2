@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeoSettingController;
 use App\Http\Controllers\Admin\PromptProfileController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\BulletinTypeController;
@@ -30,9 +31,11 @@ use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\Editor\ScriptReviewController;
 use App\Http\Controllers\Editor\SourceReferenceController;
+use App\Http\Controllers\Editor\WorldMapController as EditorWorldMapController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Viewer\DashboardController as ViewerDashboardController;
+use App\Http\Controllers\Viewer\WorldMapController as ViewerWorldMapController;
 use App\Support\AuthRedirect;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -79,6 +82,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->middleware('permission:dashboard.view')
             ->name('dashboard');
+
+        Route::get('/world-map', [AdminWorldMapController::class, 'index'])->name('world-map.index');
 
         Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
 
@@ -135,6 +140,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/dashboard', [EditorDashboardController::class, 'index'])
             ->middleware('permission:editor.dashboard.view')
             ->name('dashboard');
+
+        Route::get('/world-map', [EditorWorldMapController::class, 'index'])->name('world-map.index');
 
         Route::resource('locations', LocationController::class)->except('show');
         Route::resource('news-categories', NewsCategoryController::class)->except('show');
@@ -239,6 +246,8 @@ Route::middleware(['auth', 'verified', 'permission:viewer.access'])
         Route::get('/dashboard', [ViewerDashboardController::class, 'index'])
             ->middleware('permission:viewer.dashboard.view')
             ->name('dashboard');
+
+        Route::get('/world-map', [ViewerWorldMapController::class, 'index'])->name('world-map.index');
 
         Route::get('/published-content', fn () => Inertia::render('Viewer/PublishedContent'))
             ->name('published-content');

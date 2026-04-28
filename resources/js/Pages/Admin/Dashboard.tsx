@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Com
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useTranslations } from '@/i18n/useTranslations';
 
 type Props = {
     stats: Record<string, number | null>;
@@ -14,6 +15,7 @@ type Props = {
 
 export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpenEditorRun }: Props): JSX.Element {
     const { formatDateTime } = useDateFormatter();
+    const { t } = useTranslations();
 
     return (
         <AdminLayout>
@@ -56,6 +58,12 @@ export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpen
                             </div>
                         )) : <p className="text-sm">No failed runs.</p>}
                     </CardContent>
+                </Card>
+
+
+                <Card>
+                    <CardHeader><CardTitle>{t('World Map')}</CardTitle><CardDescription>{t('View configured bulletin locations')}</CardDescription></CardHeader>
+                    <CardContent><Link className="text-cyan-700" href={route('admin.world-map.index')}>{t('Open')}</Link></CardContent>
                 </Card>
 
                 {aiOverview && (

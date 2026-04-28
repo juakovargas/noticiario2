@@ -30,6 +30,7 @@ class BulletinPromptRunController extends Controller
             'status' => (string) $request->query('status', ''),
             'bulletin_type_id' => (string) $request->query('bulletin_type_id', ''),
             'prompt_profile_id' => (string) $request->query('prompt_profile_id', ''),
+            'location_id' => (string) $request->query('location_id', ''),
             'created_by' => (string) $request->query('created_by', ''),
             'scheduled_from' => (string) $request->query('scheduled_from', ''),
             'scheduled_to' => (string) $request->query('scheduled_to', ''),
@@ -91,6 +92,10 @@ class BulletinPromptRunController extends Controller
             ->when(
                 $filters['prompt_profile_id'] !== '',
                 fn (Builder $q) => $q->where('prompt_profile_id', $filters['prompt_profile_id'])
+            )
+            ->when(
+                $filters['location_id'] !== '',
+                fn (Builder $q) => $q->whereHas('bulletinType', fn (Builder $bt) => $bt->where('location_id', $filters['location_id']))
             )
             ->when(
                 $filters['created_by'] !== '',

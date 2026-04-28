@@ -1389,3 +1389,70 @@ Next priorities
 4. Add queue worker foundation.
 5. Add audio/video foundation.
 6. Add video/publishing later.
+
+EDITORIAL WORKFLOW CLARITY AND SCRIPT PRODUCTION METADATA
+
+Purpose:
+- Added a workflow-first editor experience so editors immediately know what action comes next.
+- Added a dedicated workbench for operational guidance (not just CRUD/statistics).
+
+Workflow steps now emphasized:
+1. Bulletin Type
+2. Prompt Run
+3. Prompt
+4. AI Response
+5. Script
+6. Review/fact-check
+7. Production metadata
+8. Audio/video later
+
+Navigation separation:
+- Workspace / Trabajo: Dashboard, Editorial Workbench, World Map.
+- Production Workflow / Flujo de producción: Bulletin Types, Prompt Runs, Scripts, Source verification, Editions.
+- Content / Contenido: News Items, News Sources, Categories, Locations.
+- Publishing preparation / Preparación de publicación: publications placeholders.
+- Configuration / Configuración: templates and schedule/config modules.
+
+Prompt Run <-> Script relationship:
+- scripts.bulletin_prompt_run_id added (nullable, FK -> bulletin_prompt_runs.id, nullOnDelete).
+- bulletin_prompt_runs.script_id remains in place.
+- script creation from prompt run now sets both references.
+- Script page displays explicit origin context (prompt run, bulletin type, prompt profile, prompt/response timestamps).
+- Prompt Run page includes linked script clarity and workflow timeline badges.
+
+New scripts production metadata fields:
+- final_title
+- production_name
+- public_description
+- short_description
+- hashtags (json array)
+- social_copy
+- target_platforms (json array)
+- seo_title
+- seo_description
+- production_status
+- ready_for_production_at
+- ready_for_production_by
+
+Production readiness requirements:
+- Final title OR production name required.
+- Public description OR short description required.
+- At least one hashtag required.
+- At least one target platform required.
+- When valid and marked ready:
+  - production_status = ready_for_production
+  - ready_for_production_at set to now
+  - ready_for_production_by set to current user
+
+Current limitations:
+- no audio generation yet
+- no video generation yet
+- no publishing automation yet
+
+Updated current next priorities:
+1. Manually test Workbench workflow.
+2. Finish/improve source verification if needed.
+3. Add real AI provider integration if not completed.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video foundation.

@@ -121,8 +121,12 @@ class BulletinPromptRunService
 
         $script = Script::query()->create([
             'edition_id' => $run->edition_id,
+            'bulletin_prompt_run_id' => $run->id,
             'title' => $title,
+            'final_title' => trim((string) ($parsed['title'] ?? '')) ?: $title,
+            'production_name' => $run->title,
             'status' => 'draft',
+            'production_status' => 'draft',
             'language' => $run->edition?->language ?: $run->bulletinType?->language?->code,
             'intro' => $intro,
             'body' => $body,

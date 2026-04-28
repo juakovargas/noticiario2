@@ -23,6 +23,7 @@ use App\Http\Controllers\Editor\EditorialRequestController;
 use App\Http\Controllers\Editor\EditorialScheduleController;
 use App\Http\Controllers\Editor\EditorialScheduleRunController;
 use App\Http\Controllers\Editor\EditorialTemplateController;
+use App\Http\Controllers\Editor\EditorialWorkbenchController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\ScriptBuilderController;
 use App\Http\Controllers\Editor\NewsCategoryController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Editor\NewsSourceController;
 use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\Editor\ScriptReviewController;
+use App\Http\Controllers\Editor\ScriptProductionMetadataController;
 use App\Http\Controllers\Editor\SourceReferenceController;
 use App\Http\Controllers\Editor\WorldMapController as EditorWorldMapController;
 use App\Http\Controllers\LocaleController;
@@ -146,6 +148,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
 
         Route::get('/world-map', [EditorWorldMapController::class, 'index'])->name('world-map.index');
 
+        Route::get('/workbench', [EditorialWorkbenchController::class, 'index'])->name('workbench');
+
         Route::resource('locations', LocationController::class)->except('show');
         Route::resource('news-categories', NewsCategoryController::class)->except('show');
         Route::resource('news-sources', NewsSourceController::class)->except('show');
@@ -164,6 +168,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('scripts', ScriptController::class);
         Route::post('/scripts/{script}/archive', [ScriptController::class, 'archive'])->name('scripts.archive');
         Route::post('/scripts/{script}/restore', [ScriptController::class, 'restore'])->name('scripts.restore');
+        Route::get('/scripts/{script}/production', [ScriptProductionMetadataController::class, 'edit'])->name('scripts.production.edit');
+        Route::put('/scripts/{script}/production', [ScriptProductionMetadataController::class, 'update'])->name('scripts.production.update');
         Route::get('/source-references', [SourceReferenceController::class, 'index'])->name('source-references.index');
         Route::get('/source-references/{sourceReference}', [SourceReferenceController::class, 'show'])->name('source-references.show');
         Route::put('/source-references/{sourceReference}', [SourceReferenceController::class, 'update'])->name('source-references.update');

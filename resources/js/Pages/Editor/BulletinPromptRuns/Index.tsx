@@ -70,7 +70,7 @@ export default function Index({ runs, filters, statuses, bulletinTypes, promptPr
 
     return <EditorLayout>
         <Head title={t('Prompt Runs')} />
-        <AdminPageHeader title={t('Prompt Runs')} description={t('External AI workflow')} />
+        <AdminPageHeader helpKey="editor.bulletinpromptruns.index" title={t('Prompt Runs')} description={t('External AI workflow')} />
 
         <Card>
             <CardContent className="pt-6">

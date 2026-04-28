@@ -93,4 +93,16 @@ class AiProviderManagementTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.ai-providers.index'))->assertDontSee('secret-value');
     }
+
+    public function test_admin_provider_show_includes_usage_summary_payload(): void
+    {
+        $admin = $this->createUserWithPermissions(['admin.access']);
+        $provider = AiProvider::factory()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.ai-providers.show', $provider))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('provider.usage_summary.daily_requests', 0)
+                ->where('provider.usage_summary.monthly_requests', 0));
+    }
 }

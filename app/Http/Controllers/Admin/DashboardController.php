@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiRequestLog;
+use App\Models\AiProvider;
 use App\Models\Edition;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
@@ -49,11 +50,15 @@ class DashboardController extends Controller
                 'aiRequestsToday' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->count() : 0,
                 'failedAiRequests' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->where('status', 'failed')->count() : 0,
                 'aiEstimatedCostToday' => Schema::hasTable('ai_request_logs') ? (float) AiRequestLog::query()->whereDate('created_at', $today)->sum('estimated_cost') : 0,
+                'aiEstimatedCostMonth' => Schema::hasTable('ai_request_logs') ? (float) AiRequestLog::query()->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('estimated_cost') : 0,
+                'blockedAiRequests' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->where('limit_blocked', true)->count() : 0,
+                'missingEnvProviders' => Schema::hasTable('ai_providers') ? AiProvider::query()->get()->filter(fn (AiProvider $provider) => ! $provider->hasConfiguredApiKey())->count() : 0,
             ],
             'recentFailedRuns' => Schema::hasTable('editorial_schedule_runs')
                 ? EditorialScheduleRun::query()->with(['schedule:id,name'])->where('status', 'failed')->latest()->limit(8)->get()
                 : [],
             'aiOverview' => $aiOverview,
+            'latestFailedAiRequestId' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->where('status', 'failed')->latest()->value('id') : null,
             'canOpenEditorRun' => auth()->user()?->can('editor.access') ?? false,
         ]);
     }

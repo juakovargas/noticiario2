@@ -34,7 +34,7 @@ export default function Index({ templates }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title={t('Editorial Templates')} />
-            <AdminPageHeader title={t('Editorial Templates')} description="Manage reusable script structures." actionLabel={t('Create Editorial Template')} actionHref={route('editor.editorial-templates.create')} />
+            <AdminPageHeader helpKey="editor.editorialtemplates.index" title={t('Editorial Templates')} description="Manage reusable script structures." actionLabel={t('Create Editorial Template')} actionHref={route('editor.editorial-templates.create')} />
             <Card>
                 <CardContent className="overflow-x-auto pt-6">
                     <table className="w-full min-w-[980px] text-sm">

@@ -10,6 +10,8 @@ use App\Models\BulletinType;
 use App\Models\PromptProfile;
 use App\Models\User;
 use App\Services\Ai\AiClientManager;
+use App\Services\Ai\AiCostCalculator;
+use App\Services\Ai\AiUsageLimitService;
 use App\Services\Ai\Exceptions\AiProviderException;
 use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
 use App\Services\PromptGeneration\BulletinPromptRunService;
@@ -26,6 +28,8 @@ class BulletinPromptRunController extends Controller
         private readonly BulletinPromptRunService $service,
         private readonly BulletinCoverageWindowResolver $coverageWindowResolver,
         private readonly AiClientManager $aiClientManager,
+        private readonly AiCostCalculator $costCalculator,
+        private readonly AiUsageLimitService $usageLimitService,
     ) {
     }
 
@@ -293,6 +297,27 @@ class BulletinPromptRunController extends Controller
             return back()->with('error', 'Environment key is not configured.');
         }
 
+        $limitCheck = $this->usageLimitService->checkProviderLimits($provider);
+        if ($limitCheck['blocked'] === true) {
+            AiRequestLog::query()->create([
+                'ai_provider_id' => $provider->id,
+                'bulletin_prompt_run_id' => $bulletinPromptRun->id,
+                'user_id' => $request->user()?->id,
+                'model' => $data['model'] ?? $provider->default_model,
+                'status' => 'failed',
+                'limit_blocked' => true,
+                'request_type' => 'bulletin_prompt_run',
+                'prompt_hash' => hash('sha256', (string) $bulletinPromptRun->generated_prompt),
+                'prompt_preview' => str((string) $bulletinPromptRun->generated_prompt)->limit(5000)->toString(),
+                'error_code' => 'limit_reached',
+                'error_message' => $limitCheck['warnings'][0] ?? 'AI provider daily limit reached.',
+                'started_at' => now(),
+                'completed_at' => now(),
+            ]);
+
+            return back()->with('error', $limitCheck['warnings'][0] ?? 'AI provider daily limit reached.');
+        }
+
         $log = AiRequestLog::query()->create([
             'ai_provider_id' => $provider->id,
             'bulletin_prompt_run_id' => $bulletinPromptRun->id,
@@ -320,7 +345,7 @@ class BulletinPromptRunController extends Controller
                 'output_tokens' => $aiResponse->outputTokens,
                 'total_tokens' => $aiResponse->totalTokens,
                 'duration_ms' => $aiResponse->durationMs,
-                'estimated_cost' => $this->estimateCost($provider, $aiResponse->inputTokens, $aiResponse->outputTokens),
+                'estimated_cost' => $this->costCalculator->estimate($provider, $aiResponse->inputTokens, $aiResponse->outputTokens),
                 'metadata' => ['finish_reason' => $aiResponse->finishReason],
                 'completed_at' => now(),
             ]);
@@ -330,6 +355,8 @@ class BulletinPromptRunController extends Controller
             $log->update([
                 'status' => 'failed',
                 'error_message' => str($exception->getMessage())->limit(1000)->toString(),
+                'error_code' => 'provider_error',
+                'provider_status_code' => null,
                 'completed_at' => now(),
             ]);
 
@@ -422,18 +449,5 @@ class BulletinPromptRunController extends Controller
         $bulletinPromptRun->update(['status' => 'cancelled']);
 
         return back()->with('success', 'Prompt run cancelled.');
-    }
-
-    private function estimateCost(AiProvider $provider, ?int $inputTokens, ?int $outputTokens): ?float
-    {
-        if ($inputTokens === null || $outputTokens === null) {
-            return null;
-        }
-
-        if ($provider->cost_input_per_1k_tokens === null || $provider->cost_output_per_1k_tokens === null) {
-            return null;
-        }
-
-        return round((($inputTokens / 1000) * (float) $provider->cost_input_per_1k_tokens) + (($outputTokens / 1000) * (float) $provider->cost_output_per_1k_tokens), 6);
     }
 }

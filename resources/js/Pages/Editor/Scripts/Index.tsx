@@ -72,7 +72,7 @@ export default function Index({ scripts, filters, statuses, editions, languages 
     return (
         <EditorLayout>
             <Head title={t('Scripts')} />
-            <AdminPageHeader title={t('Scripts')} description="Editorial scripts for editions." actionLabel={t('Create script')} actionHref={route('editor.scripts.create')} />
+            <AdminPageHeader helpKey="editor.scripts.index" title={t('Scripts')} description="Editorial scripts for editions." actionLabel={t('Create script')} actionHref={route('editor.scripts.create')} />
 
             <Card>
                 <CardContent className="pt-6">

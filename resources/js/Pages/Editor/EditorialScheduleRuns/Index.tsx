@@ -22,7 +22,7 @@ export default function Index({ runs, filters, statuses, schedules }: any): JSX.
     router.post(route(`editor.editorial-schedule-runs.${action}`, id));
   };
 
-  return <EditorLayout><Head title="Editorial Runs" /><AdminPageHeader title="Editorial Runs" description="Manual AI run desk." />
+  return <EditorLayout><Head title="Editorial Runs" /><AdminPageHeader helpKey="editor.editorialscheduleruns.index" title="Editorial Runs" description="Manual AI run desk." />
     <Card className="mb-4"><CardContent className="pt-6"><form onSubmit={submit} className="grid gap-3 md:grid-cols-4">
       <input className="rounded border px-3 py-2 text-sm" placeholder={t('Search')} value={form.search ?? ''} onChange={(e) => setForm((p:any) => ({ ...p, search: e.target.value }))} />
       <select className="rounded border px-3 py-2 text-sm" value={form.status ?? ''} onChange={(e) => setForm((p:any) => ({ ...p, status: e.target.value }))}><option value="">{t('All statuses')}</option>{statuses.map((s:string) => <option key={s} value={s}>{s}</option>)}</select>

@@ -44,7 +44,7 @@ export default function ProductionEdit({ script, productionStatuses, targetPlatf
     return (
         <EditorLayout>
             <Head title={t('Production metadata')} />
-            <AdminPageHeader title={t('Production metadata')} description={t('Prepare publishing metadata')} />
+            <AdminPageHeader helpKey="editor.scripts.productionedit" title={t('Production metadata')} description={t('Prepare publishing metadata')} />
             <Card>
                 <CardContent className="pt-6">
                     <form className="space-y-4" onSubmit={submit}>

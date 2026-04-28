@@ -64,7 +64,7 @@ export default function Show({ run, promptContext, sourceReferences = [], source
     return (
         <EditorLayout>
             <Head title={run.title || t('Prompt Run')} />
-            <AdminPageHeader title={run.title || t('Prompt Run')} description={t('Copy this prompt into your preferred AI tool')} />
+            <AdminPageHeader helpKey="editor.bulletinpromptruns.show" title={run.title || t('Prompt Run')} description={t('Copy this prompt into your preferred AI tool')} />
 
             {run.status === 'archived' && (
                 <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">

@@ -26,7 +26,7 @@ export default function Show({ script }: { script: any }): JSX.Element {
     return (
         <EditorLayout>
             <Head title={script.title} />
-            <AdminPageHeader title={script.title} description={t('Workflow')} />
+            <AdminPageHeader helpKey="editor.scripts.show" title={script.title} description={t('Workflow')} />
 
             <Card className="mb-4"><CardContent className="pt-6"><p><strong>{t('Next action')}:</strong> {nextAction}</p></CardContent></Card>
 

@@ -96,4 +96,26 @@ class BulletinPromptRunAiGenerationTest extends TestCase
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => 'TITLE: Manual'])->assertRedirect();
         $this->assertSame('TITLE: Manual', $run->fresh()->ai_response_text);
     }
+
+    public function test_generation_is_blocked_when_daily_limit_reached_without_external_call(): void
+    {
+        putenv('OPENAI_API_KEY=test-key');
+        Http::fake(['*' => Http::response(['ok' => true], 200)]);
+
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $provider = AiProvider::query()->create([
+            'name' => 'OpenAI', 'slug' => 'openai', 'provider_type' => 'openai', 'base_url' => 'https://api.openai.com/v1', 'api_key_env_name' => 'OPENAI_API_KEY', 'default_model' => 'gpt-4o-mini', 'is_active' => true, 'is_default' => true, 'timeout_seconds' => 60, 'daily_request_limit' => 1,
+        ]);
+        $run = BulletinPromptRun::factory()->create(['generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
+
+        $this->assertDatabaseCount('ai_request_logs', 0);
+        $this->assertDatabaseHas('ai_providers', ['id' => $provider->id]);
+
+        \App\Models\AiRequestLog::query()->create(['ai_provider_id' => $provider->id, 'status' => 'success']);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run))->assertSessionHas('error');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseHas('ai_request_logs', ['bulletin_prompt_run_id' => $run->id, 'limit_blocked' => true, 'error_code' => 'limit_reached']);
+    }
 }

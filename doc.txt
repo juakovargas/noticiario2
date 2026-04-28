@@ -245,13 +245,25 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 - No audio/video processing yet.
 - No media picker/thumbnails/S3 yet.
 
-## 9. CURRENT ROADMAP
+## 9. LARAVEL 13 UPGRADE READINESS
 
-1. feature/queue-worker-foundation
-2. feature/audio-production-foundation
-3. feature/video-production-foundation
-4. feature/publishing-foundation
-5. feature/public-viewer-content-and-search
-6. feature/media-picker-and-assets
-7. feature/live-source-checking-optional
-8. feature/privacy-consent-and-public-seo-hardening
+- Readiness audit branch completed: `feature/laravel-13-upgrade-readiness`.
+- Local PHP version for project baseline: **8.3.30**.
+- Laravel 13 requires **PHP 8.3+**.
+- Upgrade is feasible, but should be executed in a dedicated upgrade branch with full dependency/test validation.
+- Readiness report: `docs/laravel-13-upgrade-readiness.md`.
+- Laravel 13 introduces the first-party Laravel AI SDK; this should be evaluated after the Laravel 13 framework upgrade is stabilized.
+- Current recommendation order:
+  1. Finish readiness audit.
+  2. Run dedicated framework upgrade branch.
+  3. Evaluate Laravel AI SDK in a separate branch.
+
+## 10. CURRENT ROADMAP
+
+1. feature/upgrade-laravel-13
+2. feature/laravel-ai-sdk-evaluation
+3. feature/automatic-schedule-runner
+4. feature/queue-worker-foundation
+5. feature/audio-production-foundation
+6. feature/video-production-foundation
+7. feature/publishing-foundation

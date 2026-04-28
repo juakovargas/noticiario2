@@ -17,7 +17,7 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         $configLocale = config('app.locale', 'en');
-        $supportedLocales = ['en', 'es'];
+        $supportedLocales = ['en', 'es', 'fr'];
         $defaultActiveLanguage = null;
 
         if (Schema::hasTable('languages')) {

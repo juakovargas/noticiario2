@@ -1456,3 +1456,37 @@ Updated current next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video foundation.
+
+GLOBAL TRANSLATION AUDIT
+
+UI translation source:
+- resources/js/i18n/translations.ts
+
+Active UI locales:
+- en
+- es
+- fr
+
+Rules:
+- All visible React UI strings must use useTranslations().t().
+- Status/enum values must be mapped through translated labels (no raw enum output in UI badges/lists).
+- Flash messages should be translatable keys where possible.
+- Database-backed visible content should include translations when supported.
+- Prompt templates should be language-specific where supported by language_id/locale.
+
+TRANSLATION RULE
+Every branch that adds or changes visible UI text must update:
+- resources/js/i18n/translations.ts
+- English, Spanish and French keys
+- database seed translations if content is database-backed
+- prompt templates in the correct language if templates/prompts are added
+
+No new visible English-only text should be merged.
+
+Updated current next priorities:
+1. Keep translations updated in every branch.
+2. Continue workflow/source/AI roadmap.
+3. Add real AI provider integration if not completed.
+4. Add AI logs/cost control.
+5. Add automatic schedule execution.
+6. Add audio/video foundation.

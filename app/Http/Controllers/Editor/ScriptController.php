@@ -49,6 +49,7 @@ class ScriptController extends Controller
                     'reviewedBy:id,name,email,profile_image_id',
                     'approvedBy:id,name,email,profile_image_id',
                     'rejectedBy:id,name,email,profile_image_id',
+                    'bulletinPromptRun:id,title,status',
                 ])
                 ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                     $search = $filters['search'];
@@ -103,6 +104,10 @@ class ScriptController extends Controller
                         'avatar_url' => $script->rejectedBy->avatar_url,
                         'initials' => $script->rejectedBy->initials,
                     ] : null,
+                    'origin_prompt_run' => $script->bulletinPromptRun ? [
+                        'id' => $script->bulletinPromptRun->id,
+                        'title' => $script->bulletinPromptRun->title,
+                    ] : null,
                 ]),
             'filters' => $filters,
             'statuses' => ['draft', 'review', 'approved', 'rejected', 'archived'],
@@ -138,13 +143,23 @@ class ScriptController extends Controller
             'approvedBy:id,name,email,profile_image_id',
             'reviewedBy:id,name,email,profile_image_id',
             'rejectedBy:id,name,email,profile_image_id',
+            'readyForProductionBy:id,name,email,profile_image_id',
             'reviewItems',
             'sourceReferences.checkedBy:id,name,email,profile_image_id',
+            'bulletinPromptRun:id,title,status,bulletin_type_id,prompt_profile_id,prompt_generated_at,response_received_at',
+            'bulletinPromptRun.bulletinType:id,name',
+            'bulletinPromptRun.promptProfile:id,name',
         ]);
 
         $sourceCounts = $script->sourceReferences
             ->groupBy('verification_status')
             ->map->count();
+
+        $hasMetadataForProduction = filled($script->final_title) || filled($script->production_name);
+        $hasDescriptionForProduction = filled($script->public_description) || filled($script->short_description);
+        $hasHashtags = is_array($script->hashtags) && count($script->hashtags) > 0;
+        $hasPlatforms = is_array($script->target_platforms) && count($script->target_platforms) > 0;
+        $metadataComplete = $hasMetadataForProduction && $hasDescriptionForProduction && $hasHashtags && $hasPlatforms;
 
         return Inertia::render('Editor/Scripts/Show', [
             'script' => [
@@ -159,6 +174,24 @@ class ScriptController extends Controller
                 'outro' => $script->outro,
                 'estimated_duration_seconds' => $script->estimated_duration_seconds,
                 'review_status' => $script->review_status ?? 'pending',
+                'production_status' => $script->production_status ?? 'draft',
+                'final_title' => $script->final_title,
+                'production_name' => $script->production_name,
+                'public_description' => $script->public_description,
+                'short_description' => $script->short_description,
+                'hashtags' => $script->hashtags ?? [],
+                'social_copy' => $script->social_copy,
+                'target_platforms' => $script->target_platforms ?? [],
+                'seo_title' => $script->seo_title,
+                'seo_description' => $script->seo_description,
+                'ready_for_production_at' => $script->ready_for_production_at?->toDateTimeString(),
+                'ready_for_production_by' => $script->readyForProductionBy ? [
+                    'id' => $script->readyForProductionBy->id,
+                    'name' => $script->readyForProductionBy->name,
+                    'email' => $script->readyForProductionBy->email,
+                    'avatar_url' => $script->readyForProductionBy->avatar_url,
+                    'initials' => $script->readyForProductionBy->initials,
+                ] : null,
                 'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
                 'reviewed_by' => $script->reviewedBy ? [
                     'id' => $script->reviewedBy->id,
@@ -185,6 +218,23 @@ class ScriptController extends Controller
                 ] : null,
                 'rejection_reason' => $script->rejection_reason,
                 'review_items_count' => $script->reviewItems->count(),
+                'origin' => $script->bulletinPromptRun ? [
+                    'prompt_run' => [
+                        'id' => $script->bulletinPromptRun->id,
+                        'title' => $script->bulletinPromptRun->title,
+                        'status' => $script->bulletinPromptRun->status,
+                    ],
+                    'bulletin_type' => $script->bulletinPromptRun->bulletinType ? [
+                        'id' => $script->bulletinPromptRun->bulletinType->id,
+                        'name' => $script->bulletinPromptRun->bulletinType->name,
+                    ] : null,
+                    'prompt_profile' => $script->bulletinPromptRun->promptProfile ? [
+                        'id' => $script->bulletinPromptRun->promptProfile->id,
+                        'name' => $script->bulletinPromptRun->promptProfile->name,
+                    ] : null,
+                    'prompt_generated_at' => $script->bulletinPromptRun->prompt_generated_at?->toDateTimeString(),
+                    'response_received_at' => $script->bulletinPromptRun->response_received_at?->toDateTimeString(),
+                ] : null,
                 'source_summary' => [
                     'total' => $script->sourceReferences->count(),
                     'verified' => $sourceCounts->get('verified', 0),
@@ -212,6 +262,7 @@ class ScriptController extends Controller
                             'initials' => $reference->checkedBy->initials,
                         ] : null,
                     ])->values(),
+                'metadata_ready' => $metadataComplete,
             ],
         ]);
     }
@@ -252,6 +303,7 @@ class ScriptController extends Controller
 
             $script->update([
                 'status' => 'archived',
+                'production_status' => 'archived',
                 'metadata' => $metadata,
             ]);
         }
@@ -273,6 +325,7 @@ class ScriptController extends Controller
 
         $script->update([
             'status' => $status,
+            'production_status' => $script->production_status === 'archived' ? 'draft' : $script->production_status,
             'metadata' => $metadata,
         ]);
 

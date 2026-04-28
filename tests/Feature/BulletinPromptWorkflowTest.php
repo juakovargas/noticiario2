@@ -107,6 +107,7 @@ class BulletinPromptWorkflowTest extends TestCase
 
         $script = Script::query()->findOrFail($run->script_id);
         $this->assertSame($run->id, data_get($script->metadata, 'bulletin_prompt_run_id'));
+        $this->assertSame($run->id, $script->bulletin_prompt_run_id);
         $this->assertTrue((bool) data_get($script->metadata, 'parsed_response_used'));
         $this->assertStringContainsString('Script', $script->body ?? '');
         $this->assertStringNotContainsString('Summary', $script->body ?? '');

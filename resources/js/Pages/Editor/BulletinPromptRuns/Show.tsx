@@ -84,6 +84,30 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                 <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.cancel', run.id))}>{t('Cancel')}</Button>
             </div>
 
+
+            <Card className="mb-4">
+                <CardContent className="space-y-3 pt-6 text-sm">
+                    <h3 className="font-semibold">{t('Workflow')}</h3>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">{t('Prompt')}: {run.generated_prompt ? t('Ready') : t('Pending')}</Badge>
+                        <Badge variant="outline">{t('Response')}: {run.ai_response_text ? t('Ready') : t('Pending')}</Badge>
+                        <Badge variant="outline">{t('Script')}: {run.script_id ? t('Ready') : t('Pending')}</Badge>
+                        <Badge variant="outline">{t('Review')}: {run.script?.review_status ?? t('Pending')}</Badge>
+                        <Badge variant="outline">{t('Production metadata')}: {run.script?.metadata_ready ? t('Ready') : t('Missing metadata')}</Badge>
+                    </div>
+                    {run.script ? (
+                        <div className="rounded border border-cyan-200 bg-cyan-50 p-3">
+                            <p><strong>{t('Continue with Script')}:</strong> {run.script.title}</p>
+                            <p>{t('Status')}: {run.script.status} · {t('Review status')}: {run.script.review_status || '-'}</p>
+                            <p>{t('Production metadata')}: {run.script.metadata_ready ? t('Ready for production') : t('Missing metadata')}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <Button asChild size="sm"><Link href={route('editor.scripts.show', run.script.id)}>{t('Open Script')}</Link></Button>
+                                <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.production.edit', run.script.id)}>{t('Prepare production metadata')}</Link></Button>
+                            </div>
+                        </div>
+                    ) : null}
+                </CardContent>
+            </Card>
             <Card>
                 <CardContent className="space-y-2 pt-6 text-sm">
                     <p><strong>{t('Bulletin Type')}:</strong> {run.bulletin_type?.name}</p>
@@ -287,7 +311,7 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                             <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.create-script', run.id))}>{t('Create Script')}</Button>
                         ) : (
                             <Button asChild variant="outline">
-                                <Link href={route('editor.scripts.show', run.script_id)}>{t('Open existing script')}</Link>
+                                <Link href={route('editor.scripts.show', run.script_id)}>{t('Continue with Script')}</Link>
                             </Button>
                         )}
                     </div>

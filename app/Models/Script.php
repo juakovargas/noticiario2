@@ -15,16 +15,29 @@ class Script extends Model
     protected $fillable = [
         'edition_id',
         'title',
+        'final_title',
+        'production_name',
         'status',
         'language',
         'intro',
         'body',
         'outro',
         'estimated_duration_seconds',
+        'bulletin_prompt_run_id',
+        'public_description',
+        'short_description',
+        'hashtags',
+        'social_copy',
+        'target_platforms',
+        'seo_title',
+        'seo_description',
         'approved_at',
         'approved_by',
         'metadata',
         'review_status',
+        'production_status',
+        'ready_for_production_at',
+        'ready_for_production_by',
         'review_notes',
         'fact_check_notes',
         'reviewed_by',
@@ -40,7 +53,10 @@ class Script extends Model
             'approved_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'rejected_at' => 'datetime',
+            'ready_for_production_at' => 'datetime',
             'metadata' => 'array',
+            'hashtags' => 'array',
+            'target_platforms' => 'array',
         ];
     }
 
@@ -68,6 +84,16 @@ class Script extends Model
     public function reviewItems(): HasMany
     {
         return $this->hasMany(ScriptReviewItem::class)->orderBy('sort_order');
+    }
+
+    public function bulletinPromptRun(): BelongsTo
+    {
+        return $this->belongsTo(BulletinPromptRun::class, 'bulletin_prompt_run_id');
+    }
+
+    public function readyForProductionBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ready_for_production_by');
     }
 
     public function editorialScheduleRuns(): HasMany

@@ -100,6 +100,22 @@ class DashboardController extends Controller
                 'missingSources' => SourceReference::query()->withoutArchived()->where('verification_status', 'missing')->count(),
                 'brokenRejectedSources' => SourceReference::query()->withoutArchived()->whereIn('verification_status', ['broken', 'rejected'])->count(),
                 'scriptsBlockedBySources' => Script::query()->where('status', '!=', 'archived')->whereHas('sourceReferences', fn (Builder $query) => $query->withoutArchived()->whereIn('verification_status', ['missing', 'broken', 'rejected']))->count(),
+                'scriptsMissingMetadata' => Script::query()->where('status', '!=', 'archived')->where(function (Builder $query): void {
+                    $query->where(function (Builder $q): void {
+                        $q->whereNull('final_title')->whereNull('production_name');
+                    })->orWhere(function (Builder $q): void {
+                        $q->whereNull('public_description')->whereNull('short_description');
+                    })->orWhere(function (Builder $q): void {
+                        $q->where(function (Builder $i): void {
+                            $i->whereNull('hashtags')->orWhereJsonLength('hashtags', 0);
+                        });
+                    })->orWhere(function (Builder $q): void {
+                        $q->where(function (Builder $i): void {
+                            $i->whereNull('target_platforms')->orWhereJsonLength('target_platforms', 0);
+                        });
+                    });
+                })->count(),
+                'scriptsReadyForProduction' => Script::query()->where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->count(),
             ],
             'todayRuns' => $todayRunsQuery->orderBy('scheduled_for')->get(),
             'pendingPromptRuns' => $pendingPromptRuns,

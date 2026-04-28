@@ -26,16 +26,25 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
 
     const sections: NavSection[] = [
         {
-            title: t('Workspace'),
+            title: t('Workspace / Trabajo'),
             items: [
                 { label: t('Dashboard'), routeName: 'editor.dashboard' },
+                { label: t('Editorial Workbench'), routeName: 'editor.workbench' },
                 { label: t('World Map'), routeName: 'editor.world-map.index' },
-                { label: t('Editorial Desk'), routeName: 'editor.editorial-desk.index' },
-                { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' },
             ],
         },
         {
-            title: t('News'),
+            title: t('Production Workflow / Flujo de producción'),
+            items: [
+                { label: t('Bulletin Types'), routeName: 'editor.bulletin-types.index' },
+                { label: t('Prompt Runs'), routeName: 'editor.bulletin-prompt-runs.index' },
+                { label: t('Scripts'), routeName: 'editor.scripts.index' },
+                { label: t('Source verification'), routeName: 'editor.source-references.index' },
+                { label: t('Editions'), routeName: 'editor.editions.index' },
+            ],
+        },
+        {
+            title: t('Content / Contenido'),
             items: [
                 { label: t('News Items'), routeName: 'editor.news-items.index' },
                 { label: t('News Sources'), routeName: 'editor.news-sources.index' },
@@ -44,37 +53,23 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
             ],
         },
         {
-            title: t('Editions'),
-            items: [
-                { label: t('Editions'), routeName: 'editor.editions.index' },
-                { label: t('Scripts'), routeName: 'editor.scripts.index' },
-                { label: t('Source References'), routeName: 'editor.source-references.index' },
-                { label: t('Editorial Schedules'), routeName: 'editor.editorial-schedules.index' },
-                { label: t('Editorial Runs'), routeName: 'editor.editorial-schedule-runs.index' },
-                { label: t('Bulletin Types'), routeName: 'editor.bulletin-types.index' },
-                { label: t('Prompt Runs'), routeName: 'editor.bulletin-prompt-runs.index' },
-            ],
-        },
-        {
-            title: t('Production'),
-            items: [
-                { label: t('Audio'), routeName: 'editor.audio' },
-                { label: t('Video'), routeName: 'editor.video' },
-                { label: t('Media Renders'), routeName: 'editor.media-renders' },
-            ],
-        },
-        {
-            title: t('Publishing'),
+            title: t('Publishing preparation / Preparación de publicación'),
             items: [
                 { label: t('Publications'), routeName: 'editor.publications' },
                 { label: t('Social Channels'), routeName: 'editor.social-channels' },
+                { label: t('Audio'), routeName: 'editor.audio' },
+                { label: t('Video'), routeName: 'editor.video' },
             ],
         },
         {
-            title: t('Settings'),
+            title: t('Configuration / Configuración'),
             items: [
                 { label: t('Editorial Templates'), routeName: 'editor.editorial-templates.index' },
                 { label: t('AI Prompt Templates'), routeName: 'editor.ai-prompt-templates.index' },
+                { label: t('Editorial Desk'), routeName: 'editor.editorial-desk.index' },
+                { label: t('Editorial Requests'), routeName: 'editor.editorial-requests.index' },
+                { label: t('Editorial Schedules'), routeName: 'editor.editorial-schedules.index' },
+                { label: t('Editorial Runs'), routeName: 'editor.editorial-schedule-runs.index' },
             ],
         },
     ];

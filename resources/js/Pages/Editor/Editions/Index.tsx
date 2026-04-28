@@ -90,7 +90,7 @@ export default function Index({ editions, filters, statuses, editionTypes, langu
 
             <AdminPageHeader
                 title={t('Editions')}
-                description="Plan bulletin editions."
+                description="An edition is a planned or produced noticiario instance. Prompt runs and scripts can be linked to an edition."
                 actionLabel={t('Create edition')}
                 actionHref={route('editor.editions.create')}
             />

@@ -66,7 +66,7 @@ class BulletinPromptRunController extends Controller
             ->with([
                 'bulletinType:id,name',
                 'promptProfile:id,name',
-                'script:id,title,status',
+                'script:id,title,status,review_status,production_status,final_title,production_name,public_description,short_description,hashtags,target_platforms',
                 'createdBy:id,name,email,profile_image_id',
             ])
             ->when(
@@ -160,7 +160,7 @@ class BulletinPromptRunController extends Controller
             'bulletinType.language:id,name,code',
             'promptProfile:id,name',
             'edition:id,title',
-            'script:id,title,status',
+            'script:id,title,status,review_status,production_status,final_title,production_name,public_description,short_description,hashtags,target_platforms',
             'createdBy:id,name,email,profile_image_id',
             'sourceReferences.checkedBy:id,name,email,profile_image_id',
             'aiRequestLogs.provider:id,name',
@@ -172,6 +172,14 @@ class BulletinPromptRunController extends Controller
             ->whereNull('archived_at')
             ->groupBy('verification_status')
             ->map->count();
+
+        $script = $bulletinPromptRun->script;
+        if ($script) {
+            $script->setAttribute('metadata_ready', (filled($script->final_title) || filled($script->production_name))
+                && (filled($script->public_description) || filled($script->short_description))
+                && is_array($script->hashtags) && count($script->hashtags) > 0
+                && is_array($script->target_platforms) && count($script->target_platforms) > 0);
+        }
 
         return Inertia::render('Editor/BulletinPromptRuns/Show', [
             'run' => $bulletinPromptRun,

@@ -1,90 +1,88 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import UserIdentity from '@/Components/UserIdentity';
 import { Button } from '@/Components/ui/button';
-import { Card, CardContent } from '@/Components/ui/card';
-import EditorLayout from '@/Layouts/EditorLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { useTranslations } from '@/i18n/useTranslations';
 import { useDateFormatter } from '@/lib/useDateFormatter';
+import EditorLayout from '@/Layouts/EditorLayout';
+import { Head, Link } from '@inertiajs/react';
 
-interface Script {
-    id: number;
-    title: string;
-    edition: { id: number; title: string } | null;
-    status: string;
-    review_status: string;
-    language: string | null;
-    intro: string | null;
-    body: string | null;
-    outro: string | null;
-    estimated_duration_seconds: number | null;
-    reviewed_at: string | null;
-    reviewed_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
-    approved_at: string | null;
-    approved_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
-    rejected_at: string | null;
-    rejected_by: { id: number; name: string; email: string | null; avatar_url?: string | null; initials?: string | null } | null;
-    rejection_reason: string | null;
-    review_items_count: number;
-    source_summary: { total: number; verified: number; pending: number; weak: number; missing: number; broken: number; rejected: number; issues: number };
-    source_references: Array<{ id:number; title:string|null; source_name:string|null; source_url:string|null; verification_status:string; checked_at:string|null; checked_by:{ id:number; name:string; email:string|null; avatar_url?:string|null; initials?:string|null }|null }>;
-}
-
-interface Props {
-    script: Script;
-}
-
-export default function Show({ script }: Props): JSX.Element {
+export default function Show({ script }: { script: any }): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
+
+    const nextAction = script.status === 'archived'
+        ? t('Restore to continue working')
+        : script.source_summary.issues > 0
+          ? t('Verify sources')
+          : ['pending', 'in_review', 'needs_sources', 'needs_changes'].includes(script.review_status)
+            ? t('Review script')
+            : !script.metadata_ready
+              ? t('Prepare production metadata')
+              : script.production_status === 'ready_for_production'
+                ? t('Ready for audio/video')
+                : t('Open Script');
 
     return (
         <EditorLayout>
             <Head title={script.title} />
-            <AdminPageHeader title={script.title} description="Script detail." />
-            <Card>
-                <CardContent className="space-y-3 pt-6 text-sm">
-                    <p><strong>{t('Editions')}:</strong> {script.edition?.title || '-'}</p>
-                    <p><strong>{t('Status')}:</strong> {script.status}</p>
-                    <p><strong>{t('Review status')}:</strong> {script.review_status}</p>
-                    <p><strong>{t('Language')}:</strong> {script.language || '-'}</p>
-                    <p><strong>{t('Intro')}:</strong> {script.intro || '-'}</p>
-                    <p><strong>{t('Body')}:</strong> {script.body || '-'}</p>
-                    <p><strong>{t('Outro')}:</strong> {script.outro || '-'}</p>
-                    <p><strong>{t('Estimated Duration')}:</strong> {script.estimated_duration_seconds || '-'} seconds</p>
-                    <div><strong>{t('Reviewed by')}:</strong> {script.reviewed_by ? <UserIdentity user={script.reviewed_by} subtitle={script.reviewed_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
-                    <p><strong>{t('Reviewed at')}:</strong> {formatDateTime(script.reviewed_at)}</p>
-                    <div><strong>{t('Approved by')}:</strong> {script.approved_by ? <UserIdentity user={script.approved_by} subtitle={script.approved_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
-                    <p><strong>{t('Approved at')}:</strong> {formatDateTime(script.approved_at)}</p>
-                    <div><strong>{t('Rejected by')}:</strong> {script.rejected_by ? <UserIdentity user={script.rejected_by} subtitle={script.rejected_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
-                    <p><strong>{t('Rejected at')}:</strong> {formatDateTime(script.rejected_at)}</p>
-                    <p><strong>{t('Rejection reason')}:</strong> {script.rejection_reason || '-'}</p>
-                    <p><strong>{t('Total review items')}:</strong> {script.review_items_count}</p>
-                    <div className="rounded border border-slate-200 bg-slate-50 p-3">
-                        <p><strong>{t('Source verification')}:</strong></p>
-                        <p>{t('Source References')}: {script.source_summary.total}</p>
-                        <p>{t('Verified source')}: {script.source_summary.verified} · {t('Pending source')}: {script.source_summary.pending} · {t('Weak source')}: {script.source_summary.weak}</p>
-                        <p>{t('Missing source')}: {script.source_summary.missing} · {t('Broken source')}: {script.source_summary.broken} · {t('Rejected source')}: {script.source_summary.rejected}</p>
-                        {script.source_summary.issues > 0 ? <p className="text-rose-700">{t('This script has unresolved source issues')}</p> : null}
-                    </div>
+            <AdminPageHeader title={script.title} description={t('Workflow')} />
 
-                    <div className="rounded border border-slate-200 p-3">
-                        <p className="mb-2 font-medium">{t('Linked content')}</p>
-                        {script.source_references.length ? script.source_references.map((reference) => (
-                            <p key={reference.id} className="text-xs">
-                                <Link className="text-cyan-700 underline" href={route('editor.source-references.show', reference.id)}>{reference.title || reference.source_name || t('Source Reference')}</Link>
-                                {' · '}{reference.verification_status}
-                            </p>
-                        )) : <p className="text-xs text-slate-500">{t('No source references found')}</p>}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button asChild variant="secondary"><Link href={route('editor.scripts.index')}>{t('Back')}</Link></Button>
-                        <Button asChild variant="outline"><Link href={route('editor.scripts.review', script.id)}>{t('Review')}</Link></Button>
-                        <Button variant="outline" onClick={() => router.post(route('editor.scripts.source-references.extract', script.id))}>{t('Extract sources from script')}</Button>
-                        <Button asChild variant="outline"><Link href={route('editor.source-references.index', { script_id: script.id })}>{t('Manage sources')}</Link></Button>
-                    </div>
-                </CardContent>
-            </Card>
+            <Card className="mb-4"><CardContent className="pt-6"><p><strong>{t('Next action')}:</strong> {nextAction}</p></CardContent></Card>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                    <CardHeader><CardTitle>{t('Origin')}</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p><strong>{t('Created from Prompt Run')}:</strong> {script.origin?.prompt_run ? <Link className="text-cyan-700 underline" href={route('editor.bulletin-prompt-runs.show', script.origin.prompt_run.id)}>{script.origin.prompt_run.title}</Link> : '-'}</p>
+                        <p><strong>{t('Bulletin Type')}:</strong> {script.origin?.bulletin_type?.name || '-'}</p>
+                        <p><strong>{t('Prompt Profile')}:</strong> {script.origin?.prompt_profile?.name || '-'}</p>
+                        <p><strong>{t('Prompt')}:</strong> {formatDateTime(script.origin?.prompt_generated_at)}</p>
+                        <p><strong>{t('Response')}:</strong> {formatDateTime(script.origin?.response_received_at)}</p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>{t('Editorial content')}</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p><strong>{t('Status')}:</strong> {script.status}</p>
+                        <p><strong>{t('Review status')}:</strong> {script.review_status}</p>
+                        <p><strong>{t('Intro')}:</strong> {script.intro || '-'}</p>
+                        <p><strong>{t('Body')}:</strong> {script.body || '-'}</p>
+                        <p><strong>{t('Outro')}:</strong> {script.outro || '-'}</p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>{t('Source verification')}</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p>{t('Source References')}: {script.source_summary.total}</p>
+                        <p>{t('Unresolved source issues')}: {script.source_summary.issues}</p>
+                        <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.review', script.id)}>{t('Verify sources')}</Link></Button>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>{t('Production metadata')}</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p><strong>{t('Final title')}:</strong> {script.final_title || '-'}</p>
+                        <p><strong>{t('Production name')}:</strong> {script.production_name || '-'}</p>
+                        <p><strong>{t('Public description')}:</strong> {script.public_description || '-'}</p>
+                        <p><strong>{t('Hashtags')}:</strong> {(script.hashtags || []).join(', ') || '-'}</p>
+                        <p><strong>{t('Target platforms')}:</strong> {(script.target_platforms || []).join(', ') || '-'}</p>
+                        <p><strong>{t('Production status')}:</strong> {script.production_status}</p>
+                        <p><strong>{t('Ready for production')}:</strong> {formatDateTime(script.ready_for_production_at)}</p>
+                        <div><strong>{t('Created by')}:</strong> {script.ready_for_production_by ? <UserIdentity user={script.ready_for_production_by} subtitle={script.ready_for_production_by.email} avatarSize="xs" className="inline-flex ml-2" /> : '-'}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+                {script.origin?.prompt_run ? <Button asChild variant="outline"><Link href={route('editor.bulletin-prompt-runs.show', script.origin.prompt_run.id)}>{t('Open Prompt Run')}</Link></Button> : null}
+                <Button asChild><Link href={route('editor.scripts.production.edit', script.id)}>{t('Prepare production metadata')}</Link></Button>
+                <Button asChild variant="outline"><Link href={route('editor.scripts.review', script.id)}>{t('Review script')}</Link></Button>
+                <Button asChild variant="secondary"><Link href={route('editor.scripts.index')}>{t('Back')}</Link></Button>
+            </div>
         </EditorLayout>
     );
 }

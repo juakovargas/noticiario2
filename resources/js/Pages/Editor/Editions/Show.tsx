@@ -25,7 +25,7 @@ export default function Show({ edition, newsItems, availableNewsItems, scripts }
     const submitAdd = (e: FormEvent<HTMLFormElement>): void => { e.preventDefault(); addForm.post(route('editor.editions.news-items.store', edition.id), { preserveScroll: true }); };
     const submitEdit = (e: FormEvent<HTMLFormElement>, newsItemId: number): void => { e.preventDefault(); editForm.put(route('editor.editions.news-items.update', [edition.id, newsItemId]), { preserveScroll: true, onSuccess: () => setEditingItemId(null) }); };
 
-    return <EditorLayout><Head title={edition.title} /><AdminPageHeader title={edition.title} description="Edition detail." />
+    return <EditorLayout><Head title={edition.title} /><AdminPageHeader title={edition.title} description="Planned noticiario instance. Prompt runs and scripts can be linked here." />
       <div className="space-y-6">
         <Card><CardContent className="space-y-3 pt-6 text-sm">
           <p><strong>{t('Type')}:</strong> {edition.edition_type}</p>

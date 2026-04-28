@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiPromptTemplate;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialTemplate;
+use App\Services\Scheduling\EditorialScheduleRunner;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
@@ -21,13 +22,13 @@ class EditorialScheduleController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function __construct(private readonly EditorialScheduleRunService $runService)
+    public function __construct(private readonly EditorialScheduleRunService $runService, private readonly EditorialScheduleRunner $scheduleRunner)
     {
     }
 
     public function index(Request $request): Response
     {
-        $query = EditorialSchedule::query()->with(['location:id,name', 'newsCategory:id,name', 'language:id,name,code']);
+        $query = EditorialSchedule::query()->with(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'bulletinType:id,name']);
 
         if ($request->filled('search')) {
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%')->orWhere('slug', 'like', '%'.$request->string('search').'%'));
@@ -62,6 +63,13 @@ class EditorialScheduleController extends Controller
         $data = $this->validated($request);
         $data['slug'] = $data['slug'] ?: $this->uniqueSlug(EditorialSchedule::class, $data['name']);
         $data['weekdays'] = $data['weekdays'] ?? null;
+        $data['run_days'] = $data['run_days'] ?? $data['weekdays'] ?? null;
+        $data['run_frequency'] = $data['run_frequency'] ?? $data['frequency_type'];
+        $data['run_time'] = $data['run_time'] ?? $data['scheduled_time'];
+        if (empty($data['next_run_at'])) {
+            $draft = new EditorialSchedule($data);
+            $data['next_run_at'] = $this->scheduleRunner->calculateNextRunAt($draft)?->utc();
+        }
 
         $schedule = EditorialSchedule::query()->create($data);
 
@@ -70,7 +78,7 @@ class EditorialScheduleController extends Controller
 
     public function show(EditorialSchedule $editorialSchedule): Response
     {
-        $editorialSchedule->load(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'runs.edition:id,title', 'runs.script:id,title']);
+        $editorialSchedule->load(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'bulletinType:id,name', 'runs.edition:id,title', 'runs.script:id,title']);
 
         return Inertia::render('Editor/EditorialSchedules/Show', [
             'schedule' => $editorialSchedule,
@@ -93,6 +101,13 @@ class EditorialScheduleController extends Controller
         $data = $this->validated($request, $editorialSchedule);
         $data['slug'] = $data['slug'] ?: $this->uniqueSlug(EditorialSchedule::class, $data['name'], $editorialSchedule->id);
         $data['weekdays'] = $data['weekdays'] ?? null;
+        $data['run_days'] = $data['run_days'] ?? $data['weekdays'] ?? null;
+        $data['run_frequency'] = $data['run_frequency'] ?? $data['frequency_type'];
+        $data['run_time'] = $data['run_time'] ?? $data['scheduled_time'];
+        if (empty($data['next_run_at'])) {
+            $draft = new EditorialSchedule($data);
+            $data['next_run_at'] = $this->scheduleRunner->calculateNextRunAt($draft)?->utc();
+        }
         $editorialSchedule->update($data);
 
         return to_route('editor.editorial-schedules.show', $editorialSchedule)->with('success', 'Editorial schedule updated successfully.');
@@ -112,6 +127,31 @@ class EditorialScheduleController extends Controller
         return to_route('editor.editorial-schedule-runs.show', $run)->with('success', 'Editorial run created successfully.');
     }
 
+
+    public function runNow(EditorialSchedule $editorialSchedule): RedirectResponse
+    {
+        $result = $this->scheduleRunner->createRunForSchedule($editorialSchedule->load('bulletinType'), now()->utc()->startOfMinute(), ['generate_prompts' => true]);
+
+        if (($result['status'] ?? '') === 'duplicate' && isset($result['run_id'])) {
+            return to_route('editor.editorial-schedule-runs.show', $result['run_id'])->with('success', 'Duplicate run skipped.');
+        }
+
+        if (! isset($result['run_id'])) {
+            return back()->with('success', 'Run processed.');
+        }
+
+        return to_route('editor.editorial-schedule-runs.show', $result['run_id'])->with('success', 'Editorial run created successfully.');
+    }
+
+    public function recalculateNextRun(EditorialSchedule $editorialSchedule): RedirectResponse
+    {
+        $editorialSchedule->update([
+            'next_run_at' => $this->scheduleRunner->calculateNextRunAt($editorialSchedule),
+        ]);
+
+        return back()->with('success', 'Next run recalculated successfully.');
+    }
+
     private function formOptions(): array
     {
         return [
@@ -120,6 +160,7 @@ class EditorialScheduleController extends Controller
             'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'editorialTemplates' => class_exists(EditorialTemplate::class) ? EditorialTemplate::query()->orderBy('name')->get(['id', 'name']) : [],
             'aiPromptTemplates' => class_exists(AiPromptTemplate::class) ? AiPromptTemplate::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']) : [],
+            'bulletinTypes' => \App\Models\BulletinType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ];
     }
 
@@ -137,16 +178,24 @@ class EditorialScheduleController extends Controller
             'location_id' => ['nullable', 'exists:locations,id'],
             'news_category_id' => ['nullable', 'exists:news_categories,id'],
             'language_id' => ['nullable', 'exists:languages,id'],
+            'bulletin_type_id' => ['nullable', 'exists:bulletin_types,id'],
             'edition_type' => ['required', 'string', 'max:50'],
             'frequency_type' => ['required', 'string', 'max:50'],
+            'run_frequency' => ['nullable', 'string', 'max:50'],
             'scheduled_time' => ['nullable', 'date_format:H:i'],
+            'run_time' => ['nullable', 'date_format:H:i'],
             'scheduled_date' => ['nullable', 'date'],
             'weekdays' => ['nullable', 'array'],
+            'run_days' => ['nullable', 'array'],
             'timezone' => ['nullable', 'string', 'max:100'],
+            'next_run_at' => ['nullable', 'date'],
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'tone' => ['nullable', 'string', 'max:100'],
             'manual_ai_mode' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
+            'auto_create_prompt_run' => ['sometimes', 'boolean'],
+            'auto_generate_prompt' => ['sometimes', 'boolean'],
+            'auto_generate_ai_response' => ['sometimes', 'boolean'],
             'editorial_instructions' => ['nullable', 'string'],
             'output_instructions' => ['nullable', 'string'],
         ];

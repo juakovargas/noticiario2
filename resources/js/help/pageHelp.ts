@@ -1,60 +1,116 @@
-import { PageHelpData } from '@/Components/Help/PageHelp';
+export type PageHelpDefinition = {
+    titleKey: string;
+    summaryKey: string;
+    sections: Array<{ titleKey: string; contentKey: string }>;
+    tipsKeys?: string[];
+    nextStepsKeys?: string[];
+};
 
-export function getPageHelp(t: (key: string) => string, key?: string): PageHelpData | null {
-    if (!key) return null;
+const FALLBACK: PageHelpDefinition = {
+    titleKey: 'help.common.pageHelp',
+    summaryKey: 'help.fallback.summary',
+    sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.fallback.notConfigured' }],
+};
 
-    const data: Record<string, PageHelpData> = {
-        'admin.dashboard': {
-            title: t('Admin Dashboard help'),
-            summary: t('This page helps you understand system health and AI usage before managing configuration.'),
-            sections: [
-                { title: t('What is this page for?'), content: t('Use this dashboard for technical overview, editorial status and AI usage indicators.') },
-                { title: t('What can I do here?'), content: t('Review risks, failures and provider readiness before changing users, providers, SEO or home settings.') },
-            ],
-            nextSteps: [t('Open AI Providers to review limits and keys.'), t('Open AI Request Logs to inspect errors and costs.')],
-        },
-        'admin.aiproviders.index': {
-            title: t('AI Providers help'),
-            summary: t('Configure providers, models, limits and estimated costs safely.'),
-            sections: [{ title: t('What can I do here?'), content: t('Activate providers, set defaults, configure token prices and define request or cost limits.') }],
-            tips: [t('API keys are stored in environment variables.'), t('Costs are estimates.')],
-        },
-        'admin.airequestlogs.index': {
-            title: t('AI Request Logs help'),
-            summary: t('Monitor AI requests, failures, blocked events, tokens, duration and estimated costs.'),
-            sections: [{ title: t('What can I do here?'), content: t('Use filters and summary cards to audit provider behavior and investigate issues.') }],
-            tips: [t('Blocked requests do not call the AI provider.'), t('Estimated cost may be unavailable when token usage is not returned.')],
-        },
-        'editor.bulletinpromptruns.show': {
-            title: t('Prompt Run help'),
-            summary: t('Follow the full run lifecycle from prompt generation to script creation and source verification.'),
-            sections: [{ title: t('What can I do here?'), content: t('Generate AI responses, paste manual responses, parse output and continue to scripts.') }],
-            nextSteps: [t('Run source verification before approving scripts.'), t('Complete production metadata when the script is ready.')],
-        },
-        'viewer.dashboard': {
-            title: t('Viewer Dashboard help'),
-            summary: t('Read-only overview of completed content and coverage status.'),
-            sections: [{ title: t('What can I do here?'), content: t('Review published content summaries and open map or content pages without editing data.') }],
-        },
-        'viewer.published-content': {
-            title: t('Published Content help'),
-            summary: t('Read-only list of completed or published editorial output.'),
-            sections: [{ title: t('What can I do here?'), content: t('Inspect available content and navigate to related records when available.') }],
-        },
-        'viewer.world-map.index': {
-            title: t('Viewer World Map help'),
-            summary: t('Explore coverage and available content by geographic location.'),
-            sections: [{ title: t('What can I do here?'), content: t('Use markers to understand where current noticiario content is available.') }],
-        },
-    };
-
-    return data[key] ?? {
-        title: t('Page help'),
-        summary: t('This page helps you understand goals, actions and the recommended next step.'),
+export const PAGE_HELP: Record<string, PageHelpDefinition> = {
+    'editor.dashboard': {
+        titleKey: 'help.editor.dashboard.title',
+        summaryKey: 'help.editor.dashboard.summary',
         sections: [
-            { title: t('What is this page for?'), content: t('This page helps you manage this module safely and consistently.') },
-            { title: t('What can I do here?'), content: t('Review records, run key actions and continue the workflow from this panel.') },
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.dashboard.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.dashboard.actions' },
         ],
-        nextSteps: [t('Recommended next action')],
-    };
-}
+        nextStepsKeys: ['help.editor.dashboard.next'],
+    },
+    'editor.workbench.index': {
+        titleKey: 'help.editor.workbench.title',
+        summaryKey: 'help.editor.workbench.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.workbench.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.workbench.actions' },
+            { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.workbench.next' },
+        ],
+    },
+    'editor.bulletinpromptruns.index': {
+        titleKey: 'help.editor.promptRuns.title',
+        summaryKey: 'help.editor.promptRuns.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.promptRuns.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.promptRuns.actions' },
+        ],
+        nextStepsKeys: ['help.editor.promptRuns.next'],
+    },
+    'editor.bulletinpromptruns.show': {
+        titleKey: 'help.editor.promptRunShow.title',
+        summaryKey: 'help.editor.promptRunShow.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.promptRunShow.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.promptRunShow.actions' },
+            { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.promptRunShow.next' },
+        ],
+    },
+    'editor.worldmap.index': {
+        titleKey: 'help.editor.worldMap.title',
+        summaryKey: 'help.editor.worldMap.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.worldMap.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.worldMap.actions' },
+        ],
+    },
+    'editor.bulletintypes.index': {
+        titleKey: 'help.editor.bulletinTypes.title',
+        summaryKey: 'help.editor.bulletinTypes.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.actions' },
+        ],
+    },
+    'editor.editorialschedules.index': {
+        titleKey: 'help.editor.schedules.title',
+        summaryKey: 'help.editor.schedules.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.schedules.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.schedules.actions' },
+            { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.schedules.next' },
+        ],
+    },
+    'editor.editorialscheduleruns.index': {
+        titleKey: 'help.editor.scheduleRuns.title',
+        summaryKey: 'help.editor.scheduleRuns.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scheduleRuns.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scheduleRuns.actions' },
+        ],
+    },
+    'admin.dashboard': {
+        titleKey: 'help.admin.dashboard.title',
+        summaryKey: 'help.admin.dashboard.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.admin.dashboard.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.admin.dashboard.actions' },
+        ],
+    },
+    'viewer.dashboard': {
+        titleKey: 'help.viewer.dashboard.title',
+        summaryKey: 'help.viewer.dashboard.summary',
+        sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.viewer.dashboard.what' }],
+    },
+    'viewer.published-content': FALLBACK,
+    'viewer.world-map.index': FALLBACK,
+
+    'admin.aiproviders.index': FALLBACK,
+    'admin.aiproviders.show': FALLBACK,
+    'admin.aiproviders.form': FALLBACK,
+    'admin.airequestlogs.index': FALLBACK,
+    'admin.airequestlogs.show': FALLBACK,
+    'editor.aiprompttemplates.index': FALLBACK,
+    'editor.scripts.index': FALLBACK,
+    'editor.scripts.productionedit': FALLBACK,
+    'editor.scripts.review': FALLBACK,
+    'editor.scripts.show': FALLBACK,
+    'editor.sourcereferences.index': FALLBACK,
+    'editor.newssources.index': FALLBACK,
+    'editor.newscategories.index': FALLBACK,
+    'editor.locations.index': FALLBACK,
+    'editor.editorialtemplates.index': FALLBACK,
+};

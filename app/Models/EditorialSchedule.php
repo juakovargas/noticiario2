@@ -21,16 +21,25 @@ class EditorialSchedule extends Model
         'language_id',
         'editorial_template_id',
         'ai_prompt_template_id',
+        'bulletin_type_id',
         'edition_type',
         'frequency_type',
+        'run_frequency',
         'scheduled_time',
+        'run_time',
         'scheduled_date',
         'weekdays',
+        'run_days',
         'timezone',
+        'next_run_at',
+        'last_run_at',
         'target_duration_seconds',
         'tone',
         'manual_ai_mode',
         'is_active',
+        'auto_create_prompt_run',
+        'auto_generate_prompt',
+        'auto_generate_ai_response',
         'editorial_instructions',
         'output_instructions',
         'metadata',
@@ -41,8 +50,14 @@ class EditorialSchedule extends Model
         return [
             'scheduled_date' => 'date',
             'weekdays' => 'array',
+            'run_days' => 'array',
+            'next_run_at' => 'datetime',
+            'last_run_at' => 'datetime',
             'manual_ai_mode' => 'boolean',
             'is_active' => 'boolean',
+            'auto_create_prompt_run' => 'boolean',
+            'auto_generate_prompt' => 'boolean',
+            'auto_generate_ai_response' => 'boolean',
             'metadata' => 'array',
         ];
     }
@@ -70,6 +85,11 @@ class EditorialSchedule extends Model
     public function aiPromptTemplate(): BelongsTo
     {
         return $this->belongsTo(AiPromptTemplate::class);
+    }
+
+    public function bulletinType(): BelongsTo
+    {
+        return $this->belongsTo(BulletinType::class);
     }
 
     public function runs(): HasMany

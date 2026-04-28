@@ -1,8 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Button } from '@/Components/ui/button';
 import PageHelp from '@/Components/Help/PageHelp';
-import { useTranslations } from '@/i18n/useTranslations';
-import { getPageHelp } from '@/help/pageHelp';
 
 interface AdminPageHeaderProps {
     title: string;
@@ -19,9 +17,6 @@ export default function AdminPageHeader({
     actionHref,
     helpKey,
 }: AdminPageHeaderProps): JSX.Element {
-    const { t } = useTranslations();
-    const help = getPageHelp(t, helpKey);
-
     return (
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -30,7 +25,7 @@ export default function AdminPageHeader({
             </div>
 
             <div className="flex items-center gap-2">
-                <PageHelp help={help} />
+                <PageHelp helpKey={helpKey} />
                 {actionLabel && actionHref && (
                     <Button asChild>
                         <Link href={actionHref}>{actionLabel}</Link>

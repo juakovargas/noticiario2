@@ -1,7 +1,6 @@
 import WorldBulletinMap, { MapMarker } from '@/Components/Maps/WorldBulletinMap';
 import PageHelp from '@/Components/Help/PageHelp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
-import { getPageHelp } from '@/help/pageHelp';
 import { useTranslations } from '@/i18n/useTranslations';
 import ViewerLayout from '@/Layouts/ViewerLayout';
 import { Head } from '@inertiajs/react';
@@ -13,7 +12,7 @@ export default function Index({ markers, summary }: Props): JSX.Element {
 
     return <ViewerLayout title={t('World Map')}>
         <Head title={t('World Map')} />
-        <div className="mb-2 flex justify-end"><PageHelp help={getPageHelp(t, 'viewer.world-map.index')} /></div>
+        <div className="mb-2 flex justify-end"><PageHelp helpKey="viewer.world-map.index" /></div>
         <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <Card><CardHeader><CardTitle>{t('Locations on map')}</CardTitle></CardHeader><CardContent>{summary.locations_on_map ?? 0}</CardContent></Card>
             <Card><CardHeader><CardTitle>{t('Available content')}</CardTitle></CardHeader><CardContent>{summary.available_content ?? 0}</CardContent></Card>

@@ -7,9 +7,11 @@ import { Head, Link } from '@inertiajs/react';
 
 type Props = {
     stats: Record<string, number>;
+    upcomingSchedules: Array<{ id:number; name:string; next_run_at?:string|null }>;
+    recentBulletinPromptRuns: Array<{ id:number; title:string; metadata?:Record<string, unknown>|null }>;
 };
 
-export default function Dashboard({ stats }: Props): JSX.Element {
+export default function Dashboard({ stats, upcomingSchedules, recentBulletinPromptRuns }: Props): JSX.Element {
     const { t } = useTranslations();
 
     return (
@@ -35,6 +37,12 @@ export default function Dashboard({ stats }: Props): JSX.Element {
                 <Card><CardHeader><CardDescription>{t('Scripts ready for production')}</CardDescription></CardHeader><CardContent><CardTitle>{stats.scriptsReadyForProduction ?? 0}</CardTitle></CardContent></Card>
                 <Card><CardHeader><CardDescription>{t('Source issues pending')}</CardDescription></CardHeader><CardContent><CardTitle>{stats.scriptsBlockedBySources ?? 0}</CardTitle></CardContent></Card>
             </div>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
+                <Card><CardHeader><CardTitle>{t('Due schedules')}</CardTitle></CardHeader><CardContent className="text-sm space-y-2">{upcomingSchedules.slice(0,5).map((schedule) => <div key={schedule.id} className="border rounded p-2"><p className="font-medium">{schedule.name}</p><p>{t('Next scheduled run')}: {schedule.next_run_at ?? '-'}</p></div>)}</CardContent></Card>
+                <Card><CardHeader><CardTitle>{t('Recently created runs')}</CardTitle></CardHeader><CardContent className="text-sm space-y-2">{recentBulletinPromptRuns.slice(0,5).map((run) => <div key={run.id} className="border rounded p-2"><p className="font-medium">{run.title}</p><p>{(run.metadata as Record<string, unknown>)?.created_from_schedule_runner ? t('Created from schedule') : t('Manual')}</p></div>)}</CardContent></Card>
+            </div>
+
         </EditorLayout>
     );
 }

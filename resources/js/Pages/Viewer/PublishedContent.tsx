@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/Components/ui/card';
 import PageHelp from '@/Components/Help/PageHelp';
-import { getPageHelp } from '@/help/pageHelp';
 import { useTranslations } from '@/i18n/useTranslations';
 import ViewerLayout from '@/Layouts/ViewerLayout';
 import { Head } from '@inertiajs/react';
@@ -11,7 +10,7 @@ export default function PublishedContent(): JSX.Element {
     return (
         <ViewerLayout title={t('Published Content')}>
             <Head title={t('Published Content')} />
-            <div className="mb-2 flex justify-end"><PageHelp help={getPageHelp(t, 'viewer.published-content')} /></div>
+            <div className="mb-2 flex justify-end"><PageHelp helpKey="viewer.published-content" /></div>
 
             <Card>
                 <CardContent className="pt-6">

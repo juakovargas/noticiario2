@@ -138,14 +138,14 @@ class BulletinPromptRunService
         $timezone = $bulletinType->default_timezone ?: config('app.timezone');
 
         if ($scheduledForInput) {
-            return Carbon::parse($scheduledForInput, $timezone)->utc();
+            return Carbon::parse($scheduledForInput, $timezone)->startOfMinute()->utc();
         }
 
         if ($bulletinType->default_schedule_time) {
-            return now($timezone)->setTimeFromTimeString($bulletinType->default_schedule_time)->utc();
+            return now($timezone)->setTimeFromTimeString($bulletinType->default_schedule_time)->startOfMinute()->utc();
         }
 
-        return now()->startOfMinute();
+        return now($timezone)->startOfMinute()->utc();
     }
 
     private function bodyFromParsedItems(array $items): string

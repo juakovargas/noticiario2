@@ -77,6 +77,6 @@ export default function Form({ bulletinType, locations = [], categories = [], la
             <div className="flex gap-2"><Button type="submit" disabled={form.processing}>{t('Save')}</Button><Button asChild variant="secondary"><Link href={route('editor.bulletin-types.index')}>{t('Cancel')}</Link></Button></div>
         </form></CardContent></Card>
 
-        {bulletinType && <Card className="mt-4"><CardContent className="pt-6"><h3 className="mb-3 font-semibold">{t('Create run for date/time')}</h3><div className="flex flex-wrap items-end gap-3"><div><Label>{t('Scheduled date/time')}</Label><Input type="datetime-local" value={runForm.data.scheduled_for} onChange={(e)=>runForm.setData('scheduled_for', e.target.value)} /></div><Button type="button" variant="outline" onClick={createRun}>{t('Create Prompt Run')}</Button></div></CardContent></Card>}
+        {bulletinType && <Card className="mt-4"><CardContent className="pt-6"><h3 className="mb-3 font-semibold">{t('Create run for date/time')}</h3><p className="mb-3 text-sm text-slate-600">{t('Use current date if no schedule is configured')}</p><div className="flex flex-wrap items-end gap-3"><div><Label>{t('Scheduled date/time')}</Label><Input type="datetime-local" value={runForm.data.scheduled_for} onChange={(e)=>runForm.setData('scheduled_for', e.target.value)} /></div><Button type="button" variant="outline" onClick={createRun}>{t('Create Prompt Run')}</Button></div></CardContent></Card>}
     </EditorLayout>;
 }

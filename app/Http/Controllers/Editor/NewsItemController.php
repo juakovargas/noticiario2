@@ -43,6 +43,7 @@ class NewsItemController extends Controller
             'published_to' => (string) $request->query('published_to', ''),
             'sort' => (string) $request->query('sort', 'published_at'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'editorial_priority', 'published_at', 'collected_at', 'created_at'];
@@ -52,6 +53,7 @@ class NewsItemController extends Controller
         $languageDisplayMap = $activeLanguages->keyBy('code');
 
         $newsItems = NewsItem::query()
+            ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
             ->with([
                 'source:id,name,type',
                 'category:id,name,color',

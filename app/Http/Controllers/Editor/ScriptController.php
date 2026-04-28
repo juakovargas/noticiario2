@@ -34,6 +34,7 @@ class ScriptController extends Controller
             'approved' => (string) $request->query('approved', ''),
             'sort' => (string) $request->query('sort', 'created_at'),
             'direction' => (string) $request->query('direction', 'desc'),
+            'show_archived' => $request->boolean('show_archived'),
         ];
 
         $allowedSorts = ['title', 'status', 'language', 'estimated_duration_seconds', 'approved_at', 'created_at'];
@@ -42,6 +43,7 @@ class ScriptController extends Controller
 
         return Inertia::render('Editor/Scripts/Index', [
             'scripts' => Script::query()
+                ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
                 ->with([
                     'edition:id,title',
                     'reviewedBy:id,name,email,profile_image_id',
@@ -226,6 +228,7 @@ class ScriptController extends Controller
     {
         return [
             'editions' => Edition::query()
+                ->when(! $filters['show_archived'], fn (Builder $query) => $query->where('status', '!=', 'archived'))
                 ->with(['location.defaultLanguage:id,code'])
                 ->orderBy('title')
                 ->get(['id', 'title', 'location_id'])

@@ -9,6 +9,7 @@ import { toDateTimeLocalInputValue } from '@/lib/dates';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import StatusBadge from '@/Components/StatusBadge';
 
 interface ParsedItem {
     headline?: string | null;
@@ -62,22 +63,35 @@ export default function Show({ run, promptContext }: any): JSX.Element {
             <Head title={`${t('Prompt Run')} #${run.id}`} />
             <AdminPageHeader title={`${t('Prompt Run')} #${run.id}`} description={t('Copy this prompt into your preferred AI tool')} />
 
+            {run.status === 'archived' && (
+                <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                    {t('This prompt run is archived')}. {t('Restore to continue working')}.
+                </div>
+            )}
+
             <div className="mb-4 flex flex-wrap gap-2">
-                <Button onClick={() => router.post(route('editor.bulletin-prompt-runs.generate-prompt', run.id))}>{t('Generate Prompt')}</Button>
+                <Button disabled={run.status === 'archived'} onClick={() => router.post(route('editor.bulletin-prompt-runs.generate-prompt', run.id))}>{t('Generate Prompt')}</Button>
                 <Button variant="secondary" onClick={copyPrompt}>{t('Copy Prompt')}</Button>
-                <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.create-script', run.id))}>{t('Create Script')}</Button>
+                <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.create-script', run.id))}>{t('Create Script')}</Button>
                 {run.script_id && (
                     <Button asChild variant="ghost">
                         <Link href={route('editor.scripts.show', run.script_id)}>{t('Open Script')}</Link>
                     </Button>
                 )}
+                {run.status !== 'archived' ? (
+                    <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.archive', run.id))}>{t('Archive')}</Button>
+                ) : (
+                    <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.restore', run.id))}>{t('Restore')}</Button>
+                )}
+                <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.mark-completed', run.id))}>{t('Mark completed')}</Button>
+                <Button disabled={run.status === 'archived'} variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.cancel', run.id))}>{t('Cancel')}</Button>
             </div>
 
             <Card>
                 <CardContent className="space-y-2 pt-6 text-sm">
                     <p><strong>{t('Bulletin Type')}:</strong> {run.bulletin_type?.name}</p>
                     <p><strong>{t('Prompt Profile')}:</strong> {run.prompt_profile?.name ?? '-'}</p>
-                    <p><strong>{t('Status')}:</strong> {run.status}</p>
+                    <p><strong>{t('Status')}:</strong> <StatusBadge status={run.status} className="ml-2" /></p>
                     <p><strong>{t('Scheduled date/time')}:</strong> {formatDateTime(run.scheduled_for)}</p>
                     {run.edition_id && (
                         <p>
@@ -127,9 +141,9 @@ export default function Show({ run, promptContext }: any): JSX.Element {
                 <CardContent className="space-y-3 pt-6">
                     <h3 className="mb-2 font-semibold">{t('AI Response')}</h3>
                     <p className="text-sm text-slate-600">{t('Paste the external AI response here and save it to process the script preview')}</p>
-                    <textarea className="min-h-52 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder={t('Paste the AI response here')} value={form.data.response_text} onChange={(e) => form.setData('response_text', e.target.value)} />
+                    <textarea disabled={run.status === 'archived'} className="min-h-52 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder={t('Paste the AI response here')} value={form.data.response_text} onChange={(e) => form.setData('response_text', e.target.value)} />
                     <div className="flex flex-wrap items-center gap-2">
-                        <Button onClick={() => form.post(route('editor.bulletin-prompt-runs.save-response', run.id), { preserveScroll: true })}>{t('Save AI Response')}</Button>
+                        <Button disabled={run.status === 'archived'} onClick={() => form.post(route('editor.bulletin-prompt-runs.save-response', run.id), { preserveScroll: true })}>{t('Save AI Response')}</Button>
                         {run.response_received_at && <span className="text-xs text-slate-500">{t('Response saved at')}: {formatDateTime(run.response_received_at)}</span>}
                     </div>
                     {run.script_id && <p className="text-sm text-amber-700">{t('Updating the response will not overwrite the existing script')}</p>}

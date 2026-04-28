@@ -5,7 +5,6 @@ import { useDateFormatter } from '@/lib/useDateFormatter';
 import ViewerLayout from '@/Layouts/ViewerLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useTranslations } from '@/i18n/useTranslations';
-import { getPageHelp } from '@/help/pageHelp';
 
 type Props = {
     recentCompletedScripts: Array<{ id: number; title: string; status: string; updated_at: string | null }>;
@@ -16,12 +15,11 @@ type Props = {
 export default function Dashboard({ recentCompletedScripts, recentCompletedRuns, upcomingEditions }: Props): JSX.Element {
     const { formatDateTime } = useDateFormatter();
     const { t } = useTranslations();
-    const help = getPageHelp(t, 'viewer.dashboard');
 
     return (
         <ViewerLayout title={t('Viewer Dashboard')}>
             <Head title={t('Viewer Dashboard')} />
-            <div className="mb-2 flex justify-end"><PageHelp help={help} /></div>
+            <div className="mb-2 flex justify-end"><PageHelp helpKey="viewer.dashboard" /></div>
             <p className="mb-4 text-sm text-slate-600">{t('Read-only overview')}</p>
 
             <div className="grid gap-4 lg:grid-cols-3">

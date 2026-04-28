@@ -16,6 +16,7 @@ class EditorialScheduleRun extends Model
         'editorial_schedule_id',
         'edition_id',
         'editorial_request_id',
+        'bulletin_prompt_run_id',
         'script_id',
         'scheduled_for',
         'status',
@@ -65,6 +66,11 @@ class EditorialScheduleRun extends Model
     public function script(): BelongsTo
     {
         return $this->belongsTo(Script::class);
+    }
+
+    public function bulletinPromptRun(): BelongsTo
+    {
+        return $this->belongsTo(BulletinPromptRun::class);
     }
 
     public function sourceReferences(): HasMany

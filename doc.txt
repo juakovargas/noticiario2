@@ -178,6 +178,25 @@ B. Operational workflow:
 - Manual AI response paste workflow remains available.
 - Estimated cost is intentionally nullable when providers do not return token usage.
 
+
+## 5C. CONTEXTUAL PAGE HELP
+
+- Contextual help now uses stable page keys with a centralized map in `resources/js/help/pageHelp.ts`.
+- Help panel text is translation-key driven and resolved in `PageHelp` using en/es/fr keys in `translations.ts`.
+- Important editor flow pages (dashboard, workbench, prompt runs, schedules, schedule runs, world map, bulletin types) now have specific guidance.
+- Admin and viewer dashboards have specific contextual help; unconfigured pages now show an honest fallback message instead of generic English workflow copy.
+- Help remains code-managed (not DB/CMS managed).
+
+## 5D. AUTOMATIC SCHEDULE RUNNER
+
+- Added `App\Services\Scheduling\EditorialScheduleRunner` to detect due schedules and create schedule runs safely.
+- Added command: `php artisan noticiario:create-due-runs` with options `--now`, `--dry-run`, `--schedule-id`, `--generate-prompts`, `--limit`.
+- Runner now prevents duplicate runs for the same `editorial_schedule_id + scheduled_for`.
+- Schedule flow now supports `schedule -> editorial_schedule_run -> bulletin_prompt_run` when configured with bulletin type.
+- Prompt generation can be automatic (`auto_generate_prompt`) without calling external AI providers.
+- Added scheduling fields including `next_run_at`, `last_run_at`, frequency/time/day settings and automation flags.
+- Added editor actions: run now and recalculate next run from schedule detail page.
+
 ## 6. TRANSLATION RULE
 
 Strict translation policy:
@@ -215,7 +234,6 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 
 ## 8. CURRENT LIMITATIONS
 
-- No automatic schedule runner yet.
 - No queue worker foundation yet.
 - No audio production yet.
 - No video production yet.
@@ -229,78 +247,11 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 
 ## 9. CURRENT ROADMAP
 
-1. feature/automatic-schedule-runner
-- Objective: execute eligible editorial schedules automatically.
-- Expected result: schedule runs created/executed without manual trigger for supported modes.
-- Why this order: automation should start only after tighter AI usage controls are in place.
-
-2. feature/queue-worker-foundation
-- Objective: introduce queue infrastructure for asynchronous editorial pipeline jobs.
-- Expected result: background execution foundation for scalable workflow steps.
-- Why this order: schedule automation and media steps need queue primitives to scale safely.
-
-3. feature/audio-production-foundation
-- Objective: define base audio production pipeline for approved scripts.
-- Expected result: scripts can progress into structured audio generation stages.
-- Why this order: comes after automation/queue groundwork to avoid fragile synchronous processing.
-
-4. feature/video-production-foundation
-- Objective: define base video production pipeline aligned with script and metadata outputs.
-- Expected result: approved content can move into structured video generation stages.
-- Why this order: video builds on metadata and pipeline capabilities established by earlier steps.
-
-5. feature/publishing-foundation
-- Objective: implement publishing domain model and initial destination connectors.
-- Expected result: internal publication records and initial outbound publishing workflow.
-- Why this order: publishing should start once audio/video artifact pipelines exist.
-
-6. feature/public-viewer-content-and-search
-- Objective: improve public/viewer exploration with richer content discovery.
-- Expected result: broader public browsing and searchable published bulletin history.
-- Why this order: it depends on stabilized publishing and persisted publication outputs.
-
-7. feature/media-picker-and-assets
-- Objective: add reusable media picker, asset association UX, and richer media tooling.
-- Expected result: faster editorial/media reuse and stronger production asset management.
-- Why this order: best introduced after core publication content types are established.
-
-8. feature/live-source-checking-optional
-- Objective: provide optional live URL/source checks without replacing manual verification.
-- Expected result: editor-assist verification signals while preserving manual final judgment.
-- Why this order: optional enrichment can be layered after core editorial/publishing stability.
-
-9. feature/privacy-consent-and-public-seo-hardening
-- Objective: harden public compliance and SEO/privacy behavior.
-- Expected result: stronger production-grade public controls and safer analytics/search indexing posture.
-- Why this order: final hardening step once public surface and publishing flows are stable.
-
-## 10. DEVELOPMENT COMMANDS
-
-- php artisan migrate
-- php artisan db:seed
-- php artisan db:seed --class=DemoEditorialSeeder
-- php artisan test
-- npm run build
-- php artisan route:list --name=admin
-- php artisan route:list --name=editor
-- php artisan route:list --name=viewer
-- php artisan route:list --name=locale
-
-## 11. SAFE DEVELOPMENT RULES
-
-- No migrate:fresh on developer DB.
-- Do not wipe/truncate data.
-- Do not expose API keys.
-- Do not store real API keys in DB/frontend.
-- Preserve auth/permission behavior.
-- Preserve routes unless strictly necessary.
-- Update translations and doc.txt in every branch.
-
-## 12. CURRENT UI/THEME STATUS
-
-- User appearance preference exists and supports light, dark and system modes.
-- Admin, Editor and Viewer shells have been globally polished to better use full screen width.
-- Header, sidebar and main content now share consistent light/dark visual treatment.
-- Shared feedback and status components include dark-mode readable variants.
-- Public home has aligned dark/light cards, sections and spacing.
-- Future branches must keep dark mode compatibility for every new page/component.
+1. feature/queue-worker-foundation
+2. feature/audio-production-foundation
+3. feature/video-production-foundation
+4. feature/publishing-foundation
+5. feature/public-viewer-content-and-search
+6. feature/media-picker-and-assets
+7. feature/live-source-checking-optional
+8. feature/privacy-consent-and-public-seo-hardening

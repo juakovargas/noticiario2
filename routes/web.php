@@ -239,6 +239,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/archive', [EditorialScheduleRunController::class, 'archive'])->name('editorial-schedule-runs.archive');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/restore', [EditorialScheduleRunController::class, 'restore'])->name('editorial-schedule-runs.restore');
         Route::post('/editorial-schedules/{editorialSchedule}/runs', [EditorialScheduleController::class, 'createRun'])->name('editorial-schedules.runs.store');
+        Route::post('/editorial-schedules/{editorialSchedule}/run-now', [EditorialScheduleController::class, 'runNow'])->name('editorial-schedules.run-now');
+        Route::post('/editorial-schedules/{editorialSchedule}/recalculate-next-run', [EditorialScheduleController::class, 'recalculateNextRun'])->name('editorial-schedules.recalculate-next-run');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/generate-prompt', [EditorialScheduleRunController::class, 'generatePrompt'])->name('editorial-schedule-runs.generate-prompt');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/receive-response', [EditorialScheduleRunController::class, 'receiveResponse'])->name('editorial-schedule-runs.receive-response');
         Route::post('/editorial-schedule-runs/{editorialScheduleRun}/create-script', [EditorialScheduleRunController::class, 'createScript'])->name('editorial-schedule-runs.create-script');

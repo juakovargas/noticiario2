@@ -20,6 +20,8 @@ type Props = {
         scriptsNeedingReview: Item[];
         scriptsMissingMetadata: Item[];
         scriptsReadyForProduction: Item[];
+        dueSchedules: Array<{ id:number; name:string; next_run_at:string|null }>;
+        recentScheduleRuns: Array<{ id:number; status:string; schedule?:{name:string}|null }>;
     };
 };
 
@@ -59,6 +61,8 @@ export default function Index({ cards, steps, lists }: Props): JSX.Element {
                 <Card><CardHeader><CardDescription>{t('Scripts missing metadata')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.scripts_missing_metadata ?? 0}</p></CardContent></Card>
                 <Card><CardHeader><CardDescription>{t('Scripts ready for production')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.scripts_ready_for_production ?? 0}</p></CardContent></Card>
                 <Card><CardHeader><CardDescription>{t('Source issues pending')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.source_issues_pending ?? 0}</p></CardContent></Card>
+                <Card><CardHeader><CardDescription>{t('Due schedules')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.due_schedules ?? 0}</p></CardContent></Card>
+                <Card><CardHeader><CardDescription>{t('Upcoming schedules')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.upcoming_schedules ?? 0}</p></CardContent></Card>
             </div>
 
             <Card className="mb-6">
@@ -77,12 +81,17 @@ export default function Index({ cards, steps, lists }: Props): JSX.Element {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="mb-4 grid gap-4 lg:grid-cols-2">
                 <ListCard title={t('Step 3: Get AI response')} items={lists.readyForResponseRuns} empty={t('No tasks pending')} ctaLabel={t('Open Prompt Run')} ctaRoute="editor.bulletin-prompt-runs.show" />
                 <ListCard title={t('Step 4: Create script')} items={lists.readyForScriptRuns} empty={t('No tasks pending')} ctaLabel={t('Create Script')} ctaRoute="editor.bulletin-prompt-runs.show" />
                 <ListCard title={t('Step 5: Review and verify')} items={lists.scriptsNeedingReview} empty={t('No tasks pending')} ctaLabel={t('Review script')} ctaRoute="editor.scripts.review" />
                 <ListCard title={t('Step 6: Prepare publishing metadata')} items={lists.scriptsMissingMetadata} empty={t('No tasks pending')} ctaLabel={t('Prepare production metadata')} ctaRoute="editor.scripts.production.edit" />
                 <ListCard title={t('Ready for audio/video')} items={lists.scriptsReadyForProduction} empty={t('No tasks pending')} ctaLabel={t('Open Script')} ctaRoute="editor.scripts.show" />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+                <ListCard title={t('Due schedules')} items={lists.dueSchedules.map((s)=>({id:s.id,title:s.name,status:t('Next scheduled run')+': '+(s.next_run_at ?? '-')} as Item))} empty={t('No due schedules found')} ctaLabel={t('Run now')} ctaRoute="editor.editorial-schedules.show" />
+                <ListCard title={t('Recently created runs')} items={lists.recentScheduleRuns.map((r)=>({id:r.id,title:r.schedule?.name ?? `Run ${r.id}`,status:r.status}))} empty={t('No tasks pending')} ctaLabel={t('Open')} ctaRoute="editor.editorial-schedule-runs.show" />
             </div>
         </EditorLayout>
     );

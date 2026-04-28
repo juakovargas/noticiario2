@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
 use App\Models\Script;
+use App\Models\EditorialSchedule;
+use App\Models\EditorialScheduleRun;
 use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -77,6 +79,8 @@ class EditorialWorkbenchController extends Controller
                 'scriptsReadyForProduction' => $scriptsReadyForProduction,
             ],
             'cards' => [
+                'due_schedules' => EditorialSchedule::query()->where('is_active', true)->whereNotNull('next_run_at')->where('next_run_at', '<=', now())->count(),
+                'upcoming_schedules' => EditorialSchedule::query()->where('is_active', true)->whereNotNull('next_run_at')->where('next_run_at', '>', now())->count(),
                 'prompt_runs_waiting_for_response' => (clone $activeRuns)->whereIn('status', ['prompt_ready', 'waiting_ai_response'])->count(),
                 'responses_ready_to_become_scripts' => (clone $activeRuns)->where('status', 'response_received')->whereNull('script_id')->count(),
                 'scripts_needing_review' => (clone $activeScripts)->whereIn('review_status', ['pending', 'in_review', 'needs_sources', 'needs_changes'])->count(),
@@ -85,6 +89,8 @@ class EditorialWorkbenchController extends Controller
                 'source_issues_pending' => (clone $activeScripts)->whereHas('sourceReferences', fn (Builder $query) => $query->whereNull('archived_at')->whereIn('verification_status', ['missing', 'broken', 'rejected', 'weak']))->count(),
             ],
             'lists' => [
+                'dueSchedules' => EditorialSchedule::query()->where('is_active', true)->whereNotNull('next_run_at')->where('next_run_at', '<=', now())->orderBy('next_run_at')->limit(6)->get(['id','name','next_run_at']),
+                'recentScheduleRuns' => EditorialScheduleRun::query()->with('schedule:id,name')->latest()->limit(6)->get(['id','editorial_schedule_id','status','created_at']),
                 'readyForResponseRuns' => $readyForResponseRuns,
                 'readyForScriptRuns' => $readyForScriptRuns,
                 'scriptsNeedingReview' => $scriptsNeedingReview,

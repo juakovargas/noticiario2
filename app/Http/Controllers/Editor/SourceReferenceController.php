@@ -31,6 +31,8 @@ class SourceReferenceController extends Controller
             'checked_by' => (string) $request->query('checked_by', ''),
             'has_url' => (string) $request->query('has_url', ''),
             'script_id' => (string) $request->query('script_id', ''),
+            'show_archived' => $request->boolean('show_archived'),
+            'only_archived' => $request->boolean('only_archived'),
         ];
 
         $sourceReferences = SourceReference::query()
@@ -51,6 +53,8 @@ class SourceReferenceController extends Controller
             ->when($filters['has_url'] === 'yes', fn (Builder $query) => $query->whereNotNull('source_url')->where('source_url', '!=', ''))
             ->when($filters['has_url'] === 'no', fn (Builder $query) => $query->where(fn (Builder $query) => $query->whereNull('source_url')->orWhere('source_url', '')))
             ->when($filters['script_id'] !== '', fn (Builder $query) => $query->where('script_id', $filters['script_id']))
+            ->when(! $filters['show_archived'] && ! $filters['only_archived'], fn (Builder $query) => $query->whereNull('archived_at'))
+            ->when($filters['only_archived'], fn (Builder $query) => $query->whereNotNull('archived_at'))
             ->latest('id')
             ->paginate(15)
             ->withQueryString()
@@ -150,6 +154,26 @@ class SourceReferenceController extends Controller
         return back()->with('success', 'Source reference saved');
     }
 
+    public function archive(Request $request, SourceReference $sourceReference): RedirectResponse
+    {
+        $sourceReference->update([
+            'archived_at' => now(),
+            'archived_by' => $request->user()?->id,
+        ]);
+
+        return back()->with('success', 'Source reference archived.');
+    }
+
+    public function restore(SourceReference $sourceReference): RedirectResponse
+    {
+        $sourceReference->update([
+            'archived_at' => null,
+            'archived_by' => null,
+        ]);
+
+        return back()->with('success', 'Source reference restored.');
+    }
+
     private function sourcePayload(SourceReference $reference): array
     {
         return [
@@ -172,6 +196,7 @@ class SourceReferenceController extends Controller
             'script' => $reference->script ? ['id' => $reference->script->id, 'title' => $reference->script->title] : null,
             'news_item' => $reference->newsItem ? ['id' => $reference->newsItem->id, 'title' => $reference->newsItem->title] : null,
             'script_review_item' => $reference->scriptReviewItem ? ['id' => $reference->scriptReviewItem->id, 'title' => $reference->scriptReviewItem->title] : null,
+            'archived_at' => $reference->archived_at?->toDateTimeString(),
         ];
     }
 }

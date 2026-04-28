@@ -1155,3 +1155,22 @@ Current next priorities:
 4. Add AI logs and cost control.
 5. Add automatic schedule execution.
 6. Add audio/video/publishing later.
+
+GLOBAL TABLE LIST MANAGEMENT, ARCHIVING AND FILTERS
+- Completed inventory at docs/list-pages-audit.md.
+- Operational records use archive/restore (status=archived or archived_at/archived_by where status is not appropriate).
+- Configuration records continue with active/inactive toggles and filters.
+- Archived records are hidden by default and exposed with show_archived / only_archived patterns.
+- Archive actions do not delete records; restore brings records back to active workflow.
+- Prompt runs/scripts/editions/news items keep archive workflows; editorial schedule runs and editorial requests now also support archive/restore.
+- Source references now support archived_at/archived_by archive mode and archive visibility filters.
+- Raw #id values should not be the primary visual label in user-facing lists.
+- Dashboard active-work counters exclude archived records.
+
+Current next priorities:
+1. Improve pasted AI response parser and preview.
+2. Improve source verification workflow.
+3. Add real AI provider integration.
+4. Add AI logs and cost control.
+5. Add automatic schedule execution.
+6. Add audio/video/publishing later.

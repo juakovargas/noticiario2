@@ -24,7 +24,7 @@ export default function Index({ sourceReferences, filters, verificationStatuses,
 
     return <EditorLayout>
         <Head title={t('Source References')} />
-        <AdminPageHeader title={t('Source References')} description={t('Source verification')} />
+        <AdminPageHeader helpKey="editor.sourcereferences.index" title={t('Source References')} description={t('Source verification')} />
         <Card className="mb-4"><CardContent className="pt-6"><form className="grid gap-3 md:grid-cols-6" onSubmit={submit}>
             <input className="rounded border px-3 py-2 text-sm" placeholder={t('Search')} value={form.search ?? ''} onChange={(e)=>setForm((prev)=>({...prev,search:e.target.value}))} />
             <select className="rounded border px-3 py-2 text-sm" value={form.verification_status ?? ''} onChange={(e)=>setForm((prev)=>({...prev,verification_status:e.target.value}))}><option value="">{t('Verification status')}</option>{verificationStatuses.map((item)=><option key={item} value={item}>{t(item === 'not_required' ? 'Not required' : item.charAt(0).toUpperCase()+item.slice(1))}</option>)}</select>

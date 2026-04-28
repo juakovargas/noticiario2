@@ -45,7 +45,7 @@ export default function Index({ newsSources }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title={t('News Sources')} />
-            <AdminPageHeader title={t('News Sources')} description="Manage source catalog." actionLabel={t('Create source')} actionHref={route('editor.news-sources.create')} />
+            <AdminPageHeader helpKey="editor.newssources.index" title={t('News Sources')} description="Manage source catalog." actionLabel={t('Create source')} actionHref={route('editor.news-sources.create')} />
             <Card>
                 <CardContent className="overflow-x-auto pt-6">
                     <table className="w-full min-w-[980px] text-sm">

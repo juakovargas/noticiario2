@@ -18,7 +18,7 @@ export default function Index({ locations, filters }: Props): JSX.Element {
         router.get(route('editor.locations.index'), { ...filters, [name]: value }, { preserveState: true, preserveScroll: true });
     };
 
-    return <EditorLayout><Head title={t('Locations')} /><AdminPageHeader title={t('Locations')} description={t('Manage geographic scopes for news and editions.')} actionLabel={t('Create')} actionHref={route('editor.locations.create')} />
+    return <EditorLayout><Head title={t('Locations')} /><AdminPageHeader helpKey="editor.locations.index" title={t('Locations')} description={t('Manage geographic scopes for news and editions.')} actionLabel={t('Create')} actionHref={route('editor.locations.create')} />
         <Card><CardContent className="overflow-x-auto pt-6">
             <div className="mb-4 grid gap-3 md:grid-cols-2">
                 <select className="rounded-md border border-slate-300 px-3 py-2" value={filters.show_on_map} onChange={(e) => onFilter('show_on_map', e.target.value)}>

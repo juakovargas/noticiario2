@@ -50,7 +50,7 @@ export default function Index({ cards, steps, lists }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title={t('Editorial Workbench')} />
-            <AdminPageHeader title={t('Editorial Workbench')} description={t('What needs attention')} />
+            <AdminPageHeader helpKey="editor.workbench.index" title={t('Editorial Workbench')} description={t('What needs attention')} />
 
             <div className="mb-6 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                 <Card><CardHeader><CardDescription>{t('Prompt runs waiting for response')}</CardDescription></CardHeader><CardContent><p className="text-2xl font-bold">{cards.prompt_runs_waiting_for_response ?? 0}</p></CardContent></Card>

@@ -15,7 +15,7 @@ export default function Dashboard({ stats }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title={t('Dashboard')} />
-            <AdminPageHeader title={t('Dashboard')} description={t('What needs attention')} />
+            <AdminPageHeader helpKey="editor.dashboard" title={t('Dashboard')} description={t('What needs attention')} />
 
             <Card className="mb-6">
                 <CardHeader>

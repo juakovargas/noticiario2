@@ -11,21 +11,22 @@ type Props = {
     recentFailedRuns: Array<{ id: number; status: string; error_message: string | null; scheduled_for: string | null; schedule?: { name: string } }>;
     aiOverview: null | { total: number; active: number; defaultProvider: string | null };
     canOpenEditorRun: boolean;
+    latestFailedAiRequestId: number | null;
 };
 
-export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpenEditorRun }: Props): JSX.Element {
+export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpenEditorRun, latestFailedAiRequestId }: Props): JSX.Element {
     const { formatDateTime } = useDateFormatter();
     const { t } = useTranslations();
 
     return (
         <AdminLayout>
             <Head title={t('Admin Dashboard')} />
-            <AdminPageHeader title={t('Administration Dashboard')} description={t('Technical/system overview and editorial health indicators.')} />
+            <AdminPageHeader helpKey="admin.dashboard" title={t('Administration Dashboard')} description={t('Technical/system overview and editorial health indicators.')} />
 
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
                     ['Total users', stats.users], ['Active users', stats.activeUsers], ['Roles', stats.roles], ['Permissions', stats.permissions], ['Languages', stats.languages],
-                    ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders], ['AI requests today', stats.aiRequestsToday], ['Failed AI requests', stats.failedAiRequests], ['Estimated cost', stats.aiEstimatedCostToday],
+                    ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders], ['AI requests today', stats.aiRequestsToday], ['Failed AI requests', stats.failedAiRequests], ['Blocked requests', stats.blockedAiRequests], ['Daily estimated cost', stats.aiEstimatedCostToday], ['Monthly estimated cost', stats.aiEstimatedCostMonth], ['Providers with missing env keys', stats.missingEnvProviders],
                 ].map(([label, value]) => (
                     <Card key={String(label)}><CardHeader className="pb-2"><CardDescription>{t(String(label))}</CardDescription></CardHeader><CardContent><CardTitle>{value ?? '-'}</CardTitle></CardContent></Card>
                 ))}
@@ -72,6 +73,8 @@ export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpen
                         <CardContent className="space-y-1 text-sm text-slate-700">
                             <p>{t('Default provider')}: {aiOverview.defaultProvider ?? t('Not configured')}</p>
                             <p>{t('Active providers')}: {aiOverview.active}</p>
+                            <p>{t('Blocked requests')}: {stats.blockedAiRequests}</p>
+                            {latestFailedAiRequestId ? <Link className="text-cyan-700" href={route('admin.ai-request-logs.show', latestFailedAiRequestId)}>{t('Latest failed request')}</Link> : null}
                         </CardContent>
                     </Card>
                 )}

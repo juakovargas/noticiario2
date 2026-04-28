@@ -158,6 +158,26 @@ B. Operational workflow:
 - Script review: review flow and review items integrated with scripts.
 - Production metadata: production preparation metadata workflow implemented.
 
+
+## 5A. CONTEXTUAL PAGE HELP
+
+- Reusable contextual help component implemented in frontend (`PageHelp`) and integrated through shared page headers in Admin/Editor plus Viewer pages.
+- Help content is translation-based (en/es/fr) and ships with code.
+- Help explains page purpose, key actions, and recommended next steps.
+- Current limitation: help content is code/translation based, not DB/CMS managed yet.
+
+## 5B. AI LOGS, COST CONTROL AND LIMITS
+
+- Added `AiCostCalculator` service for estimated token-based costs.
+- Added `AiUsageLimitService` for daily/monthly request and cost summaries + blocking checks.
+- Added provider limits: daily/monthly request limits and daily/monthly cost limits.
+- AI generation now checks limits before provider calls; blocked attempts are logged safely (`limit_blocked`, `error_code`).
+- AI Request Logs admin pages now include richer filters, summary cards, and detailed error/status visibility.
+- AI Provider admin pages now include usage summary visibility and limit/cost controls.
+- Admin dashboard now includes compact AI usage/failure/blocked/cost indicators.
+- Manual AI response paste workflow remains available.
+- Estimated cost is intentionally nullable when providers do not return token usage.
+
 ## 6. TRANSLATION RULE
 
 Strict translation policy:
@@ -197,7 +217,6 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 
 - No automatic schedule runner yet.
 - No queue worker foundation yet.
-- No full AI cost control/limits yet.
 - No audio production yet.
 - No video production yet.
 - No publishing automation yet.
@@ -210,52 +229,47 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 
 ## 9. CURRENT ROADMAP
 
-1. feature/ai-logs-cost-control-advanced
-- Objective: add cost-control policies, usage limits, and richer AI log observability.
-- Expected result: safer operational AI usage and clearer financial oversight.
-- Why this order: it improves reliability and control before automation layers depend on AI volume.
-
-2. feature/automatic-schedule-runner
+1. feature/automatic-schedule-runner
 - Objective: execute eligible editorial schedules automatically.
 - Expected result: schedule runs created/executed without manual trigger for supported modes.
 - Why this order: automation should start only after tighter AI usage controls are in place.
 
-3. feature/queue-worker-foundation
+2. feature/queue-worker-foundation
 - Objective: introduce queue infrastructure for asynchronous editorial pipeline jobs.
 - Expected result: background execution foundation for scalable workflow steps.
 - Why this order: schedule automation and media steps need queue primitives to scale safely.
 
-4. feature/audio-production-foundation
+3. feature/audio-production-foundation
 - Objective: define base audio production pipeline for approved scripts.
 - Expected result: scripts can progress into structured audio generation stages.
 - Why this order: comes after automation/queue groundwork to avoid fragile synchronous processing.
 
-5. feature/video-production-foundation
+4. feature/video-production-foundation
 - Objective: define base video production pipeline aligned with script and metadata outputs.
 - Expected result: approved content can move into structured video generation stages.
 - Why this order: video builds on metadata and pipeline capabilities established by earlier steps.
 
-6. feature/publishing-foundation
+5. feature/publishing-foundation
 - Objective: implement publishing domain model and initial destination connectors.
 - Expected result: internal publication records and initial outbound publishing workflow.
 - Why this order: publishing should start once audio/video artifact pipelines exist.
 
-7. feature/public-viewer-content-and-search
+6. feature/public-viewer-content-and-search
 - Objective: improve public/viewer exploration with richer content discovery.
 - Expected result: broader public browsing and searchable published bulletin history.
 - Why this order: it depends on stabilized publishing and persisted publication outputs.
 
-8. feature/media-picker-and-assets
+7. feature/media-picker-and-assets
 - Objective: add reusable media picker, asset association UX, and richer media tooling.
 - Expected result: faster editorial/media reuse and stronger production asset management.
 - Why this order: best introduced after core publication content types are established.
 
-9. feature/live-source-checking-optional
+8. feature/live-source-checking-optional
 - Objective: provide optional live URL/source checks without replacing manual verification.
 - Expected result: editor-assist verification signals while preserving manual final judgment.
 - Why this order: optional enrichment can be layered after core editorial/publishing stability.
 
-10. feature/privacy-consent-and-public-seo-hardening
+9. feature/privacy-consent-and-public-seo-hardening
 - Objective: harden public compliance and SEO/privacy behavior.
 - Expected result: stronger production-grade public controls and safer analytics/search indexing posture.
 - Why this order: final hardening step once public surface and publishing flows are stable.

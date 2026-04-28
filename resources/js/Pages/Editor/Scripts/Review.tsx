@@ -110,7 +110,7 @@ export default function Review({ script, reviewStatuses, verificationStatuses, r
     return (
         <EditorLayout>
             <Head title={`${t('Script Review')}: ${script.title}`} />
-            <AdminPageHeader title={script.title} description={t('Script Review')} />
+            <AdminPageHeader helpKey="editor.scripts.review" title={script.title} description={t('Script Review')} />
 
             <Card className="mb-4">
                 <CardContent className="grid gap-3 pt-6 text-sm md:grid-cols-2 lg:grid-cols-4">

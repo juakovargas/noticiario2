@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiProvider;
+use App\Services\Ai\AiUsageLimitService;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,10 @@ use Inertia\Response;
 class AiProviderController extends Controller
 {
     use GeneratesUniqueSlug;
+
+    public function __construct(private readonly AiUsageLimitService $usageLimitService)
+    {
+    }
 
     public function index(): Response
     {
@@ -92,6 +97,8 @@ class AiProviderController extends Controller
             'cost_output_per_1k_tokens' => ['nullable', 'numeric', 'min:0'],
             'daily_request_limit' => ['nullable', 'integer', 'min:0'],
             'monthly_request_limit' => ['nullable', 'integer', 'min:0'],
+            'daily_cost_limit' => ['nullable', 'numeric', 'min:0'],
+            'monthly_cost_limit' => ['nullable', 'numeric', 'min:0'],
             'metadata' => ['nullable', 'array'],
         ]);
     }
@@ -125,6 +132,8 @@ class AiProviderController extends Controller
         return [
             ...$provider->toArray(),
             'env_key_configured' => $provider->hasConfiguredApiKey(),
+            'usage_summary' => $this->usageLimitService->checkProviderLimits($provider),
+            'last_request' => $provider->aiRequestLogs()->latest()->first(['id', 'status', 'created_at']),
         ];
     }
 }

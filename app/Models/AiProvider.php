@@ -37,6 +37,8 @@ class AiProvider extends Model
         'cost_output_per_1k_tokens',
         'daily_request_limit',
         'monthly_request_limit',
+        'daily_cost_limit',
+        'monthly_cost_limit',
         'metadata',
     ];
 
@@ -48,6 +50,8 @@ class AiProvider extends Model
             'temperature' => 'decimal:2',
             'cost_input_per_1k_tokens' => 'decimal:6',
             'cost_output_per_1k_tokens' => 'decimal:6',
+            'daily_cost_limit' => 'decimal:6',
+            'monthly_cost_limit' => 'decimal:6',
             'metadata' => 'array',
         ];
     }

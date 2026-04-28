@@ -19,9 +19,9 @@ class AiRequestLogAccessTest extends TestCase
         $provider = AiProvider::factory()->create();
 
         AiRequestLog::query()->create(['ai_provider_id' => $provider->id, 'status' => 'success']);
-        AiRequestLog::query()->create(['ai_provider_id' => $provider->id, 'status' => 'failed']);
+        AiRequestLog::query()->create(['ai_provider_id' => $provider->id, 'status' => 'failed', 'limit_blocked' => true, 'error_message' => 'Error']);
 
-        $this->actingAs($admin)->get(route('admin.ai-request-logs.index', ['status' => 'failed']))->assertOk()->assertSee('failed');
+        $this->actingAs($admin)->get(route('admin.ai-request-logs.index', ['status' => 'failed', 'limit_blocked' => 1, 'has_error' => 1]))->assertOk()->assertSee('failed');
     }
 
     public function test_editor_cannot_access_admin_ai_logs(): void

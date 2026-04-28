@@ -16,6 +16,7 @@ class AiRequestLog extends Model
         'user_id',
         'model',
         'status',
+        'limit_blocked',
         'request_type',
         'prompt_hash',
         'prompt_preview',
@@ -26,6 +27,8 @@ class AiRequestLog extends Model
         'estimated_cost',
         'duration_ms',
         'error_message',
+        'error_code',
+        'provider_status_code',
         'metadata',
         'started_at',
         'completed_at',
@@ -35,6 +38,7 @@ class AiRequestLog extends Model
     {
         return [
             'estimated_cost' => 'decimal:6',
+            'limit_blocked' => 'boolean',
             'metadata' => 'array',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',

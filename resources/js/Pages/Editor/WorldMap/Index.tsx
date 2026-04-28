@@ -12,7 +12,7 @@ export default function Index({ markers, summary }: Props): JSX.Element {
 
     return <EditorLayout>
         <Head title={t('World Map')} />
-        <AdminPageHeader title={t('World Map')} description={t('View noticiario coverage by country')} />
+        <AdminPageHeader helpKey="editor.worldmap.index" title={t('World Map')} description={t('View noticiario coverage by country')} />
         <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader><CardTitle>{t('Active locations')}</CardTitle></CardHeader><CardContent>{summary.active_locations ?? 0}</CardContent></Card>
             <Card><CardHeader><CardTitle>{t('Active bulletin count')}</CardTitle></CardHeader><CardContent>{summary.active_bulletin_types ?? 0}</CardContent></Card>

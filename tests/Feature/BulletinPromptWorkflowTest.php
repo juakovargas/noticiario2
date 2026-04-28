@@ -88,13 +88,17 @@ class BulletinPromptWorkflowTest extends TestCase
         $this->assertStringContainsString('irony level', strtolower($run->generated_prompt ?? ''));
         $this->assertStringContainsString('No inventes', $run->generated_prompt ?? '');
         $this->assertStringContainsString('SOURCE HINTS', $run->generated_prompt ?? '');
-        $this->assertStringContainsString('Broadcast date', $run->generated_prompt ?? '');
+        $this->assertStringContainsString('Fecha de emisión', $run->generated_prompt ?? '');
 
         $responseText = "TITLE:\nDemo\n\nINTRO:\nIntro\n\nNEWS ITEMS:\n1. HEADLINE:\nHeadline\n\nSUMMARY:\nSummary\n\nSCRIPT:\nScript\n\nEDITORIAL ANGLE:\nAngle\n\nSOURCE HINTS:\n- https://example.com\n\nOUTRO:\nOutro";
 
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => $responseText])->assertRedirect();
         $run->refresh();
         $this->assertSame('response_received', $run->status);
+        $this->assertSame('Demo', data_get($run->parsed_response, 'title'));
+        $this->assertSame('Intro', data_get($run->parsed_response, 'intro'));
+        $this->assertSame('Outro', data_get($run->parsed_response, 'outro'));
+        $this->assertSame('Script', data_get($run->parsed_response, 'items.0.script'));
 
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertRedirect();
         $run->refresh();
@@ -103,6 +107,9 @@ class BulletinPromptWorkflowTest extends TestCase
 
         $script = Script::query()->findOrFail($run->script_id);
         $this->assertSame($run->id, data_get($script->metadata, 'bulletin_prompt_run_id'));
+        $this->assertTrue((bool) data_get($script->metadata, 'parsed_response_used'));
+        $this->assertStringContainsString('Script', $script->body ?? '');
+        $this->assertStringNotContainsString('Summary', $script->body ?? '');
 
         $this->actingAs($viewer)->get(route('editor.bulletin-prompt-runs.index'))->assertForbidden();
         $this->actingAs($viewer)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertForbidden();
@@ -137,6 +144,38 @@ class BulletinPromptWorkflowTest extends TestCase
         $this->assertTrue($latest->scheduled_for?->betweenIncluded($before, $after));
     }
 
+
+
+    #[Test]
+    public function unstructured_response_uses_full_response_as_script_body_fallback(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+
+        $type = BulletinType::query()->create([
+            'name' => 'Fallback Type',
+            'slug' => 'fallback-type',
+            'default_timezone' => 'UTC',
+            'prompt_language' => 'en',
+        ]);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-types.prompt-runs.store', $type))->assertRedirect();
+        $run = BulletinPromptRun::query()->latest('id')->firstOrFail();
+
+        $text = 'This is an unstructured AI response block without headings.';
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-prompt-runs.save-response', $run), ['response_text' => $text])
+            ->assertRedirect();
+
+        $run->refresh();
+        $this->assertSame($text, data_get($run->parsed_response, 'body'));
+
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertRedirect();
+
+        $script = Script::query()->findOrFail($run->script_id);
+        $this->assertSame($text, $script->body);
+        $this->assertFalse((bool) data_get($script->metadata, 'parsed_response_used'));
+    }
     #[Test]
     public function bulletin_prompt_seed_data_is_idempotent(): void
     {

@@ -16,8 +16,8 @@ class AiResponseParser
         }
 
         $sectionMap = [
-            'title' => ['TITLE', 'TÍTULO'],
-            'intro' => ['INTRO', 'INTRODUCTION', 'ENTRADILLA'],
+            'title' => ['TITLE', 'TÍTULO', 'TITULO'],
+            'intro' => ['INTRO', 'INTRODUCTION', 'INTRODUCCIÓN', 'INTRODUCCION', 'ENTRADILLA'],
             'news_items' => ['NEWS ITEMS', 'ITEMS', 'NOTICIAS'],
             'outro' => ['OUTRO', 'CIERRE'],
             'notes' => ['NOTES', 'NOTAS'],
@@ -29,6 +29,8 @@ class AiResponseParser
         $hasStructuredSections = collect(['title', 'intro', 'news_items', 'outro', 'notes'])
             ->some(fn (string $key): bool => ($sections[$key] ?? null) !== null);
 
+        $warnings = $this->buildWarnings($sections, $items, $hasStructuredSections);
+
         if (! $hasStructuredSections && count($items) === 0) {
             return [
                 'title' => null,
@@ -37,19 +39,19 @@ class AiResponseParser
                 'outro' => null,
                 'notes' => null,
                 'items' => [],
+                'warnings' => ['unstructured_response', 'no_script_blocks'],
                 'raw' => $raw,
             ];
         }
 
-        $body = $this->buildBody($items, $sections['news_items'] ?? null, $raw);
-
         return [
             'title' => $this->nullIfEmpty($sections['title'] ?? null),
             'intro' => $this->nullIfEmpty($sections['intro'] ?? null),
-            'body' => $this->nullIfEmpty($body),
+            'body' => $this->buildBody($items, $raw),
             'outro' => $this->nullIfEmpty($sections['outro'] ?? null),
             'notes' => $this->nullIfEmpty($sections['notes'] ?? null),
             'items' => $items,
+            'warnings' => $warnings,
             'raw' => $raw,
         ];
     }
@@ -123,25 +125,32 @@ class AiResponseParser
             return [];
         }
 
-        $blocks = preg_split('/\n(?=\s*(?:\d+\.|\d+\)|[-*]\s*)?\s*(?:HEADLINE|TITULAR)\s*:)/iu', $text) ?: [];
+        $sourcePattern = '(?:HEADLINE|TITULAR)\s*:';
+        $matches = preg_match_all('/(?:(?<=\n)|^)\s*(?:\d+\.|\d+\)|[-*•])?\s*'.$sourcePattern.'/iu', $text, $all, PREG_OFFSET_CAPTURE);
 
-        if (count($blocks) <= 1 && preg_match('/\n\s*\d+\s*\.\s*(?:(?!HEADLINE|TITULAR).)*$/imu', $text) === 1) {
-            $blocks = preg_split('/\n(?=\s*\d+\s*\.)/u', $text) ?: [];
+        if ($matches === false || $matches === 0) {
+            return [];
         }
+
+        $offsets = array_map(static fn (array $hit): int => (int) $hit[1], $all[0]);
+        $offsets[] = strlen($text);
 
         $items = [];
 
-        foreach ($blocks as $block) {
-            $cleanBlock = trim($block);
-            if ($cleanBlock === '') {
+        for ($i = 0; $i < count($offsets) - 1; $i++) {
+            $start = $offsets[$i];
+            $end = $offsets[$i + 1];
+            $block = trim(substr($text, $start, $end - $start));
+
+            if ($block === '') {
                 continue;
             }
 
-            $headline = $this->matchSection($cleanBlock, ['HEADLINE', 'TITULAR'], ['SUMMARY', 'RESUMEN', 'SCRIPT', 'GUION', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'FUENTES']);
-            $summary = $this->matchSection($cleanBlock, ['SUMMARY', 'RESUMEN'], ['SCRIPT', 'GUION', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'FUENTES']);
-            $script = $this->matchSection($cleanBlock, ['SCRIPT', 'GUION'], ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'FUENTES']);
-            $editorialAngle = $this->matchSection($cleanBlock, ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL'], ['SOURCE HINTS', 'FUENTES']);
-            $sourceHintsText = $this->matchSection($cleanBlock, ['SOURCE HINTS', 'FUENTES'], []);
+            $headline = $this->matchSection($block, ['HEADLINE', 'TITULAR'], ['SUMMARY', 'RESUMEN', 'SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
+            $summary = $this->matchSection($block, ['SUMMARY', 'RESUMEN'], ['SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
+            $script = $this->matchSection($block, ['SCRIPT', 'GUION', 'GUIÓN'], ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
+            $editorialAngle = $this->matchSection($block, ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL'], ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
+            $sourceHintsText = $this->matchSection($block, ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES'], []);
             $sourceHints = $this->parseSourceHints($sourceHintsText);
 
             if ($headline === null && $summary === null && $script === null && $editorialAngle === null && count($sourceHints) === 0) {
@@ -154,7 +163,7 @@ class AiResponseParser
                 'script' => $script,
                 'editorial_angle' => $editorialAngle,
                 'source_hints' => $sourceHints,
-                'raw' => $cleanBlock,
+                'raw' => $block,
             ];
         }
 
@@ -173,8 +182,8 @@ class AiResponseParser
             : null;
 
         $pattern = $nextRegex
-            ? '/(?:^|\n)\s*(?:\d+\.|\d+\)|[-*]\s*)?'.$labelRegex.'\s*:\s*(.*?)\s*(?=\n\s*(?:\d+\.|\d+\)|[-*]\s*)?(?:'.$nextRegex.')\s*:|$)/isu'
-            : '/(?:^|\n)\s*(?:\d+\.|\d+\)|[-*]\s*)?'.$labelRegex.'\s*:\s*(.*)$/isu';
+            ? '/(?:^|\n)\s*(?:\d+\.|\d+\)|[-*•]\s*)?'.$labelRegex.'\s*:\s*(.*?)\s*(?=\n\s*(?:\d+\.|\d+\)|[-*•]\s*)?(?:'.$nextRegex.')\s*:|$)/isu'
+            : '/(?:^|\n)\s*(?:\d+\.|\d+\)|[-*•]\s*)?'.$labelRegex.'\s*:\s*(.*)$/isu';
 
         if (preg_match($pattern, $text, $match) !== 1) {
             return null;
@@ -204,28 +213,60 @@ class AiResponseParser
     /**
      * @param  array<int, array<string, mixed>>  $items
      */
-    private function buildBody(array $items, ?string $newsItemsSection, string $raw): string
+    private function buildBody(array $items, string $raw): string
     {
         if (count($items) === 0) {
-            return $this->nullIfEmpty($newsItemsSection) ?? $raw;
+            return $raw;
         }
 
         $blocks = [];
 
-        foreach ($items as $index => $item) {
-            $parts = array_filter([
-                $item['headline'] ? ($index + 1).'. '.$item['headline'] : null,
-                $item['summary'],
-                $item['script'],
-                $item['editorial_angle'] ? 'Editorial angle: '.$item['editorial_angle'] : null,
-            ]);
+        foreach ($items as $item) {
+            $headline = trim((string) ($item['headline'] ?? ''));
+            $script = trim((string) ($item['script'] ?? ''));
 
-            if (count($parts) > 0) {
-                $blocks[] = implode("\n", $parts);
+            if ($script === '') {
+                continue;
             }
+
+            $blocks[] = trim(($headline !== '' ? '['.$headline."]\n" : '').$script);
         }
 
-        return trim(implode("\n\n", $blocks));
+        return count($blocks) > 0 ? implode("\n\n", $blocks) : $raw;
+    }
+
+    /**
+     * @param  array<string, string|null>  $sections
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, string>
+     */
+    private function buildWarnings(array $sections, array $items, bool $hasStructuredSections): array
+    {
+        $warnings = [];
+
+        if (! $hasStructuredSections) {
+            $warnings[] = 'unstructured_response';
+        }
+
+        if ($this->nullIfEmpty($sections['title'] ?? null) === null) {
+            $warnings[] = 'missing_title';
+        }
+
+        if ($this->nullIfEmpty($sections['intro'] ?? null) === null) {
+            $warnings[] = 'missing_intro';
+        }
+
+        $scriptBlocks = collect($items)->filter(fn (array $item): bool => $this->nullIfEmpty((string) ($item['script'] ?? '')) !== null)->count();
+        if ($scriptBlocks === 0) {
+            $warnings[] = 'no_script_blocks';
+        }
+
+        $missingSources = collect($items)->contains(fn (array $item): bool => count($item['source_hints'] ?? []) === 0);
+        if (count($items) > 0 && $missingSources) {
+            $warnings[] = 'missing_sources';
+        }
+
+        return array_values(array_unique($warnings));
     }
 
     /**
@@ -240,6 +281,7 @@ class AiResponseParser
             'outro' => null,
             'notes' => null,
             'items' => [],
+            'warnings' => ['unstructured_response', 'missing_title', 'missing_intro', 'no_script_blocks'],
             'raw' => $raw,
         ];
     }

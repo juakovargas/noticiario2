@@ -100,11 +100,21 @@ class BulletinPromptRunService
 
         $intro = trim((string) ($parsed['intro'] ?? ''));
         $outro = trim((string) ($parsed['outro'] ?? ''));
+        $notes = trim((string) ($parsed['notes'] ?? ''));
         $title = trim((string) ($parsed['title'] ?? '')) ?: ($run->edition?->title ?? $run->title);
-        $body = $this->bodyFromParsedItems($items);
+
+        [$body, $parsedResponseUsed] = $this->bodyFromParsedItems($items);
         if ($body === '') {
             $body = trim((string) ($parsed['body'] ?? $response));
         }
+
+        $sourceHints = collect($items)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->flatMap(fn (array $item): array => is_array($item['source_hints'] ?? null) ? $item['source_hints'] : [])
+            ->map(fn (mixed $hint): string => trim((string) $hint))
+            ->filter(fn (string $hint): bool => $hint !== '')
+            ->values()
+            ->all();
 
         $script = Script::query()->create([
             'edition_id' => $run->edition_id,
@@ -120,6 +130,10 @@ class BulletinPromptRunService
                 'bulletin_prompt_run_id' => $run->id,
                 'bulletin_type_id' => $run->bulletin_type_id,
                 'prompt_profile_id' => $run->prompt_profile_id,
+                'parsed_response_used' => $parsedResponseUsed,
+                'news_item_count' => count($items),
+                'source_hints' => $sourceHints,
+                'notes' => $notes !== '' ? $notes : null,
                 'parsed_response' => $parsed,
             ],
         ]);
@@ -148,27 +162,30 @@ class BulletinPromptRunService
         return now($timezone)->startOfMinute()->utc();
     }
 
-    private function bodyFromParsedItems(array $items): string
+    /**
+     * @param  array<int, mixed>  $items
+     * @return array{0:string,1:bool}
+     */
+    private function bodyFromParsedItems(array $items): array
     {
         $blocks = [];
 
-        foreach ($items as $index => $item) {
+        foreach ($items as $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            $parts = array_filter([
-                ($item['headline'] ?? null) ? ($index + 1).'. '.trim((string) $item['headline']) : null,
-                isset($item['summary']) ? trim((string) $item['summary']) : null,
-                isset($item['script']) ? trim((string) $item['script']) : null,
-                isset($item['editorial_angle']) ? trim((string) $item['editorial_angle']) : null,
-            ]);
-
-            if ($parts !== []) {
-                $blocks[] = implode("\n", $parts);
+            $script = trim((string) ($item['script'] ?? ''));
+            if ($script === '') {
+                continue;
             }
+
+            $headline = trim((string) ($item['headline'] ?? ''));
+            $blocks[] = trim(($headline !== '' ? '['.$headline."]\n" : '').$script);
         }
 
-        return trim(implode("\n\n", $blocks));
+        $body = trim(implode("\n\n", $blocks));
+
+        return [$body, $body !== ''];
     }
 }

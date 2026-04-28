@@ -18,7 +18,7 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $locales = ['en', 'es'];
+        $locales = ['en', 'es', 'fr'];
 
         if (Schema::hasTable('languages')) {
             $codes = Language::query()->where('is_active', true)->pluck('code')->all();

@@ -629,7 +629,7 @@ This second block gives extra details for manual fact-checking demonstrations.',
      */
     private function seedAiPromptTemplates(array $locations, array $categories): array
     {
-        $languages = Language::query()->whereIn('code', ['en', 'es'])->get()->keyBy('code');
+        $languages = Language::query()->whereIn('code', ['en', 'es', 'fr'])->get()->keyBy('code');
 
         $definitions = [
             [

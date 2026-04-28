@@ -27,7 +27,7 @@ class UserUpdateRequest extends FormRequest
     {
         $userId = $this->route('user')?->id;
 
-        $locales = ['en', 'es'];
+        $locales = ['en', 'es', 'fr'];
 
         if (Schema::hasTable('languages')) {
             $codes = \App\Models\Language::query()->where('is_active', true)->pluck('code')->all();

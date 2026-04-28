@@ -47,10 +47,11 @@ function needsVerification(value: string): boolean {
     return /needs verification|requiere verificación|weak|fuente débil/i.test(value);
 }
 
-export default function Show({ run, promptContext, sourceReferences = [], sourceSummary = null }: any): JSX.Element {
+export default function Show({ run, promptContext, sourceReferences = [], sourceSummary = null, aiProviders = [], defaultAiProviderId = null, latestAiLog = null }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime, formatDate, formatTime } = useDateFormatter();
     const form = useForm({ response_text: run.ai_response_text ?? '' });
+    const aiForm = useForm({ ai_provider_id: run.ai_provider_id ?? defaultAiProviderId ?? '', model: '' });
     const scheduleForm = useForm({ scheduled_for: toDateTimeLocalInputValue(run.scheduled_for ?? new Date()) });
     const parsed = (run.parsed_response ?? null) as ParsedResponse | null;
 
@@ -133,6 +134,56 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                 </CardContent>
             </Card>
 
+
+
+            <Card className="mt-4">
+                <CardContent className="space-y-3 pt-6 text-sm">
+                    <h3 className="font-semibold">{t('AI generation')}</h3>
+                    <p className="text-slate-600">{t('This will send the generated prompt to the configured AI provider.')}</p>
+                    <p className="text-slate-600">{t('Manual copy and paste workflow is still available.')}</p>
+                    {aiProviders.length === 0 ? (
+                        <p className="text-amber-700">{t('No active AI provider configured.')}</p>
+                    ) : (
+                        <>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <div>
+                                    <Label>{t('AI provider')}</Label>
+                                    <select className="w-full rounded-md border border-slate-300 px-3 py-2" value={aiForm.data.ai_provider_id} onChange={(e) => aiForm.setData('ai_provider_id', e.target.value)} >
+                                        {aiProviders.map((provider: any) => <option key={provider.id} value={provider.id}>{provider.name} ({provider.provider_type})</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label>{t('Model')}</Label>
+                                    <Input value={aiForm.data.model} onChange={(e) => aiForm.setData('model', e.target.value)} placeholder={t('Default model')} />
+                                </div>
+                            </div>
+                            <div className="text-xs text-slate-600">
+                                {(() => {
+                                    const selected = aiProviders.find((provider: any) => String(provider.id) === String(aiForm.data.ai_provider_id));
+                                    if (!selected) return null;
+                                    return <>
+                                        <p>{t('AI provider')}: {selected.name}</p>
+                                        {!selected.is_active && <p className="text-amber-700">{t('Provider is inactive')}</p>}
+                                        {!selected.env_key_configured && <p className="text-amber-700">{t('Environment key is not configured')}</p>}
+                                    </>;
+                                })()}
+                            </div>
+                            <Button disabled={run.status === 'archived'} onClick={() => aiForm.post(route('editor.bulletin-prompt-runs.generate-ai-response', run.id), { preserveScroll: true })}>{t('Generate AI Response')}</Button>
+                        </>
+                    )}
+                    {latestAiLog && (
+                        <div className="rounded border bg-slate-50 p-3 text-xs">
+                            <p><strong>{t('AI request log')}:</strong> {latestAiLog.status}</p>
+                            <p><strong>{t('AI provider')}:</strong> {latestAiLog.provider?.name || '-'}</p>
+                            <p><strong>{t('Model')}:</strong> {latestAiLog.model || '-'}</p>
+                            <p><strong>{t('Duration')}:</strong> {latestAiLog.duration_ms || '-'} ms</p>
+                            <p><strong>{t('Total tokens')}:</strong> {latestAiLog.total_tokens ?? '-'}</p>
+                            <p><strong>{t('Estimated cost')}:</strong> {latestAiLog.estimated_cost ?? '-'}</p>
+                            <Link className="text-cyan-700" href={route('admin.ai-request-logs.show', latestAiLog.id)}>{t('Open AI request log')}</Link>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             <Card className="mt-4">
                 <CardContent className="space-y-3 pt-6 text-sm">

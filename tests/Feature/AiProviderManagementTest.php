@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AiProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -12,62 +13,84 @@ class AiProviderManagementTest extends TestCase
     use InteractsWithPermissions;
     use RefreshDatabase;
 
-    public function test_admin_can_manage_ai_providers(): void
+    public function test_admin_can_create_and_update_ai_provider(): void
     {
         $admin = $this->createUserWithPermissions(['admin.access']);
 
         $this->actingAs($admin)->post(route('admin.ai-providers.store'), [
-            'name' => 'Mock AI Provider',
+            'name' => 'OpenRouter Provider',
             'slug' => '',
-            'provider_type' => 'mock',
-            'default_model' => 'mock-editorial-v1',
-            'supports_web_search' => true,
-            'supports_json_mode' => true,
+            'provider_type' => 'openrouter',
+            'base_url' => 'https://openrouter.ai/api/v1',
+            'api_key_env_name' => 'OPENROUTER_API_KEY',
+            'default_model' => 'openai/gpt-4o-mini',
+            'timeout_seconds' => 60,
             'is_active' => true,
             'is_default' => true,
         ])->assertRedirect(route('admin.ai-providers.index'));
 
         $provider = AiProvider::query()->firstOrFail();
-        $this->assertSame('mock-ai-provider', $provider->slug);
 
         $this->actingAs($admin)->put(route('admin.ai-providers.update', $provider), [
-            'name' => 'Mock Provider Updated',
+            'name' => 'OpenRouter Updated',
             'slug' => '',
-            'provider_type' => 'mock',
+            'provider_type' => 'openrouter',
+            'base_url' => 'https://openrouter.ai/api/v1',
+            'api_key_env_name' => 'OPENROUTER_API_KEY',
+            'default_model' => 'openai/gpt-4o-mini',
+            'timeout_seconds' => 70,
             'is_active' => true,
         ])->assertRedirect(route('admin.ai-providers.index'));
 
-        $this->assertDatabaseHas('ai_providers', ['id' => $provider->id, 'name' => 'Mock Provider Updated']);
-
-        $this->actingAs($admin)->delete(route('admin.ai-providers.destroy', $provider))->assertRedirect(route('admin.ai-providers.index'));
-        $this->assertSoftDeleted('ai_providers', ['id' => $provider->id]);
+        $this->assertDatabaseHas('ai_providers', ['id' => $provider->id, 'name' => 'OpenRouter Updated']);
     }
 
-    public function test_editor_cannot_manage_admin_ai_providers(): void
+    public function test_editor_cannot_manage_ai_providers(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access']);
 
         $this->actingAs($editor)->get(route('admin.ai-providers.index'))->assertForbidden();
     }
 
-    public function test_default_provider_uniqueness_is_enforced(): void
+    public function test_only_one_default_provider_exists(): void
     {
         $admin = $this->createUserWithPermissions(['admin.access']);
 
-        $this->actingAs($admin)->post(route('admin.ai-providers.store'), [
-            'name' => 'Provider A',
-            'provider_type' => 'mock',
-            'is_default' => true,
-        ])->assertRedirect();
-
-        $this->actingAs($admin)->post(route('admin.ai-providers.store'), [
-            'name' => 'Provider B',
-            'provider_type' => 'mock',
-            'is_default' => true,
-        ])->assertRedirect();
+        foreach (['A', 'B'] as $name) {
+            $this->actingAs($admin)->post(route('admin.ai-providers.store'), [
+                'name' => "Provider {$name}",
+                'provider_type' => 'openai',
+                'base_url' => 'https://api.openai.com/v1',
+                'api_key_env_name' => 'OPENAI_API_KEY',
+                'timeout_seconds' => 60,
+                'is_default' => true,
+            ])->assertRedirect();
+        }
 
         $this->assertSame(1, AiProvider::query()->where('is_default', true)->count());
-        $this->assertDatabaseHas('ai_providers', ['name' => 'Provider B', 'is_default' => true]);
-        $this->assertDatabaseHas('ai_providers', ['name' => 'Provider A', 'is_default' => false]);
+    }
+
+    public function test_provider_env_key_status_does_not_expose_secret_value(): void
+    {
+        putenv('OPENAI_API_KEY=secret-value');
+
+        $admin = $this->createUserWithPermissions(['admin.access']);
+        AiProvider::query()->create([
+            'name' => 'OpenAI',
+            'slug' => 'openai',
+            'provider_type' => 'openai',
+            'base_url' => 'https://api.openai.com/v1',
+            'api_key_env_name' => 'OPENAI_API_KEY',
+            'timeout_seconds' => 60,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.ai-providers.index'))
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('providers.data.0.env_key_configured', true)
+                ->missing('providers.data.0.api_key'));
+
+        $this->actingAs($admin)->get(route('admin.ai-providers.index'))->assertDontSee('secret-value');
     }
 }

@@ -71,4 +71,9 @@ class BulletinPromptRun extends Model
     {
         return $this->hasMany(SourceReference::class);
     }
+
+    public function aiRequestLogs(): HasMany
+    {
+        return $this->hasMany(AiRequestLog::class);
+    }
 }

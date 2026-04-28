@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiRequestLog;
 use App\Models\Edition;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
@@ -28,8 +29,6 @@ class DashboardController extends Controller
                 'total' => $providerModel::query()->count(),
                 'active' => $providerModel::query()->where('is_active', true)->count(),
                 'defaultProvider' => $providerModel::query()->where('is_default', true)->value('name'),
-                'supportsWebSearch' => $providerModel::query()->where('supports_web_search', true)->count(),
-                'supportsJsonMode' => $providerModel::query()->where('supports_json_mode', true)->count(),
             ];
         }
 
@@ -47,6 +46,9 @@ class DashboardController extends Controller
                 'plannedEditions' => Schema::hasTable('editions') ? Edition::query()->whereIn('status', ['planning', 'scripting'])->count() : 0,
                 'aiProviders' => $aiOverview['total'] ?? null,
                 'activeAiProviders' => $aiOverview['active'] ?? null,
+                'aiRequestsToday' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->count() : 0,
+                'failedAiRequests' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->where('status', 'failed')->count() : 0,
+                'aiEstimatedCostToday' => Schema::hasTable('ai_request_logs') ? (float) AiRequestLog::query()->whereDate('created_at', $today)->sum('estimated_cost') : 0,
             ],
             'recentFailedRuns' => Schema::hasTable('editorial_schedule_runs')
                 ? EditorialScheduleRun::query()->with(['schedule:id,name'])->where('status', 'failed')->latest()->limit(8)->get()

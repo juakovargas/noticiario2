@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\AiRequestLogController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\MediaFileController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -125,6 +126,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
 
         Route::resource('languages', LanguageController::class)->except('show');
         Route::resource('ai-providers', AiProviderController::class);
+        Route::get('/ai-request-logs', [AiRequestLogController::class, 'index'])->name('ai-request-logs.index');
+        Route::get('/ai-request-logs/{aiRequestLog}', [AiRequestLogController::class, 'show'])->name('ai-request-logs.show');
         Route::resource('prompt-profiles', PromptProfileController::class);
 
         Route::get('/seo-settings', [SeoSettingController::class, 'edit'])->name('seo-settings.edit');
@@ -219,6 +222,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-types/{bulletinType}/prompt-runs', [BulletinPromptRunController::class, 'store'])->name('bulletin-types.prompt-runs.store');
         Route::put('/bulletin-prompt-runs/{bulletinPromptRun}/schedule', [BulletinPromptRunController::class, 'updateSchedule'])->name('bulletin-prompt-runs.update-schedule');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-ai-response', [BulletinPromptRunController::class, 'generateAiResponse'])->name('bulletin-prompt-runs.generate-ai-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/archive', [BulletinPromptRunController::class, 'archive'])->name('bulletin-prompt-runs.archive');

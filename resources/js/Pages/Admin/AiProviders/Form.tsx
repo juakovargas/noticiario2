@@ -3,31 +3,39 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import { useTranslations } from '@/i18n/useTranslations';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEvent } from 'react';
 
-interface Provider { id:number; name:string; slug:string; provider_type:string; base_url:string|null; api_key_env:string|null; default_model:string|null; supports_web_search:boolean; supports_json_mode:boolean; is_active:boolean; is_default:boolean; monthly_budget_cents:number|null; cost_per_1k_input_tokens_cents:number|null; cost_per_1k_output_tokens_cents:number|null; notes:string|null; }
+interface Provider {
+    id:number; name:string; slug:string; provider_type:string; base_url:string|null; api_key_env_name:string|null; default_model:string|null; organization:string|null;
+    is_active:boolean; is_default:boolean; timeout_seconds:number; max_tokens:number|null; temperature:string|null;
+    cost_input_per_1k_tokens:string|null; cost_output_per_1k_tokens:string|null; daily_request_limit:number|null; monthly_request_limit:number|null;
+}
 interface Props { provider?:Provider; providerTypes:string[]; }
 
 export default function AiProviderForm({ provider, providerTypes = [] }: Props): JSX.Element {
     const isEdit = !!provider;
+    const { t } = useTranslations();
     const form = useForm({
-        name: provider?.name ?? '', slug: provider?.slug ?? '', provider_type: provider?.provider_type ?? 'mock', base_url: provider?.base_url ?? '', api_key_env: provider?.api_key_env ?? '', default_model: provider?.default_model ?? '',
-        supports_web_search: provider?.supports_web_search ?? false, supports_json_mode: provider?.supports_json_mode ?? false, is_active: provider?.is_active ?? true, is_default: provider?.is_default ?? false,
-        monthly_budget_cents: provider?.monthly_budget_cents?.toString() ?? '', cost_per_1k_input_tokens_cents: provider?.cost_per_1k_input_tokens_cents?.toString() ?? '', cost_per_1k_output_tokens_cents: provider?.cost_per_1k_output_tokens_cents?.toString() ?? '', notes: provider?.notes ?? '',
+        name: provider?.name ?? '', slug: provider?.slug ?? '', provider_type: provider?.provider_type ?? 'openrouter', base_url: provider?.base_url ?? '', api_key_env_name: provider?.api_key_env_name ?? '',
+        default_model: provider?.default_model ?? '', organization: provider?.organization ?? '', is_active: provider?.is_active ?? true, is_default: provider?.is_default ?? false,
+        timeout_seconds: String(provider?.timeout_seconds ?? 60), max_tokens: provider?.max_tokens ? String(provider.max_tokens) : '', temperature: provider?.temperature ?? '',
+        cost_input_per_1k_tokens: provider?.cost_input_per_1k_tokens ?? '', cost_output_per_1k_tokens: provider?.cost_output_per_1k_tokens ?? '', daily_request_limit: provider?.daily_request_limit ? String(provider.daily_request_limit) : '', monthly_request_limit: provider?.monthly_request_limit ? String(provider.monthly_request_limit) : '',
     });
 
     const submit = (e: FormEvent<HTMLFormElement>): void => { e.preventDefault(); if (isEdit) form.put(route('admin.ai-providers.update', provider!.id)); else form.post(route('admin.ai-providers.store')); };
 
-    return <AdminLayout><Head title={isEdit ? 'Edit AI Provider' : 'Create AI Provider'} /><AdminPageHeader title={isEdit ? 'Edit AI Provider' : 'Create AI Provider'} description="Technical provider configuration." />
+    return <AdminLayout><Head title={isEdit ? t('Edit AI Provider') : t('Create AI Provider')} /><AdminPageHeader title={isEdit ? t('Edit AI Provider') : t('Create AI Provider')} description={t('Technical provider configuration.')} />
         <Card><CardContent className="pt-6"><form onSubmit={submit} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2"><div><Label>Name</Label><Input value={form.data.name} onChange={(e)=>form.setData('name', e.target.value)} /></div><div><Label>Slug</Label><Input value={form.data.slug} onChange={(e)=>form.setData('slug', e.target.value)} /></div></div>
-            <div className="grid gap-4 md:grid-cols-3"><div><Label>Provider type</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.provider_type} onChange={(e)=>form.setData('provider_type', e.target.value)}>{providerTypes.map((item)=><option key={item} value={item}>{item}</option>)}</select></div><div><Label>Base URL</Label><Input value={form.data.base_url} onChange={(e)=>form.setData('base_url', e.target.value)} /></div><div><Label>API key env</Label><Input value={form.data.api_key_env} onChange={(e)=>form.setData('api_key_env', e.target.value)} /></div></div>
-            <div className="grid gap-4 md:grid-cols-3"><div><Label>Default model</Label><Input value={form.data.default_model} onChange={(e)=>form.setData('default_model', e.target.value)} /></div><div><Label>Monthly budget</Label><Input type="number" value={form.data.monthly_budget_cents} onChange={(e)=>form.setData('monthly_budget_cents', e.target.value)} /></div><div><Label>Cost per 1K input tokens</Label><Input type="number" value={form.data.cost_per_1k_input_tokens_cents} onChange={(e)=>form.setData('cost_per_1k_input_tokens_cents', e.target.value)} /></div></div>
-            <div><Label>Cost per 1K output tokens</Label><Input type="number" value={form.data.cost_per_1k_output_tokens_cents} onChange={(e)=>form.setData('cost_per_1k_output_tokens_cents', e.target.value)} /></div>
-            <div><Label>Notes</Label><textarea className="w-full rounded-md border border-slate-300 px-3 py-2" rows={4} value={form.data.notes} onChange={(e)=>form.setData('notes', e.target.value)} /></div>
-            <div className="grid gap-4 md:grid-cols-2"><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.supports_web_search} onChange={(e)=>form.setData('supports_web_search', e.target.checked)} />Supports web search</label><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.supports_json_mode} onChange={(e)=>form.setData('supports_json_mode', e.target.checked)} />Supports JSON mode</label><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.is_active} onChange={(e)=>form.setData('is_active', e.target.checked)} />Active</label><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.is_default} onChange={(e)=>form.setData('is_default', e.target.checked)} />Default</label></div>
-            <div className="flex gap-2"><Button type="submit" disabled={form.processing}>Save</Button><Button asChild variant="secondary"><Link href={route('admin.ai-providers.index')}>Cancel</Link></Button></div>
+            <div className="grid gap-4 md:grid-cols-2"><div><Label>{t('Name')}</Label><Input value={form.data.name} onChange={(e)=>form.setData('name', e.target.value)} /></div><div><Label>{t('Slug')}</Label><Input value={form.data.slug} onChange={(e)=>form.setData('slug', e.target.value)} /></div></div>
+            <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Provider type')}</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.provider_type} onChange={(e)=>form.setData('provider_type', e.target.value)}>{providerTypes.map((item)=><option key={item} value={item}>{item}</option>)}</select></div><div><Label>{t('Base URL')}</Label><Input value={form.data.base_url} onChange={(e)=>form.setData('base_url', e.target.value)} /></div><div><Label>{t('API key environment name')}</Label><Input value={form.data.api_key_env_name} onChange={(e)=>form.setData('api_key_env_name', e.target.value)} /></div></div>
+            <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Default model')}</Label><Input value={form.data.default_model} onChange={(e)=>form.setData('default_model', e.target.value)} /></div><div><Label>{t('Organization')}</Label><Input value={form.data.organization} onChange={(e)=>form.setData('organization', e.target.value)} /></div><div><Label>{t('Timeout seconds')}</Label><Input type="number" min={5} max={300} value={form.data.timeout_seconds} onChange={(e)=>form.setData('timeout_seconds', e.target.value)} /></div></div>
+            <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Max tokens')}</Label><Input type="number" value={form.data.max_tokens} onChange={(e)=>form.setData('max_tokens', e.target.value)} /></div><div><Label>{t('Temperature')}</Label><Input type="number" step="0.01" min={0} max={2} value={form.data.temperature} onChange={(e)=>form.setData('temperature', e.target.value)} /></div><div><Label>{t('Daily request limit')}</Label><Input type="number" value={form.data.daily_request_limit} onChange={(e)=>form.setData('daily_request_limit', e.target.value)} /></div></div>
+            <div className="grid gap-4 md:grid-cols-2"><div><Label>{t('Input token cost')}</Label><Input type="number" step="0.000001" value={form.data.cost_input_per_1k_tokens} onChange={(e)=>form.setData('cost_input_per_1k_tokens', e.target.value)} /></div><div><Label>{t('Output token cost')}</Label><Input type="number" step="0.000001" value={form.data.cost_output_per_1k_tokens} onChange={(e)=>form.setData('cost_output_per_1k_tokens', e.target.value)} /></div></div>
+            <div><Label>{t('Monthly request limit')}</Label><Input type="number" value={form.data.monthly_request_limit} onChange={(e)=>form.setData('monthly_request_limit', e.target.value)} /></div>
+            <div className="grid gap-4 md:grid-cols-2"><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.is_active} onChange={(e)=>form.setData('is_active', e.target.checked)} />{t('Active')}</label><label className="flex items-center gap-2"><input type="checkbox" checked={form.data.is_default} onChange={(e)=>form.setData('is_default', e.target.checked)} />{t('Default')}</label></div>
+            <div className="flex gap-2"><Button type="submit" disabled={form.processing}>{t('Save')}</Button><Button asChild variant="secondary"><Link href={route('admin.ai-providers.index')}>{t('Cancel')}</Link></Button></div>
         </form></CardContent></Card></AdminLayout>;
 }

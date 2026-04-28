@@ -11,31 +11,43 @@ class AiProvider extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const SUPPORTED_PROVIDER_TYPES = [
+        'openai',
+        'openrouter',
+        'anthropic',
+        'ollama',
+        'custom_openai_compatible',
+        'mock',
+    ];
+
     protected $fillable = [
         'name',
         'slug',
         'provider_type',
         'base_url',
-        'api_key_env',
+        'api_key_env_name',
         'default_model',
-        'supports_web_search',
-        'supports_json_mode',
+        'organization',
         'is_active',
         'is_default',
-        'monthly_budget_cents',
-        'cost_per_1k_input_tokens_cents',
-        'cost_per_1k_output_tokens_cents',
-        'notes',
+        'timeout_seconds',
+        'max_tokens',
+        'temperature',
+        'cost_input_per_1k_tokens',
+        'cost_output_per_1k_tokens',
+        'daily_request_limit',
+        'monthly_request_limit',
         'metadata',
     ];
 
     protected function casts(): array
     {
         return [
-            'supports_web_search' => 'boolean',
-            'supports_json_mode' => 'boolean',
             'is_active' => 'boolean',
             'is_default' => 'boolean',
+            'temperature' => 'decimal:2',
+            'cost_input_per_1k_tokens' => 'decimal:6',
+            'cost_output_per_1k_tokens' => 'decimal:6',
             'metadata' => 'array',
         ];
     }
@@ -43,5 +55,26 @@ class AiProvider extends Model
     public function editorialRequests(): HasMany
     {
         return $this->hasMany(EditorialRequest::class);
+    }
+
+    public function aiRequestLogs(): HasMany
+    {
+        return $this->hasMany(AiRequestLog::class);
+    }
+
+    public function requiresApiKey(): bool
+    {
+        return $this->provider_type !== 'ollama' && $this->provider_type !== 'mock';
+    }
+
+    public function hasConfiguredApiKey(): bool
+    {
+        if (! $this->requiresApiKey()) {
+            return true;
+        }
+
+        $envName = trim((string) $this->api_key_env_name);
+
+        return $envName !== '' && filled(env($envName));
     }
 }

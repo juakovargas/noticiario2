@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             LanguageSeeder::class,
             SeoSettingSeeder::class,
+            AiProviderSeeder::class,
         ]);
 
         if (app()->environment(['local', 'testing'])) {

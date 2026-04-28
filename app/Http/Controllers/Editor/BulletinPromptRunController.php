@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Editor;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiProvider;
+use App\Models\AiRequestLog;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
 use App\Models\PromptProfile;
 use App\Models\User;
+use App\Services\Ai\AiClientManager;
+use App\Services\Ai\Exceptions\AiProviderException;
 use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
 use App\Services\PromptGeneration\BulletinPromptRunService;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,12 +18,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class BulletinPromptRunController extends Controller
 {
     public function __construct(
         private readonly BulletinPromptRunService $service,
         private readonly BulletinCoverageWindowResolver $coverageWindowResolver,
+        private readonly AiClientManager $aiClientManager,
     ) {
     }
 
@@ -157,8 +163,10 @@ class BulletinPromptRunController extends Controller
             'script:id,title,status',
             'createdBy:id,name,email,profile_image_id',
             'sourceReferences.checkedBy:id,name,email,profile_image_id',
+            'aiRequestLogs.provider:id,name',
         ]);
 
+        $activeProvider = AiProvider::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->first();
 
         $sourceCounts = $bulletinPromptRun->sourceReferences
             ->whereNull('archived_at')
@@ -168,6 +176,23 @@ class BulletinPromptRunController extends Controller
         return Inertia::render('Editor/BulletinPromptRuns/Show', [
             'run' => $bulletinPromptRun,
             'promptContext' => $this->coverageWindowResolver->resolve($bulletinPromptRun),
+            'aiProviders' => AiProvider::query()
+                ->where('is_active', true)
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (AiProvider $provider) => [
+                    'id' => $provider->id,
+                    'name' => $provider->name,
+                    'provider_type' => $provider->provider_type,
+                    'default_model' => $provider->default_model,
+                    'is_default' => $provider->is_default,
+                    'is_active' => $provider->is_active,
+                    'api_key_env_name' => $provider->api_key_env_name,
+                    'env_key_configured' => $provider->hasConfiguredApiKey(),
+                ]),
+            'defaultAiProviderId' => $activeProvider?->id,
+            'latestAiLog' => $bulletinPromptRun->aiRequestLogs->sortByDesc('id')->first(),
             'sourceReferences' => $bulletinPromptRun->sourceReferences
                 ->whereNull('archived_at')
                 ->map(fn ($reference) => [
@@ -227,6 +252,81 @@ class BulletinPromptRunController extends Controller
         $this->service->generatePrompt($bulletinPromptRun);
 
         return back()->with('success', 'Prompt generated successfully.');
+    }
+
+    public function generateAiResponse(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $data = $request->validate([
+            'ai_provider_id' => ['nullable', 'exists:ai_providers,id'],
+            'model' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($bulletinPromptRun->status === 'archived') {
+            return back()->with('error', 'Archived prompt runs cannot generate AI responses.');
+        }
+
+        if (blank($bulletinPromptRun->generated_prompt)) {
+            return back()->with('error', 'Generate prompt before requesting AI response.');
+        }
+
+        $provider = null;
+        if (filled($data['ai_provider_id'] ?? null)) {
+            $provider = AiProvider::query()->find($data['ai_provider_id']);
+        }
+
+        $provider ??= AiProvider::query()->where('is_active', true)->where('is_default', true)->first();
+        $provider ??= AiProvider::query()->where('is_active', true)->orderByDesc('is_default')->first();
+
+        if (! $provider || ! $provider->is_active) {
+            return back()->with('error', 'No active AI provider configured.');
+        }
+
+        if ($provider->requiresApiKey() && ! $provider->hasConfiguredApiKey()) {
+            return back()->with('error', 'Environment key is not configured.');
+        }
+
+        $log = AiRequestLog::query()->create([
+            'ai_provider_id' => $provider->id,
+            'bulletin_prompt_run_id' => $bulletinPromptRun->id,
+            'user_id' => $request->user()?->id,
+            'model' => $data['model'] ?? $provider->default_model,
+            'status' => 'pending',
+            'request_type' => 'bulletin_prompt_run',
+            'prompt_hash' => hash('sha256', (string) $bulletinPromptRun->generated_prompt),
+            'prompt_preview' => str((string) $bulletinPromptRun->generated_prompt)->limit(5000)->toString(),
+            'started_at' => now(),
+        ]);
+
+        try {
+            $aiResponse = $this->aiClientManager->generateText($provider, (string) $bulletinPromptRun->generated_prompt, [
+                'model' => $data['model'] ?? null,
+            ]);
+
+            $this->service->saveResponse($bulletinPromptRun, $aiResponse->text);
+
+            $log->update([
+                'status' => 'success',
+                'response_preview' => str($aiResponse->text)->limit(5000)->toString(),
+                'model' => $aiResponse->model,
+                'input_tokens' => $aiResponse->inputTokens,
+                'output_tokens' => $aiResponse->outputTokens,
+                'total_tokens' => $aiResponse->totalTokens,
+                'duration_ms' => $aiResponse->durationMs,
+                'estimated_cost' => $this->estimateCost($provider, $aiResponse->inputTokens, $aiResponse->outputTokens),
+                'metadata' => ['finish_reason' => $aiResponse->finishReason],
+                'completed_at' => now(),
+            ]);
+
+            return back()->with('success', 'Response generated successfully.');
+        } catch (AiProviderException|Throwable $exception) {
+            $log->update([
+                'status' => 'failed',
+                'error_message' => str($exception->getMessage())->limit(1000)->toString(),
+                'completed_at' => now(),
+            ]);
+
+            return back()->with('error', 'AI request failed.');
+        }
     }
 
     public function saveResponse(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
@@ -314,5 +414,18 @@ class BulletinPromptRunController extends Controller
         $bulletinPromptRun->update(['status' => 'cancelled']);
 
         return back()->with('success', 'Prompt run cancelled.');
+    }
+
+    private function estimateCost(AiProvider $provider, ?int $inputTokens, ?int $outputTokens): ?float
+    {
+        if ($inputTokens === null || $outputTokens === null) {
+            return null;
+        }
+
+        if ($provider->cost_input_per_1k_tokens === null || $provider->cost_output_per_1k_tokens === null) {
+            return null;
+        }
+
+        return round((($inputTokens / 1000) * (float) $provider->cost_input_per_1k_tokens) + (($outputTokens / 1000) * (float) $provider->cost_output_per_1k_tokens), 6);
     }
 }

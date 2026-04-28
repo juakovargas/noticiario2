@@ -18,7 +18,9 @@ class AiProviderController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/AiProviders/Index', [
-            'providers' => AiProvider::query()->orderByDesc('is_default')->orderBy('name')->paginate(15),
+            'providers' => AiProvider::query()->orderByDesc('is_default')->orderBy('name')->paginate(15)->through(
+                fn (AiProvider $provider): array => $this->presentProvider($provider)
+            ),
             'providerTypes' => $this->providerTypes(),
         ]);
     }
@@ -43,7 +45,7 @@ class AiProviderController extends Controller
 
     public function show(AiProvider $aiProvider): Response
     {
-        return Inertia::render('Admin/AiProviders/Show', ['provider' => $aiProvider]);
+        return Inertia::render('Admin/AiProviders/Show', ['provider' => $this->presentProvider($aiProvider)]);
     }
 
     public function edit(AiProvider $aiProvider): Response
@@ -76,26 +78,26 @@ class AiProviderController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('ai_providers', 'slug')->ignore($provider?->id)],
-            'provider_type' => ['required', 'string', 'max:50'],
+            'provider_type' => ['required', Rule::in($this->providerTypes())],
             'base_url' => ['nullable', 'url'],
-            'api_key_env' => ['nullable', 'string', 'max:255'],
+            'api_key_env_name' => ['nullable', 'string', 'max:255'],
             'default_model' => ['nullable', 'string', 'max:255'],
-            'supports_web_search' => ['boolean'],
-            'supports_json_mode' => ['boolean'],
+            'organization' => ['nullable', 'string', 'max:255'],
             'is_active' => ['boolean'],
             'is_default' => ['boolean'],
-            'monthly_budget_cents' => ['nullable', 'integer', 'min:0'],
-            'cost_per_1k_input_tokens_cents' => ['nullable', 'integer', 'min:0'],
-            'cost_per_1k_output_tokens_cents' => ['nullable', 'integer', 'min:0'],
-            'notes' => ['nullable', 'string'],
+            'timeout_seconds' => ['required', 'integer', 'min:5', 'max:300'],
+            'max_tokens' => ['nullable', 'integer', 'min:1'],
+            'temperature' => ['nullable', 'numeric', 'min:0', 'max:2'],
+            'cost_input_per_1k_tokens' => ['nullable', 'numeric', 'min:0'],
+            'cost_output_per_1k_tokens' => ['nullable', 'numeric', 'min:0'],
+            'daily_request_limit' => ['nullable', 'integer', 'min:0'],
+            'monthly_request_limit' => ['nullable', 'integer', 'min:0'],
             'metadata' => ['nullable', 'array'],
         ]);
     }
 
     private function withBooleanValues(Request $request, array $data): array
     {
-        $data['supports_web_search'] = $request->boolean('supports_web_search', false);
-        $data['supports_json_mode'] = $request->boolean('supports_json_mode', false);
         $data['is_active'] = $request->boolean('is_active', true);
         $data['is_default'] = $request->boolean('is_default', false);
 
@@ -114,6 +116,15 @@ class AiProviderController extends Controller
     /** @return string[] */
     private function providerTypes(): array
     {
-        return ['openai', 'openrouter', 'anthropic', 'google', 'local', 'mock', 'custom'];
+        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'mock'];
+    }
+
+    /** @return array<string,mixed> */
+    private function presentProvider(AiProvider $provider): array
+    {
+        return [
+            ...$provider->toArray(),
+            'env_key_configured' => $provider->hasConfiguredApiKey(),
+        ];
     }
 }

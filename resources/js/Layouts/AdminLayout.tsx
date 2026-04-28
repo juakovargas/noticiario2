@@ -60,6 +60,13 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                 routeName: 'admin.ai-providers.*',
                 icon: <Bot className="h-4 w-4" />,
             },
+
+            {
+                label: t('AI Request Logs'),
+                href: route('admin.ai-request-logs.index'),
+                routeName: 'admin.ai-request-logs.*',
+                icon: <Bot className="h-4 w-4" />,
+            },
             {
                 label: t('Prompt Profiles'),
                 href: route('admin.prompt-profiles.index'),

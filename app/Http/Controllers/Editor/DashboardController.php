@@ -85,6 +85,7 @@ class DashboardController extends Controller
                 'activeBulletinTypes' => BulletinType::query()->where('is_active', true)->count(),
                 'recentPromptRuns' => BulletinPromptRun::query()->where('status', '!=', 'archived')->count(),
                 'promptRunsWaitingAiResponse' => BulletinPromptRun::query()->where('status', '!=', 'archived')->whereIn('status', ['prompt_ready', 'waiting_ai_response'])->count(),
+                'promptRunsReadyForAiGeneration' => BulletinPromptRun::query()->where('status', 'prompt_ready')->whereNull('ai_response_text')->count(),
                 'promptRunsReadyToCreateScript' => BulletinPromptRun::query()->where('status', 'response_received')->count(),
                 'todayRuns' => (clone $todayRunsQuery)->count(),
                 'pendingPrompts' => EditorialScheduleRun::query()->where('status', 'pending')->count(),

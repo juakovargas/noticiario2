@@ -34,6 +34,7 @@ const cards: Array<{ key: string; label: string }> = [
     { key: 'activeBulletinTypes', label: 'Active bulletin types' },
     { key: 'recentPromptRuns', label: 'Recent prompt runs' },
     { key: 'promptRunsWaitingAiResponse', label: 'Prompt runs waiting for AI response' },
+    { key: 'promptRunsReadyForAiGeneration', label: 'Prompt runs ready for AI generation' },
     { key: 'promptRunsReadyToCreateScript', label: 'Prompt runs ready to create script' },
     { key: 'todayRuns', label: "Today's runs" },
     { key: 'pendingPrompts', label: 'Pending prompts' },

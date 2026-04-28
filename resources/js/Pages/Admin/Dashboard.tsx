@@ -9,7 +9,7 @@ import { useTranslations } from '@/i18n/useTranslations';
 type Props = {
     stats: Record<string, number | null>;
     recentFailedRuns: Array<{ id: number; status: string; error_message: string | null; scheduled_for: string | null; schedule?: { name: string } }>;
-    aiOverview: null | { total: number; active: number; defaultProvider: string | null; supportsWebSearch: number; supportsJsonMode: number };
+    aiOverview: null | { total: number; active: number; defaultProvider: string | null };
     canOpenEditorRun: boolean;
 };
 
@@ -25,7 +25,7 @@ export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpen
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
                     ['Total users', stats.users], ['Active users', stats.activeUsers], ['Roles', stats.roles], ['Permissions', stats.permissions], ['Languages', stats.languages],
-                    ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders],
+                    ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders], ['AI requests today', stats.aiRequestsToday], ['Failed AI requests', stats.failedAiRequests], ['Estimated cost', stats.aiEstimatedCostToday],
                 ].map(([label, value]) => (
                     <Card key={String(label)}><CardHeader className="pb-2"><CardDescription>{label}</CardDescription></CardHeader><CardContent><CardTitle>{value ?? '-'}</CardTitle></CardContent></Card>
                 ))}
@@ -72,8 +72,6 @@ export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpen
                         <CardContent className="space-y-1 text-sm text-slate-700">
                             <p>Default provider: {aiOverview.defaultProvider ?? 'Not configured'}</p>
                             <p>Active providers: {aiOverview.active}</p>
-                            <p>Providers supporting web search: {aiOverview.supportsWebSearch}</p>
-                            <p>Providers supporting JSON mode: {aiOverview.supportsJsonMode}</p>
                         </CardContent>
                     </Card>
                 )}

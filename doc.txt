@@ -1364,3 +1364,28 @@ Updated next priorities:
 3. Add AI logs and cost control.
 4. Add automatic schedule execution.
 5. Add audio/video/publishing later.
+
+REAL AI PROVIDER INTEGRATION
+- Added AI provider upgrades in `ai_providers` with `api_key_env_name`, provider runtime settings (model, timeout, tokens, temperature), limits, and token-cost fields.
+- API keys are not stored in the database/frontend; credentials are resolved from environment variables using the configured env key name.
+- Supported provider types currently targeted in this branch: `openai`, `openrouter`, `ollama`, `custom_openai_compatible` (plus existing `mock` compatibility).
+- Added editor action on Bulletin Prompt Runs: "Generate AI Response".
+- Action flow: generated_prompt -> provider call -> ai_response_text save -> parsed_response generation -> existing preview remains in use.
+- Manual copy/paste and Save AI Response flow remains available and unchanged.
+- Added `ai_request_logs` table for request observability: status, token usage, estimated cost, duration, previews, and error metadata.
+- Failure handling keeps existing response content intact and logs request failures safely without exposing secrets.
+
+Current limitations
+- No automatic scheduler execution in this branch.
+- No queue worker foundation in this branch.
+- No batch AI generation in this branch.
+- No audio/video/publishing automation in this branch.
+- Source verification remains manual/editorial.
+
+Next priorities
+1. Test one real provider in local `.env` using a safe API key.
+2. Improve AI request logs and cost control.
+3. Add automatic schedule execution.
+4. Add queue worker foundation.
+5. Add audio/video foundation.
+6. Add video/publishing later.

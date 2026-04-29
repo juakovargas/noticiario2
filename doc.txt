@@ -433,3 +433,15 @@ Limitations:
 - Workflow events currently wired in service layer: script rejected (existing), script approved/source rejected/AI failed/background task failed are prepared for expansion.
 - Future events are prepared for: audio generated, video generated, publication failed.
 - Limitations: internal messages are not real-time websockets; internal messages are not email notifications; some related models still lack admin-safe viewers.
+
+## SECURE INTERNAL MESSAGE RELATED LINKS
+
+- Internal message related links are now resolved dynamically for the current authenticated user and current permissions.
+- Stored metadata URLs (for example old editor URLs) are not trusted as navigation targets.
+- Admin users resolve related links only to admin routes.
+- Editor users resolve related links only to editor routes.
+- Viewer users only get viewer/public-safe links when available; otherwise no link is shown.
+- Cross-panel links are blocked; no fallback to a different panel is allowed.
+- Admin-safe read-only script viewer is available at `/admin/scripts/{script}`.
+- Admin script viewer is read-only and keeps the user in the Admin panel.
+- Impersonation remains the only explicit/intended way for admin users to test another user panel experience.

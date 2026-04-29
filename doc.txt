@@ -196,6 +196,8 @@ B. Operational workflow:
 - Prompt generation can be automatic (`auto_generate_prompt`) without calling external AI providers.
 - Added scheduling fields including `next_run_at`, `last_run_at`, frequency/time/day settings and automation flags.
 - Added editor actions: run now and recalculate next run from schedule detail page.
+- Workbench and Editor Dashboard now surface due/upcoming schedule indicators and scheduler-created work counters.
+- Automatic runner never calls external AI providers by default; `auto_generate_ai_response` remains disabled by default.
 
 ## 6. TRANSLATION RULE
 

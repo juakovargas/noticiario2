@@ -41,7 +41,7 @@ class CreateDueEditorialRunsCommand extends Command
         $this->line('Due runs created: '.$summary['runs_created']);
         $this->line('Prompt runs created: '.$summary['prompt_runs_created']);
         $this->line('Prompts generated: '.$summary['prompts_generated']);
-        $this->line('Duplicate runs skipped: '.$summary['skipped_duplicates']);
+        $this->line('Duplicate runs skipped: '.$summary['duplicates_skipped']);
         $this->line('Failed schedules: '.$summary['failed']);
         $this->line('This command does not call external AI providers.');
 

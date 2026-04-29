@@ -236,7 +236,6 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 
 ## 8. CURRENT LIMITATIONS
 
-- No queue worker foundation yet.
 - No audio production yet.
 - No video production yet.
 - No publishing automation yet.
@@ -349,3 +348,22 @@ Limitations:
 5. feature/media-picker-and-assets
 6. feature/live-source-checking-optional
 7. feature/privacy-consent-and-public-seo-hardening
+
+
+## GROQ PROVIDER SUPPORT
+
+- Added first-class `groq` provider type using the existing OpenAI-compatible client flow.
+- Groq base URL: `https://api.groq.com/openai/v1`.
+- API key is resolved only via environment variable name `GROQ_API_KEY`.
+- Never commit real API keys; provider records only store `api_key_env_name`.
+- Configure/activate provider from Admin > AI Providers.
+- Manual command for local checks:
+  - `php artisan noticiario:test-ai-provider groq --dry-run`
+  - `php artisan noticiario:test-ai-provider groq --prompt="Return exactly: OK"`
+- Recommended manual test flow:
+  1. Generate prompt in Bulletin Prompt Run.
+  2. Choose Groq provider.
+  3. Generate AI response.
+  4. Inspect parsed response.
+  5. Create script.
+  6. Extract and verify sources.

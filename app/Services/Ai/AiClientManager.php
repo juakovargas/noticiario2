@@ -40,7 +40,7 @@ class AiClientManager
         }
 
         return match ($provider->provider_type) {
-            'openai', 'openrouter', 'custom_openai_compatible' => new OpenAiCompatibleClient(),
+            'openai', 'openrouter', 'custom_openai_compatible', 'groq' => new OpenAiCompatibleClient(),
             'ollama' => new OllamaClient(),
             'mock' => new class implements AiClient {
                 public function generateText(AiProvider $provider, string $prompt, array $options = []): AiResponseData

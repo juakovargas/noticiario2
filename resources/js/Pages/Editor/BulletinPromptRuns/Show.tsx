@@ -165,6 +165,9 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                     <h3 className="font-semibold">{t('AI generation')}</h3>
                     <p className="text-slate-600">{t('This will send the generated prompt to the configured AI provider.')}</p>
                     <p className="text-slate-600">{t('Manual copy and paste workflow is still available.')}</p>
+                    <p className="text-slate-600">{t('Use Groq for fast manual AI testing.')}</p>
+                    <p className="text-slate-600">{t('This will consume one provider request.')}</p>
+                    <p className="text-slate-600">{t('The API key is read from the server environment and is never shown.')}</p>
                     {aiProviders.length === 0 ? (
                         <p className="text-amber-700">{t('No active AI provider configured.')}</p>
                     ) : (

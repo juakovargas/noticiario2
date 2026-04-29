@@ -61,4 +61,28 @@ class OpenAiCompatibleClientTest extends TestCase
             $this->assertStringContainsString('AI request failed', $exception->getMessage());
         }
     }
+    public function test_groq_uses_openai_compatible_endpoint(): void
+    {
+        putenv('GROQ_API_KEY=test-key');
+        Http::fake([
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([
+                'model' => 'llama-3.3-70b-versatile',
+                'choices' => [['message' => ['content' => 'OK'], 'finish_reason' => 'stop']],
+                'usage' => ['prompt_tokens' => 1, 'completion_tokens' => 1, 'total_tokens' => 2],
+            ], 200),
+        ]);
+
+        $provider = new AiProvider([
+            'provider_type' => 'groq',
+            'base_url' => 'https://api.groq.com/openai/v1',
+            'api_key_env_name' => 'GROQ_API_KEY',
+            'default_model' => 'llama-3.3-70b-versatile',
+            'timeout_seconds' => 30,
+        ]);
+
+        $response = (new OpenAiCompatibleClient())->generateText($provider, 'Return exactly: OK');
+
+        $this->assertSame('OK', $response->text);
+    }
+
 }

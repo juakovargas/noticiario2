@@ -125,7 +125,7 @@ class AiProviderController extends Controller
     /** @return string[] */
     private function providerTypes(): array
     {
-        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'mock'];
+        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'groq', 'mock'];
     }
 
     /** @return array<string,mixed> */

@@ -34,6 +34,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
             items: [
                 { label: t('Dashboard'), routeName: 'editor.dashboard' },
                 { label: t('Editorial Workbench'), routeName: 'editor.workbench' },
+                { label: t('Automation'), routeName: 'editor.automation.index' },
                 { label: t('World Map'), routeName: 'editor.world-map.index' },
             ],
         },

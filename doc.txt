@@ -467,3 +467,26 @@ Limitations:
 6. feature/media-picker-and-assets
 7. feature/live-source-checking-optional
 8. feature/privacy-consent-and-public-seo-hardening
+
+## EDITORIAL AUTOMATION CONTROL PANEL
+
+Implemented:
+- New Editor Automation page at `/editor/automation` as a central operational panel.
+- Panel groups automation by Bulletin Type (informativo) and shows schedule activation status, configured times, next execution, last execution, and quick actions.
+- Actions include schedule toggle, bulletin-level toggle for all schedules, and manual run now.
+- Relationship model remains: BulletinType (configuration), EditorialSchedule (timing + flags), EditorialScheduleRun (concrete execution), BulletinPromptRun (prompt/AI/script pipeline execution).
+- Added/ensured automation flags on schedules: `auto_create_prompt_run`, `auto_generate_prompt`, `auto_run_pipeline`, `auto_generate_ai_response`, `auto_create_script`, `auto_generate_metadata`, `auto_extract_sources`.
+- Added schedule execution tracking fields: `last_success_at`, `last_failure_at`, `last_error_message`.
+- AI spending rule preserved: automatic AI requests remain disabled by default unless explicitly enabled.
+- Future cron command path remains `php artisan noticiario:create-due-runs --run-pipeline` (server cron setup stays out of scope).
+
+Current roadmap:
+1. feature/operations-monitoring-dashboard-alerts
+2. feature/cron-scheduler-integration
+3. feature/audio-production-foundation
+4. feature/video-production-foundation
+5. feature/publishing-foundation
+6. feature/public-viewer-content-and-search
+7. feature/media-picker-and-assets
+8. feature/live-source-checking-optional
+9. feature/privacy-consent-and-public-seo-hardening

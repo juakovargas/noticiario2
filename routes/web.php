@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ScriptViewerController;
 use App\Http\Controllers\Admin\OperationAlertSettingController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\AiRequestLogController as EditorAiRequestLogController;
+use App\Http\Controllers\Editor\AutomationControlPanelController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\BulletinTypeController;
 use App\Http\Controllers\Editor\BulletinPromptRunController;
@@ -191,6 +192,11 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/world-map', [EditorWorldMapController::class, 'index'])->name('world-map.index');
 
         Route::get('/workbench', [EditorialWorkbenchController::class, 'index'])->name('workbench');
+
+        Route::get('/automation', [AutomationControlPanelController::class, 'index'])->name('automation.index');
+        Route::post('/automation/schedules/{editorialSchedule}/toggle', [AutomationControlPanelController::class, 'toggleSchedule'])->name('automation.schedules.toggle');
+        Route::post('/automation/bulletin-types/{bulletinType}/toggle', [AutomationControlPanelController::class, 'toggleBulletinType'])->name('automation.bulletin-types.toggle');
+        Route::post('/automation/schedules/{editorialSchedule}/run-now', [AutomationControlPanelController::class, 'runNow'])->name('automation.schedules.run-now');
 
         Route::resource('locations', LocationController::class)->except('show');
         Route::resource('news-categories', NewsCategoryController::class)->except('show');

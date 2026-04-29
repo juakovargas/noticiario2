@@ -2,13 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\InternalMessage;
 use App\Models\Language;
 use App\Models\User;
 use App\Support\Seo\SeoSettingsResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
-use App\Models\InternalMessage;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -31,10 +31,7 @@ class HandleInertiaRequests extends Middleware
             : null;
 
         $impersonatorId = $request->session()->get('impersonator_id');
-
-        $impersonator = $impersonatorId
-            ? User::query()->find($impersonatorId)
-            : null;
+        $impersonator = $impersonatorId ? User::query()->find($impersonatorId) : null;
 
         $availableLocales = [
             ['code' => 'en', 'name' => 'English', 'native_name' => 'English', 'flag_emoji' => '🇬🇧'],
@@ -62,12 +59,19 @@ class HandleInertiaRequests extends Middleware
         }
 
         $seoProps = app(SeoSettingsResolver::class)->safeSeoProps();
-
         $avatarUrl = $user?->avatar_url;
+        $unreadMessagesCount = 0;
+
+        if ($user && Schema::hasTable('internal_messages')) {
+            $unreadMessagesCount = InternalMessage::query()
+                ->where('recipient_id', $user->id)
+                ->whereNull('read_at')
+                ->whereNull('archived_at')
+                ->count();
+        }
 
         return [
             ...parent::share($request),
-
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -93,23 +97,21 @@ class HandleInertiaRequests extends Middleware
                         'public_url' => $user->profileImage->public_url,
                     ] : null,
                 ] : null,
-                'unreadMessagesCount' => $user ? InternalMessage::query()->where('recipient_id', $user->id)->whereNull('read_at')->whereNull('archived_at')->count() : 0,
             ],
-
+            'messages' => [
+                'unread_count' => $unreadMessagesCount,
+            ],
             'impersonation' => [
                 'active' => (bool) $impersonatorId,
                 'impersonator_id' => $impersonatorId,
                 'impersonator_name' => $impersonator?->name,
                 'current_user_name' => $user?->name,
             ],
-
             'i18n' => [
                 'locale' => app()->getLocale(),
                 'availableLocales' => $availableLocales,
             ],
-
             'seo' => $seoProps,
-
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

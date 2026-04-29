@@ -6,7 +6,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, X } from 'lucide-react';
+import { Mail, Menu, X } from 'lucide-react';
 import { PropsWithChildren, useState } from 'react';
 import { PageProps } from '@/types';
 
@@ -25,6 +25,8 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
     const user = page.props.auth.user;
     const impersonation = page.props.impersonation;
     const { t } = useTranslations();
+    const canOpenMessages = route().has?.('messages.index') ?? false;
+    const unreadMessagesCount = page.props.messages?.unread_count ?? 0;
 
     const sections: NavSection[] = [
         {
@@ -137,7 +139,15 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                             <div className="ml-auto flex items-center gap-2">
                                 <LanguageSwitcher />
                                 <ThemeSwitcher />
-                                <Button asChild variant="outline" size="sm"><Link href={route('messages.index')}>{t('Messages')} {((page.props as any).auth?.unreadMessagesCount ?? 0) > 0 ? `(${Math.min(99, (page.props as any).auth.unreadMessagesCount)}${((page.props as any).auth.unreadMessagesCount>99?'+' : '')})` : ''}</Link></Button>
+                                {canOpenMessages && (
+                                    <Button asChild variant="outline" size="sm" className="gap-2">
+                                        <Link href={route('messages.index')}>
+                                            <Mail className="h-4 w-4" />
+                                            {t('Messages')}
+                                            {unreadMessagesCount > 0 && ` (${unreadMessagesCount > 99 ? '99+' : unreadMessagesCount})`}
+                                        </Link>
+                                    </Button>
+                                )}
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={route('profile.edit', { panel: 'editor' })}>{t('Preferences')}</Link>
                                 </Button>

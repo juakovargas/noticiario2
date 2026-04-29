@@ -12,16 +12,16 @@ interface RolePermissionOption { id: number; name: string; }
 interface RoleWithPermissions { id: number; name: string; permissions: string[]; }
 interface LocaleOption { code: string; name: string; }
 interface User { id:number; name:string; email:string; is_active:boolean; roles:string[]; permissions:string[]; preferred_locale:string|null; timezone:string|null; date_format:string|null; time_format:string|null; avatar_url:string|null; initials:string; profile_image_id:number|null; }
-interface UsersEditProps { user: User; roles: RolePermissionOption[]; rolesWithPermissions: RoleWithPermissions[]; permissions: RolePermissionOption[]; localeOptions: LocaleOption[]; dateFormatOptions: string[]; timeFormatOptions: string[]; }
+interface UsersEditProps { user: User & { manager_id?: number | null }; roles: RolePermissionOption[]; rolesWithPermissions: RoleWithPermissions[]; permissions: RolePermissionOption[]; localeOptions: LocaleOption[]; dateFormatOptions: string[]; timeFormatOptions: string[]; managers: Array<{id:number;name:string;email:string}>; }
 
-interface FormData { _method:'put'; name:string; email:string; password:string; password_confirmation:string; is_active:boolean; roles:string[]; permissions:string[]; preferred_locale:string; timezone:string; date_format:string; time_format:string; profile_image:File|null; remove_avatar:boolean; }
+interface FormData { _method:'put'; name:string; email:string; password:string; password_confirmation:string; is_active:boolean; roles:string[]; permissions:string[]; preferred_locale:string; timezone:string; date_format:string; time_format:string; manager_id:string; profile_image:File|null; remove_avatar:boolean; }
 
-export default function UsersEdit({ user, roles, rolesWithPermissions, permissions, localeOptions, dateFormatOptions, timeFormatOptions }: UsersEditProps): JSX.Element {
+export default function UsersEdit({ user, roles, rolesWithPermissions, permissions, localeOptions, dateFormatOptions, timeFormatOptions, managers }: UsersEditProps): JSX.Element {
     const { t } = useTranslations();
     const { data, setData, post, processing, errors } = useForm<FormData>({
         _method: 'put', name: user.name, email: user.email, password: '', password_confirmation: '', is_active: user.is_active,
         roles: user.roles, permissions: user.permissions, preferred_locale: user.preferred_locale ?? '', timezone: user.timezone ?? '',
-        date_format: user.date_format ?? 'locale_default', time_format: user.time_format ?? '24h', profile_image: null, remove_avatar: false,
+        date_format: user.date_format ?? 'locale_default', time_format: user.time_format ?? '24h', manager_id: user.manager_id ? String(user.manager_id) : '', profile_image: null, remove_avatar: false,
     });
 
     const toggleArrayValue = (field: 'roles' | 'permissions', value: string): void => {
@@ -49,6 +49,7 @@ export default function UsersEdit({ user, roles, rolesWithPermissions, permissio
                     <div><Label htmlFor="timezone">{t('Timezone')}</Label><Input id="timezone" value={data.timezone} onChange={(e) => setData('timezone', e.target.value)} /></div>
                     <div><Label htmlFor="date_format">{t('Date format')}</Label><select id="date_format" className="w-full rounded-md border" value={data.date_format} onChange={(e)=>setData('date_format', e.target.value)}>{dateFormatOptions.map((i)=><option key={i} value={i}>{i}</option>)}</select></div>
                     <div><Label htmlFor="time_format">{t('Time format')}</Label><select id="time_format" className="w-full rounded-md border" value={data.time_format} onChange={(e)=>setData('time_format', e.target.value)}>{timeFormatOptions.map((i)=><option key={i} value={i}>{i}</option>)}</select></div>
+                    <div><Label htmlFor="manager_id">{t('Manager')}</Label><select id="manager_id" className="w-full rounded-md border" value={data.manager_id} onChange={(e)=>setData('manager_id', e.target.value)}><option value="">{t('Select manager')}</option>{managers.map((m)=><option key={m.id} value={String(m.id)}>{m.name} ({m.email})</option>)}</select><p className="text-xs text-slate-500">{t('The manager receives workflow messages when this user needs review or correction')}</p></div>
                     <div className="md:col-span-2"><Label>{t('Current profile image')}</Label><div className="mt-2 flex items-center gap-3"><UserAvatar user={user} size="md" /><span className="text-sm text-slate-500">{user.avatar_url ?? t('No profile image')}</span></div></div>
                     <div className="md:col-span-2"><Label htmlFor="profile_image">{t('Upload profile image')}</Label><Input id="profile_image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e)=>setData('profile_image', e.target.files?.[0] ?? null)} />{errors.profile_image && <p className="mt-1 text-xs text-rose-600">{errors.profile_image}</p>}<label className="mt-2 inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={data.remove_avatar} onChange={(e)=>setData('remove_avatar', e.target.checked)} />{t('Remove avatar')}</label></div>
                 </div>

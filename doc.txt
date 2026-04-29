@@ -421,3 +421,15 @@ Limitations:
 - Shared Inertia prop now exposes `messages.unread_count` safely (falls back to 0 if guest or table missing).
 - Translation duplicate-key checker script is available via `npm run check:translations`.
 - Non-production emergency logout behavior remains unchanged.
+
+## INTERNAL MESSAGES
+
+- Messages now support panel-aware layout resolution for Admin, Editor, and Viewer contexts.
+- Messages index now supports Inbox, Sent, and Archived boxes.
+- Unread header badge continues to count unread, non-archived inbox messages only.
+- Workflow recipient metadata now includes recipient_reason for manager/script_creator/admin_fallback/explicit/system scenarios.
+- Added related-link resolver with safe access behavior and null fallback when inaccessible.
+- Added admin-safe read-only script viewer route (`admin.scripts.show`) for script-related internal messages.
+- Workflow events currently wired in service layer: script rejected (existing), script approved/source rejected/AI failed/background task failed are prepared for expansion.
+- Future events are prepared for: audio generated, video generated, publication failed.
+- Limitations: internal messages are not real-time websockets; internal messages are not email notifications; some related models still lack admin-safe viewers.

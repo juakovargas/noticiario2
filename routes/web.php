@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\Admin\BackgroundTaskController;
 use App\Http\Controllers\Admin\OperationsDashboardController;
 use App\Http\Controllers\Admin\OperationalEventController;
+use App\Http\Controllers\Admin\ScriptViewerController;
 use App\Http\Controllers\Admin\OperationAlertSettingController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\AiRequestLogController as EditorAiRequestLogController;
@@ -116,6 +117,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::get('/world-map', [AdminWorldMapController::class, 'index'])->name('world-map.index');
 
         Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
+
+        Route::get('/scripts/{script}', [ScriptViewerController::class, 'show'])->name('scripts.show');
 
         Route::resource('users', UserController::class)
             ->middleware([

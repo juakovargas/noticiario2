@@ -21,6 +21,7 @@ interface UserItem {
     timezone: string | null;
     avatar_url: string | null;
     initials: string;
+    manager?: { id:number; name:string; email:string } | null;
 }
 
 interface UsersIndexProps {
@@ -71,6 +72,7 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                 <th className="px-2 pb-3">{t('Timezone')}</th>
                                 <th className="px-2 pb-3">{t('Status')}</th>
                                 <th className="px-2 pb-3">{t('Roles')}</th>
+                                <th className="px-2 pb-3">{t('Manager')}</th>
                                 <th className="px-2 pb-3">{t('Created at')}</th>
                                 <th className="px-2 pb-3 text-right">{t('Actions')}</th>
                             </tr>
@@ -98,6 +100,7 @@ export default function UsersIndex({ users }: UsersIndexProps): JSX.Element {
                                             </div>
                                         ) : t('No roles')}
                                     </td>
+                                    <td className="px-2 py-3 text-slate-600">{user.manager ? `${user.manager.name} (${user.manager.email})` : t('No manager')}</td>
                                     <td className="px-2 py-3 text-slate-600">{formatDateTime(user.created_at)}</td>
                                     <td className="px-2 py-3">
                                         <div className="flex justify-end gap-2">

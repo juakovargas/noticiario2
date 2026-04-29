@@ -1,5 +1,12 @@
 export const translations: Record<string, Record<string, string>> = {
     en: {
+        'The request failed before a response was saved': 'The request failed before a response was saved',
+        'Check provider configuration, model, limits and numeric options': 'Check provider configuration, model, limits and numeric options',
+        'Open editor AI request log': 'Open editor AI request log',
+        'AI request details': 'AI request details',
+        'Safe metadata': 'Safe metadata',
+        'Related prompt run': 'Related prompt run',
+        'You do not have permission to view this AI request log': 'You do not have permission to view this AI request log',
 
         Groq: 'Groq',
         'Groq provider': 'Groq provider',
@@ -1113,6 +1120,13 @@ export const translations: Record<string, Record<string, string>> = {
 },
 
     es: {
+        'The request failed before a response was saved': 'La solicitud falló antes de guardar una respuesta',
+        'Check provider configuration, model, limits and numeric options': 'Revisa la configuración del proveedor, el modelo, los límites y las opciones numéricas',
+        'Open editor AI request log': 'Abrir registro de solicitud de IA del editor',
+        'AI request details': 'Detalles de la solicitud de IA',
+        'Safe metadata': 'Metadatos seguros',
+        'Related prompt run': 'Ejecución de prompt relacionada',
+        'You do not have permission to view this AI request log': 'No tienes permisos para ver este registro de solicitud de IA',
 
         Groq: 'Groq',
         'Groq provider': 'Proveedor Groq',
@@ -2228,6 +2242,13 @@ export const translations: Record<string, Record<string, string>> = {
         'Selected': 'Seleccionado',
 },
     fr: {
+        'The request failed before a response was saved': "La requête a échoué avant qu'une réponse soit enregistrée",
+        'Check provider configuration, model, limits and numeric options': 'Vérifiez la configuration du fournisseur, le modèle, les limites et les options numériques',
+        'Open editor AI request log': 'Ouvrir le journal de requête IA éditeur',
+        'AI request details': 'Détails de la requête IA',
+        'Safe metadata': 'Métadonnées sûres',
+        'Related prompt run': 'Exécution de prompt liée',
+        'You do not have permission to view this AI request log': "Vous n'avez pas la permission de voir ce journal de requête IA",
 
         Groq: 'Groq',
         'Groq provider': 'Fournisseur Groq',

@@ -27,9 +27,15 @@ class OpenAiCompatibleClientTest extends TestCase
             'api_key_env_name' => 'OPENAI_API_KEY',
             'default_model' => 'gpt-4o-mini',
             'timeout_seconds' => 30,
+            'temperature' => '0.40',
+            'max_tokens' => '3000',
         ]);
 
         $response = (new OpenAiCompatibleClient())->generateText($provider, 'Prompt');
+        Http::assertSent(function ($request) {
+            $data = $request->data();
+            return is_float($data['temperature']) && is_int($data['max_tokens']);
+        });
 
         $this->assertSame('Hello world', $response->text);
         $this->assertSame(10, $response->inputTokens);
@@ -83,6 +89,25 @@ class OpenAiCompatibleClientTest extends TestCase
         $response = (new OpenAiCompatibleClient())->generateText($provider, 'Return exactly: OK');
 
         $this->assertSame('OK', $response->text);
+    }
+
+    public function test_string_numeric_values_are_normalized_for_payload(): void
+    {
+        putenv('GROQ_API_KEY=test-key');
+        Http::fake(['*' => Http::response(['choices' => [['message' => ['content' => 'OK']]]], 200)]);
+
+        $provider = new AiProvider([
+            'provider_type' => 'groq',
+            'base_url' => 'https://api.groq.com/openai/v1',
+            'api_key_env_name' => 'GROQ_API_KEY',
+            'default_model' => 'llama-3.3-70b-versatile',
+            'timeout_seconds' => '60',
+            'temperature' => '0.40',
+            'max_tokens' => '3000',
+        ]);
+
+        (new OpenAiCompatibleClient())->generateText($provider, 'Prompt', ['temperature' => '0.55', 'max_tokens' => '2000']);
+        Http::assertSent(fn ($request) => is_float($request->data()['temperature']) && is_int($request->data()['max_tokens']));
     }
 
 }

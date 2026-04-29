@@ -6,6 +6,7 @@ use App\Models\AiProvider;
 use App\Services\Ai\Contracts\AiClient;
 use App\Services\Ai\Data\AiResponseData;
 use App\Services\Ai\Exceptions\AiProviderException;
+use App\Services\Ai\Support\AiRequestOptionsNormalizer;
 use Illuminate\Support\Facades\Http;
 
 class OpenAiCompatibleClient implements AiClient
@@ -30,9 +31,16 @@ class OpenAiCompatibleClient implements AiClient
                 ['role' => 'system', 'content' => 'You are a professional editorial assistant.'],
                 ['role' => 'user', 'content' => $prompt],
             ],
-            'temperature' => $options['temperature'] ?? $provider->temperature,
-            'max_tokens' => $options['max_tokens'] ?? $provider->max_tokens,
         ];
+        $requestOptions = AiRequestOptionsNormalizer::normalize([
+            'temperature' => $options['temperature'] ?? $provider->temperatureForRequest(),
+            'max_tokens' => $options['max_tokens'] ?? $provider->maxTokensForRequest(),
+            'top_p' => $options['top_p'] ?? null,
+            'frequency_penalty' => $options['frequency_penalty'] ?? null,
+            'presence_penalty' => $options['presence_penalty'] ?? null,
+            'stream' => $options['stream'] ?? null,
+        ]);
+        $payload = [...$payload, ...$requestOptions];
 
         $headers = [
             'Authorization' => 'Bearer '.$apiKey,
@@ -45,9 +53,9 @@ class OpenAiCompatibleClient implements AiClient
         }
 
         $startedAt = microtime(true);
-        $response = Http::timeout((int) ($provider->timeout_seconds ?: 60))
+        $response = Http::timeout($provider->timeoutSecondsForRequest())
             ->withHeaders($headers)
-            ->post($baseUrl.'/chat/completions', array_filter($payload, fn ($v) => $v !== null));
+            ->post($baseUrl.'/chat/completions', $payload);
         $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
 
         if (! $response->successful()) {

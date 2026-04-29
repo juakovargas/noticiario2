@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\OperationsDashboardController;
 use App\Http\Controllers\Admin\OperationalEventController;
 use App\Http\Controllers\Admin\OperationAlertSettingController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
+use App\Http\Controllers\Editor\AiRequestLogController as EditorAiRequestLogController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\BulletinTypeController;
 use App\Http\Controllers\Editor\BulletinPromptRunController;
@@ -230,6 +231,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
 
         Route::resource('editorial-templates', EditorialTemplateController::class);
         Route::resource('ai-prompt-templates', AiPromptTemplateController::class);
+        Route::get('/ai-request-logs/{aiRequestLog}', [EditorAiRequestLogController::class, 'show'])->name('ai-request-logs.show');
         Route::resource('editorial-requests', EditorialRequestController::class);
         Route::post('/editorial-requests/{editorialRequest}/archive', [EditorialRequestController::class, 'archive'])->name('editorial-requests.archive');
         Route::post('/editorial-requests/{editorialRequest}/restore', [EditorialRequestController::class, 'restore'])->name('editorial-requests.restore');

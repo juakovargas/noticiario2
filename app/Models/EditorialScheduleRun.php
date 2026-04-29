@@ -53,6 +53,11 @@ class EditorialScheduleRun extends Model
         return $this->belongsTo(EditorialSchedule::class, 'editorial_schedule_id');
     }
 
+    public function editorialSchedule(): BelongsTo
+    {
+        return $this->belongsTo(EditorialSchedule::class, 'editorial_schedule_id');
+    }
+
     public function edition(): BelongsTo
     {
         return $this->belongsTo(Edition::class);

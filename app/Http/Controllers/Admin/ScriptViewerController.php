@@ -12,7 +12,13 @@ class ScriptViewerController extends Controller
     public function show(Script $script): Response
     {
         return Inertia::render('Admin/Scripts/Show', [
-            'script' => $script->load('bulletinPromptRun.createdBy:id,name,email'),
+            'script' => $script->load([
+                'edition:id,name,language',
+                'bulletinPromptRun:id,title,status,created_by',
+                'bulletinPromptRun.createdBy:id,name,email',
+                'reviewedBy:id,name,email',
+            ]),
+            'returnToMessages' => request()->query('from') === 'messages',
         ]);
     }
 }

@@ -27,6 +27,10 @@ interface ReviewItem {
 interface ScriptData {
     id: number;
     title: string;
+    final_title?: string | null;
+    intro?: string | null;
+    body?: string | null;
+    outro?: string | null;
     status: string;
     review_status: string;
     review_notes: string | null;
@@ -126,6 +130,18 @@ export default function Review({ script, reviewStatuses, verificationStatuses, r
                         <Button asChild variant="outline"><Link href={route('editor.scripts.show', script.id)}>{t('Back to script')}</Link></Button>
                         <Button asChild variant="secondary"><Link href={route('editor.scripts.edit', script.id)}>{t('Edit script')}</Link></Button>
                     </div>
+                </CardContent>
+            </Card>
+
+
+            <Card className="mb-4">
+                <CardHeader><CardTitle>{t('Script content')}</CardTitle></CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                    <p><strong>{t('Final title')}:</strong> {script.final_title || script.title}</p>
+                    <p><strong>{t('Intro')}:</strong> {script.intro || '-'}</p>
+                    <p><strong>{t('Body')}:</strong> {script.body || '-'}</p>
+                    <p><strong>{t('Outro')}:</strong> {script.outro || '-'}</p>
+                    <p className="text-xs text-slate-500">{t('The manager will be notified when this script is rejected')}</p>
                 </CardContent>
             </Card>
 

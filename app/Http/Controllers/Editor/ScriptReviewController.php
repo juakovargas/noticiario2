@@ -7,6 +7,7 @@ use App\Models\Script;
 use App\Models\ScriptReviewItem;
 use App\Models\SourceReference;
 use App\Services\EditorialReview\ScriptReviewItemGenerator;
+use App\Services\Messages\InternalMessageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ use Inertia\Response;
 
 class ScriptReviewController extends Controller
 {
-    public function __construct(private readonly ScriptReviewItemGenerator $generator)
+    public function __construct(private readonly ScriptReviewItemGenerator $generator, private readonly InternalMessageService $messageService)
     {
     }
 
@@ -43,6 +44,10 @@ class ScriptReviewController extends Controller
                 'rejection_reason' => $script->rejection_reason,
                 'language' => $script->language,
                 'estimated_duration_seconds' => $script->estimated_duration_seconds,
+                'final_title' => $script->final_title,
+                'intro' => $script->intro,
+                'body' => $script->body,
+                'outro' => $script->outro,
                 'edition' => $script->edition,
                 'reviewed_at' => $script->reviewed_at?->toDateTimeString(),
                 'approved_at' => $script->approved_at?->toDateTimeString(),
@@ -226,6 +231,8 @@ class ScriptReviewController extends Controller
         }
 
         $script->update($attributes);
+
+        $this->messageService->sendScriptRejected($script->fresh(['bulletinPromptRun.createdBy.manager']), $request->user(), $data['rejection_reason']);
 
         return back()->with('success', 'Script rejected.');
     }

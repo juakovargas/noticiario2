@@ -103,6 +103,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                             <div className="ml-auto flex items-center gap-2">
                                 <LanguageSwitcher />
                                 <ThemeSwitcher />
+                                <Button asChild variant="outline" size="sm"><Link href={route('messages.index')}>{t('Messages')} {((page.props as any).auth?.unreadMessagesCount ?? 0) > 0 ? `(${Math.min(99, (page.props as any).auth.unreadMessagesCount)}${((page.props as any).auth.unreadMessagesCount>99?'+' : '')})` : ''}</Link></Button>
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={route('profile.edit', { panel: 'admin' })}>{t('Preferences')}</Link>
                                 </Button>

@@ -77,6 +77,7 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                     <div className="flex items-center gap-2 md:gap-3">
                         <LanguageSwitcher />
                         <ThemeSwitcher />
+                                <Button asChild variant="outline" size="sm"><Link href={route('messages.index')}>{t('Messages')} {((page.props as any).auth?.unreadMessagesCount ?? 0) > 0 ? `(${Math.min(99, (page.props as any).auth.unreadMessagesCount)}${((page.props as any).auth.unreadMessagesCount>99?'+' : '')})` : ''}</Link></Button>
                         <div className="hidden items-center gap-2 md:flex">
                             <UserAvatar user={page.props.auth.user} size="sm" />
                             <p className="text-sm text-slate-600 dark:text-slate-300">{page.props.auth.user?.name}</p>

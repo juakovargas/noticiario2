@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Ai\Contracts\LaravelAiSdkGateway as LaravelAiSdkGatewayContract;
+use App\Services\Ai\LaravelAiSdkGateway;
 use App\Support\Seo\SeoSettingsResolver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
@@ -16,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(LaravelAiSdkGatewayContract::class, LaravelAiSdkGateway::class);
     }
 
     /**

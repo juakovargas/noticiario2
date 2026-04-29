@@ -4,15 +4,21 @@ namespace App\Services\Ai;
 
 use App\Data\AiResponse;
 use App\Models\AiProvider;
+use App\Services\Ai\Clients\LaravelAiSdkClient;
 use App\Services\Ai\Clients\OllamaClient;
 use App\Services\Ai\Clients\OpenAiCompatibleClient;
 use App\Services\Ai\Contracts\AiClient;
+use App\Services\Ai\Contracts\LaravelAiSdkGateway;
 use App\Services\Ai\Data\AiResponseData;
 use App\Services\Ai\Exceptions\AiProviderException;
 use RuntimeException;
 
 class AiClientManager
 {
+    public function __construct(private readonly LaravelAiSdkGateway $laravelAiSdkGateway)
+    {
+    }
+
     public function resolve(AiProvider $provider): AiClientInterface
     {
         if ($provider->provider_type === 'mock') {
@@ -29,6 +35,10 @@ class AiClientManager
 
     private function resolveTextClient(AiProvider $provider): AiClient
     {
+        if ($provider->client_driver === 'laravel_ai') {
+            return new LaravelAiSdkClient($this->laravelAiSdkGateway);
+        }
+
         return match ($provider->provider_type) {
             'openai', 'openrouter', 'custom_openai_compatible' => new OpenAiCompatibleClient(),
             'ollama' => new OllamaClient(),

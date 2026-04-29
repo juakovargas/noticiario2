@@ -84,6 +84,7 @@ class AiProviderController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('ai_providers', 'slug')->ignore($provider?->id)],
             'provider_type' => ['required', Rule::in($this->providerTypes())],
+            'client_driver' => ['nullable', Rule::in(['custom', 'laravel_ai'])],
             'base_url' => ['nullable', 'url'],
             'api_key_env_name' => ['nullable', 'string', 'max:255'],
             'default_model' => ['nullable', 'string', 'max:255'],
@@ -107,6 +108,7 @@ class AiProviderController extends Controller
     {
         $data['is_active'] = $request->boolean('is_active', true);
         $data['is_default'] = $request->boolean('is_default', false);
+        $data['client_driver'] = $data['client_driver'] ?? 'custom';
 
         return $data;
     }

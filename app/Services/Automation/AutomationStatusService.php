@@ -22,7 +22,8 @@ class AutomationStatusService
                 'language:id,name,code',
                 'location:id,name',
                 'newsCategory:id,name',
-                'schedules' => fn ($q) => $q->orderBy('run_time')->orderBy('scheduled_time'),
+                'schedules' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),
+                'primarySchedule',
             ])
             ->get()
             ->map(function (BulletinType $bulletinType) use ($hasActiveProvider): array {
@@ -41,6 +42,7 @@ class AutomationStatusService
                     'active_schedules_count' => $schedules->where('is_active', true)->count(),
                     'total_schedules_count' => $schedules->count(),
                     'schedules' => $schedules->map(fn (EditorialSchedule $schedule) => $this->getScheduleStatus($schedule))->values(),
+                    'primary_schedule' => $bulletinType->primarySchedule ? $this->getScheduleStatus($bulletinType->primarySchedule) : null,
                     'latest_execution' => $latestExecution,
                     'needs_manual_attention' => count($attentionReasons) > 0,
                     'attention_reasons' => array_values(array_unique($attentionReasons)),
@@ -132,7 +134,7 @@ class AutomationStatusService
         $reasons = [];
 
         if ($schedules->isEmpty()) {
-            $reasons[] = 'no_schedules_configured';
+            $reasons[] = $bulletinType->default_schedule_time || $bulletinType->default_run_time ? 'schedule_not_synchronized' : 'missing_schedule';
         }
 
         foreach ($schedules as $schedule) {

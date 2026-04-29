@@ -25,6 +25,15 @@ export default function Form({ bulletinType, locations = [], categories = [], la
         target_duration_seconds: bulletinType?.target_duration_seconds?.toString() ?? '',
         default_schedule_time: bulletinType?.default_schedule_time?.slice(0, 5) ?? '',
         default_timezone: bulletinType?.default_timezone ?? '',
+        default_run_frequency: bulletinType?.default_run_frequency ?? 'daily',
+        default_run_time: bulletinType?.default_run_time?.slice(0, 5) ?? bulletinType?.default_schedule_time?.slice(0, 5) ?? '',
+        default_run_days: bulletinType?.default_run_days ?? [],
+        default_schedule_is_active: bulletinType?.default_schedule_is_active ?? false,
+        default_auto_run_pipeline: bulletinType?.default_auto_run_pipeline ?? false,
+        default_auto_generate_ai_response: bulletinType?.default_auto_generate_ai_response ?? false,
+        default_auto_create_script: bulletinType?.default_auto_create_script ?? true,
+        default_auto_generate_metadata: bulletinType?.default_auto_generate_metadata ?? true,
+        default_auto_extract_sources: bulletinType?.default_auto_extract_sources ?? true,
         coverage_mode: bulletinType?.coverage_mode ?? 'previous_period',
         coverage_starts_offset_minutes: bulletinType?.coverage_starts_offset_minutes?.toString() ?? '',
         coverage_ends_offset_minutes: bulletinType?.coverage_ends_offset_minutes?.toString() ?? '',
@@ -63,6 +72,12 @@ export default function Form({ bulletinType, locations = [], categories = [], la
             <div className="grid gap-4 md:grid-cols-2"><div><Label>{t('Language')}</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.language_id} onChange={(e)=>form.setData('language_id', e.target.value)}><option value="">{t('Any')}</option>{languages.map((x:any)=><option key={x.id} value={x.id}>{x.name} ({x.code})</option>)}</select></div><div><Label>{t('Default prompt profile')}</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.default_prompt_profile_id} onChange={(e)=>form.setData('default_prompt_profile_id', e.target.value)}><option value="">{t('Any')}</option>{promptProfiles.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></div></div>
             <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Edition type')}</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.edition_type} onChange={(e)=>form.setData('edition_type', e.target.value)}><option value="">{t('Any')}</option>{editionTypes.map((x:string)=><option key={x} value={x}>{x}</option>)}</select></div><div><Label>{t('Target duration')}</Label><Input type="number" value={form.data.target_duration_seconds} onChange={(e)=>form.setData('target_duration_seconds', e.target.value)} /></div><div><Label>{t('Timezone')}</Label><Input value={form.data.default_timezone} onChange={(e)=>form.setData('default_timezone', e.target.value)} /></div></div>
             <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Time')}</Label><Input type="time" value={form.data.default_schedule_time} onChange={(e)=>form.setData('default_schedule_time', e.target.value)} /></div><div><Label>{t('Sort order')}</Label><Input type="number" value={form.data.sort_order} onChange={(e)=>form.setData('sort_order', Number(e.target.value))} /></div><label className="flex items-center gap-2 pt-7"><input type="checkbox" checked={form.data.is_active} onChange={(e)=>form.setData('is_active', e.target.checked)} />{t('Active')}</label></div>
+
+
+            <div className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">{t('Recurring schedule')}</h3>
+            <div className="grid gap-4 md:grid-cols-3"><div><Label>{t('Frequency')}</Label><select className="w-full rounded-md border border-slate-300 px-3 py-2" value={form.data.default_run_frequency} onChange={(e)=>form.setData('default_run_frequency', e.target.value)}>{['daily','weekdays','weekends','selected_days','monthly','custom'].map((x:string)=><option key={x} value={x}>{t(x === 'daily' ? 'Daily' : x === 'weekdays' ? 'Weekdays' : x === 'weekends' ? 'Weekends' : x === 'selected_days' ? 'Selected days' : x === 'monthly' ? 'Monthly' : 'Custom')}</option>)}</select></div><div><Label>{t('Run time')}</Label><Input type="time" value={form.data.default_run_time} onChange={(e)=>form.setData('default_run_time', e.target.value)} /></div><div><Label>{t('Timezone')}</Label><Input value={form.data.default_timezone} onChange={(e)=>form.setData('default_timezone', e.target.value)} /></div></div>
+            <div className="flex flex-wrap gap-4"><label><input type="checkbox" checked={form.data.default_schedule_is_active} onChange={(e)=>form.setData('default_schedule_is_active', e.target.checked)} /> {t('Active by default')}</label><label><input type="checkbox" checked={form.data.default_auto_run_pipeline} onChange={(e)=>form.setData('default_auto_run_pipeline', e.target.checked)} /> {t('Auto run pipeline')}</label><label><input type="checkbox" checked={form.data.default_auto_generate_ai_response} onChange={(e)=>form.setData('default_auto_generate_ai_response', e.target.checked)} /> {t('Auto generate AI response')}</label></div>
+            </div>
 
             <div className="space-y-3 rounded-lg border p-4">
                 <h3 className="font-semibold">{t('Coverage and prompt timing')}</h3>

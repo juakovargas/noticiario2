@@ -194,9 +194,10 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/workbench', [EditorialWorkbenchController::class, 'index'])->name('workbench');
 
         Route::get('/automation', [AutomationControlPanelController::class, 'index'])->name('automation.index');
+        Route::post('/automation/bulletin-types/{bulletinType}/sync-schedule', [AutomationControlPanelController::class, 'syncBulletinTypeSchedule'])->name('automation.bulletin-types.sync-schedule');
+        Route::post('/automation/sync-schedules', [AutomationControlPanelController::class, 'syncSchedules'])->name('automation.sync-schedules');
         Route::post('/automation/schedules/{editorialSchedule}/toggle', [AutomationControlPanelController::class, 'toggleSchedule'])->name('automation.schedules.toggle');
-        Route::post('/automation/bulletin-types/{bulletinType}/toggle', [AutomationControlPanelController::class, 'toggleBulletinType'])->name('automation.bulletin-types.toggle');
-        Route::post('/automation/schedules/{editorialSchedule}/run-now', [AutomationControlPanelController::class, 'runNow'])->name('automation.schedules.run-now');
+                Route::post('/automation/schedules/{editorialSchedule}/run-now', [AutomationControlPanelController::class, 'runNow'])->name('automation.schedules.run-now');
         Route::post('/automation/schedules/{editorialSchedule}/recalculate-next-run', [AutomationControlPanelController::class, 'recalculateNextRun'])->name('automation.schedules.recalculate-next-run');
 
         Route::resource('locations', LocationController::class)->except('show');

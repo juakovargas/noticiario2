@@ -26,7 +26,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Index', [
             'users' => User::query()
-                ->with(['roles:id,name', 'profileImage'])
+                ->with(['roles:id,name', 'profileImage', 'manager:id,name,email'])
                 ->latest()
                 ->paginate(10)
                 ->through(fn (User $user) => [
@@ -41,6 +41,7 @@ class UserController extends Controller
                     'timezone' => $user->timezone,
                     'avatar_url' => $user->avatar_url,
                     'initials' => $user->initials,
+                    'manager' => $user->manager ? ['id'=>$user->manager->id,'name'=>$user->manager->name,'email'=>$user->manager->email] : null,
                 ]),
         ]);
     }
@@ -70,6 +71,7 @@ class UserController extends Controller
             'timezone' => $data['timezone'] ?? null,
             'date_format' => $data['date_format'] ?? null,
             'time_format' => $data['time_format'] ?? null,
+            'manager_id' => $data['manager_id'] ?? null,
         ]);
 
         $profileImageFile = $request->file('profile_image') ?? $request->file('avatar');
@@ -105,8 +107,11 @@ class UserController extends Controller
                 'time_format' => $user->time_format,
                 'avatar_url' => $user->avatar_url,
                 'initials' => $user->initials,
+                    'manager' => $user->manager ? ['id'=>$user->manager->id,'name'=>$user->manager->name,'email'=>$user->manager->email] : null,
                 'profile_image_id' => $user->profile_image_id,
+                'manager_id' => $user->manager_id,
             ],
+            'managers' => User::query()->whereKeyNot($user->id)->orderBy('name')->get(['id','name','email']),
         ]);
     }
 
@@ -128,8 +133,11 @@ class UserController extends Controller
                 'time_format' => $user->time_format,
                 'avatar_url' => $user->avatar_url,
                 'initials' => $user->initials,
+                    'manager' => $user->manager ? ['id'=>$user->manager->id,'name'=>$user->manager->name,'email'=>$user->manager->email] : null,
                 'profile_image_id' => $user->profile_image_id,
+                'manager_id' => $user->manager_id,
             ],
+            'managers' => User::query()->whereKeyNot($user->id)->orderBy('name')->get(['id','name','email']),
             'roles' => Role::query()->select('id', 'name')->orderBy('name')->get(),
             'rolesWithPermissions' => $this->rolesWithPermissions(),
             'permissions' => Permission::query()->select('id', 'name')->orderBy('name')->get(),
@@ -168,6 +176,7 @@ class UserController extends Controller
             'timezone' => $data['timezone'] ?? null,
             'date_format' => $data['date_format'] ?? null,
             'time_format' => $data['time_format'] ?? null,
+            'manager_id' => $data['manager_id'] ?? null,
         ];
 
         if (array_key_exists('profile_image_id', $data)) {

@@ -17,6 +17,8 @@ class BulletinPromptRun extends Model
         'prompt_profile_id',
         'edition_id',
         'script_id',
+        'editorial_schedule_id',
+        'editorial_schedule_run_id',
         'created_by',
         'title',
         'scheduled_for',
@@ -65,6 +67,16 @@ class BulletinPromptRun extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editorialSchedule(): BelongsTo
+    {
+        return $this->belongsTo(EditorialSchedule::class);
+    }
+
+    public function editorialScheduleRun(): BelongsTo
+    {
+        return $this->belongsTo(EditorialScheduleRun::class);
     }
 
     public function sourceReferences(): HasMany

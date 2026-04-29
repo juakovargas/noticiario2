@@ -6,7 +6,6 @@ use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
 use App\Services\PromptGeneration\BulletinPromptRunService;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class EditorialScheduleRunner
 {
@@ -14,19 +13,19 @@ class EditorialScheduleRunner
     {
     }
 
-    public function createDueRuns(Carbon $now = null, array $options = []): array
+    public function createDueRuns(?Carbon $now = null, array $options = []): array
     {
         $now ??= now();
-        $limit = (int) ($options['limit'] ?? 100);
+        $dryRun = (bool) ($options['dry_run'] ?? false);
 
         $dueSchedules = EditorialSchedule::query()
             ->with('bulletinType')
             ->where('is_active', true)
-            ->when(isset($options['schedule_id']), fn ($q) => $q->whereKey($options['schedule_id']))
+            ->when(isset($options['schedule_id']), fn ($q) => $q->whereKey((int) $options['schedule_id']))
             ->whereNotNull('next_run_at')
             ->where('next_run_at', '<=', $now)
             ->orderBy('next_run_at')
-            ->limit($limit)
+            ->limit((int) ($options['limit'] ?? 50))
             ->get();
 
         $summary = [
@@ -34,145 +33,147 @@ class EditorialScheduleRunner
             'runs_created' => 0,
             'prompt_runs_created' => 0,
             'prompts_generated' => 0,
-            'skipped_duplicates' => 0,
-            'skipped' => 0,
+            'duplicates_skipped' => 0,
             'failed' => 0,
-            'items' => [],
+            'dry_run' => $dryRun,
+            'messages' => [],
         ];
 
         foreach ($dueSchedules as $schedule) {
             $scheduledFor = Carbon::parse($schedule->next_run_at)->utc()->startOfMinute();
 
             try {
-                $result = $this->createRunForSchedule($schedule, $scheduledFor, $options);
-                $summary['runs_created'] += (int) $result['run_created'];
-                $summary['prompt_runs_created'] += (int) $result['prompt_run_created'];
-                $summary['prompts_generated'] += (int) $result['prompt_generated'];
-                $summary['skipped_duplicates'] += (int) $result['duplicate'];
-                $summary['skipped'] += (int) $result['skipped'];
-                $summary['items'][] = $result;
+                $run = $this->createRunForSchedule($schedule, $scheduledFor, $options);
+                $isDuplicate = $run->wasRecentlyCreated === false && $run->scheduled_for?->equalTo($scheduledFor);
+
+                $summary['runs_created'] += $run->wasRecentlyCreated ? 1 : 0;
+                $summary['duplicates_skipped'] += $isDuplicate ? 1 : 0;
+                $summary['prompt_runs_created'] += $run->bulletin_prompt_run_id ? 1 : 0;
+                $summary['prompts_generated'] += $run->status === 'prompt_generated' ? 1 : 0;
             } catch (\Throwable $e) {
                 $summary['failed']++;
-                $summary['items'][] = ['schedule_id' => $schedule->id, 'status' => 'failed', 'message' => $e->getMessage()];
+                $summary['messages'][] = sprintf('schedule %d failed: %s', $schedule->id, $e->getMessage());
             }
         }
 
         return $summary;
     }
 
-    public function createRunForSchedule(EditorialSchedule $schedule, Carbon $scheduledFor, array $options = []): array
+    public function createRunForSchedule(EditorialSchedule $schedule, Carbon $scheduledFor, array $options = []): EditorialScheduleRun
     {
-        if (! $schedule->is_active) {
-            return ['schedule_id' => $schedule->id, 'status' => 'skipped', 'skipped' => 1, 'run_created' => 0, 'prompt_run_created' => 0, 'prompt_generated' => 0, 'duplicate' => 0];
-        }
-
         $existing = EditorialScheduleRun::query()
             ->where('editorial_schedule_id', $schedule->id)
             ->where('scheduled_for', $scheduledFor)
             ->first();
 
         if ($existing) {
-            return ['schedule_id' => $schedule->id, 'status' => 'duplicate', 'run_id' => $existing->id, 'skipped' => 0, 'run_created' => 0, 'prompt_run_created' => 0, 'prompt_generated' => 0, 'duplicate' => 1];
+            return $existing;
         }
 
         if (($options['dry_run'] ?? false) === true) {
-            return ['schedule_id' => $schedule->id, 'status' => 'dry_run', 'scheduled_for' => $scheduledFor->toDateTimeString(), 'skipped' => 0, 'run_created' => 0, 'prompt_run_created' => 0, 'prompt_generated' => 0, 'duplicate' => 0];
+            return new EditorialScheduleRun([
+                'editorial_schedule_id' => $schedule->id,
+                'scheduled_for' => $scheduledFor,
+                'status' => 'created',
+            ]);
         }
 
         $run = EditorialScheduleRun::query()->create([
             'editorial_schedule_id' => $schedule->id,
             'scheduled_for' => $scheduledFor,
             'status' => 'created',
+            'started_at' => now(),
         ]);
-
-        $promptRun = null;
-        $promptGenerated = false;
-        $promptRunCreated = false;
 
         if (($schedule->auto_create_prompt_run ?? true) && $schedule->bulletinType) {
             $promptRun = $this->promptRunService->createFromBulletinType($schedule->bulletinType, null, $scheduledFor->toIso8601String());
-            $promptRunCreated = true;
 
-            $run->update([
+            $promptRun->forceFill([
+                'editorial_schedule_id' => $schedule->id,
+                'editorial_schedule_run_id' => $run->id,
+            ])->save();
+
+            $run->forceFill([
                 'bulletin_prompt_run_id' => $promptRun->id,
                 'status' => 'prompt_run_created',
-                'metadata' => array_merge((array) $run->metadata, ['created_from_schedule_runner' => true]),
-            ]);
+            ])->save();
 
             if (($options['generate_prompts'] ?? false) || ($schedule->auto_generate_prompt ?? true)) {
                 $this->promptRunService->generatePrompt($promptRun);
-                $promptGenerated = true;
-                $run->update(['status' => 'prompt_generated']);
+                $run->forceFill(['status' => 'prompt_generated'])->save();
             }
         }
 
         $schedule->forceFill([
             'last_run_at' => $scheduledFor,
-            'next_run_at' => $this->calculateNextRunAt($schedule, $scheduledFor->copy()->addMinute()),
+            'next_run_at' => $schedule->run_frequency === 'once'
+                ? null
+                : $this->calculateNextRunAt($schedule, $scheduledFor->copy()->addMinute()),
         ])->save();
 
-        return [
-            'schedule_id' => $schedule->id,
-            'status' => 'created',
-            'run_id' => $run->id,
-            'run_created' => 1,
-            'prompt_run_created' => $promptRunCreated ? 1 : 0,
-            'prompt_generated' => $promptGenerated ? 1 : 0,
-            'duplicate' => 0,
-            'skipped' => 0,
-        ];
+        return $run->refresh();
     }
 
-    public function calculateNextRunAt(EditorialSchedule $schedule, Carbon $from = null): ?Carbon
+    public function calculateNextRunAt(EditorialSchedule $schedule, ?Carbon $from = null): ?Carbon
     {
         $timezone = $schedule->timezone ?: config('app.timezone');
         $fromLocal = ($from ?? now())->copy()->timezone($timezone);
+        $runTime = strlen((string) ($schedule->run_time ?: '08:00')) === 5 ? ($schedule->run_time.':00') : ($schedule->run_time ?: '08:00:00');
 
-        $frequency = $schedule->run_frequency ?: $schedule->frequency_type ?: 'daily';
-        $time = $schedule->run_time ?: $schedule->scheduled_time ?: '08:00:00';
-
-        $base = $fromLocal->copy();
-        $base->setTimeFromTimeString(strlen($time) === 5 ? $time.':00' : $time);
-
-        return match ($frequency) {
-            'once' => $schedule->scheduled_date
-                ? Carbon::parse($schedule->scheduled_date->toDateString().' '.$base->format('H:i:s'), $timezone)->utc()
-                : $schedule->next_run_at,
-            'weekly' => $this->nextWeekly($schedule, $base, $timezone),
-            'monthly' => $this->nextMonthly($base),
-            default => $this->nextDaily($base),
+        return match ($schedule->run_frequency ?: 'daily') {
+            'once' => null,
+            'weekly' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
+            'monthly' => $this->nextMonthly($schedule, $fromLocal, $runTime)->utc(),
+            'custom' => $schedule->next_run_at,
+            default => $this->nextDaily($fromLocal, $runTime)->utc(),
         };
     }
 
-    private function nextDaily(Carbon $base): Carbon
+    public function isDue(EditorialSchedule $schedule, ?Carbon $now = null): bool
     {
-        return $base->isFuture() ? $base->utc() : $base->addDay()->utc();
+        $now ??= now();
+
+        return (bool) $schedule->is_active && $schedule->next_run_at !== null && Carbon::parse($schedule->next_run_at)->lessThanOrEqualTo($now);
     }
 
-    private function nextMonthly(Carbon $base): Carbon
+    private function nextDaily(Carbon $fromLocal, string $runTime): Carbon
     {
-        return $base->isFuture() ? $base->utc() : $base->addMonthNoOverflow()->utc();
+        $candidate = $fromLocal->copy()->setTimeFromTimeString($runTime);
+
+        return $candidate->greaterThan($fromLocal) ? $candidate : $candidate->addDay();
     }
 
-    private function nextWeekly(EditorialSchedule $schedule, Carbon $base, string $timezone): Carbon
+    private function nextWeekly(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): Carbon
     {
-        $days = collect($schedule->run_days ?: $schedule->weekdays ?: ['mon'])
-            ->map(fn ($d) => strtolower((string) $d))
-            ->map(fn ($d) => ['sun' => 0, 'mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6][$d] ?? null)
-            ->filter(fn ($d) => $d !== null)
-            ->values();
+        $dayMap = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
+        $days = collect($schedule->run_days ?? [])->map(function ($value) use ($dayMap) {
+            if (is_numeric($value)) {
+                return ((int) $value) % 7;
+            }
+            return $dayMap[strtolower((string) $value)] ?? null;
+        })->filter(fn ($day) => $day !== null)->values();
 
         if ($days->isEmpty()) {
-            return $this->nextDaily($base);
+            return $this->nextDaily($fromLocal, $runTime);
         }
 
-        for ($i = 0; $i < 8; $i++) {
-            $candidate = $base->copy()->addDays($i);
-            if ($days->contains($candidate->dayOfWeek) && $candidate->isFuture()) {
-                return $candidate->utc();
+        for ($i = 0; $i < 14; $i++) {
+            $candidate = $fromLocal->copy()->addDays($i)->setTimeFromTimeString($runTime);
+            if ($days->contains($candidate->dayOfWeek) && $candidate->greaterThan($fromLocal)) {
+                return $candidate;
             }
         }
 
-        return $base->copy()->addWeek()->utc();
+        return $fromLocal->copy()->addWeek();
+    }
+
+    private function nextMonthly(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): Carbon
+    {
+        $monthDay = (int) data_get($schedule->metadata, 'month_day', $schedule->next_run_at?->timezone($fromLocal->timezone)->day ?? 1);
+        $monthDay = max(1, min(28, $monthDay));
+
+        $candidate = $fromLocal->copy()->day($monthDay)->setTimeFromTimeString($runTime);
+
+        return $candidate->greaterThan($fromLocal) ? $candidate : $candidate->addMonthNoOverflow();
     }
 }

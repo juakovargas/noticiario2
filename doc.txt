@@ -502,3 +502,15 @@ Current roadmap:
 - AI automation remains disabled unless schedule/provider flags are explicitly enabled.
 - Inactive schedules are ignored by runner/cron execution paths.
 - Future branches must provide real contextual help on touched pages and must avoid leaving generic English help text in Spanish UI.
+
+## RECURRING BULLETINS AND AUTOMATION
+
+- BulletinType now acts as the recurring informativo definition.
+- BulletinType create/update now synchronizes a primary EditorialSchedule automatically.
+- Primary schedules are marked with `is_primary` and linked by `bulletin_type_id`.
+- Existing bulletin types can be backfilled with `php artisan noticiario:sync-bulletin-schedules`.
+- Frequency handling now includes daily, weekdays, weekends, selected_days, monthly, and custom.
+- Automation page was redesigned into a compact table with sync/toggle/run/recalculate actions.
+- Active schedules are processed by runner/cron; inactive schedules are ignored.
+- Automatic AI generation remains opt-in through automation flags.
+- Weekend and different-day bulletin behavior is supported through frequency + run_days.

@@ -8,6 +8,7 @@ use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\PromptProfile;
+use App\Services\Scheduling\BulletinTypeScheduleSyncService;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ use Inertia\Response;
 
 class BulletinTypeController extends Controller
 {
+    public function __construct(private readonly BulletinTypeScheduleSyncService $scheduleSyncService)
+    {
+    }
+
     use GeneratesUniqueSlug;
 
     public function index(Request $request): Response
@@ -49,8 +54,9 @@ class BulletinTypeController extends Controller
         $data['slug'] = $this->uniqueSlug(BulletinType::class, $data['slug'] ?: $data['name']);
 
         $type = BulletinType::query()->create($data);
+        $this->scheduleSyncService->syncPrimarySchedule($type);
 
-        return to_route('editor.bulletin-types.show', $type)->with('success', 'Bulletin type created successfully.');
+        return to_route('editor.bulletin-types.show', $type)->with('success', 'Bulletin type created successfully. Primary schedule synchronized.');
     }
 
     public function show(BulletinType $bulletinType): Response
@@ -74,8 +80,9 @@ class BulletinTypeController extends Controller
         $data['slug'] = $this->uniqueSlug(BulletinType::class, $data['slug'] ?: $data['name'], $bulletinType->id);
 
         $bulletinType->update($data);
+        $this->scheduleSyncService->syncPrimarySchedule($bulletinType->refresh());
 
-        return to_route('editor.bulletin-types.show', $bulletinType)->with('success', 'Bulletin type updated successfully.');
+        return to_route('editor.bulletin-types.show', $bulletinType)->with('success', 'Bulletin type updated successfully. Primary schedule synchronized.');
     }
 
     public function destroy(BulletinType $bulletinType): RedirectResponse
@@ -91,6 +98,14 @@ class BulletinTypeController extends Controller
         $data['sort_order'] = $data['sort_order'] ?? 0;
         $data['coverage_mode'] = $data['coverage_mode'] ?? 'previous_period';
         $data['prompt_language'] = $data['prompt_language'] ?? 'es';
+        $data['default_run_frequency'] = $data['default_run_frequency'] ?? 'daily';
+        $data['default_run_time'] = $data['default_run_time'] ?? $data['default_schedule_time'] ?? null;
+        $data['default_schedule_is_active'] = $request->boolean('default_schedule_is_active');
+        $data['default_auto_run_pipeline'] = $request->boolean('default_auto_run_pipeline');
+        $data['default_auto_generate_ai_response'] = $request->boolean('default_auto_generate_ai_response');
+        $data['default_auto_create_script'] = $request->boolean('default_auto_create_script', true);
+        $data['default_auto_generate_metadata'] = $request->boolean('default_auto_generate_metadata', true);
+        $data['default_auto_extract_sources'] = $request->boolean('default_auto_extract_sources', true);
         $data['output_mode'] = $data['output_mode'] ?? 'structured_script';
         $data['include_future_agenda'] = $request->boolean('include_future_agenda');
         $data['include_historical_context'] = $request->boolean('include_historical_context');
@@ -116,6 +131,16 @@ class BulletinTypeController extends Controller
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'default_schedule_time' => ['nullable', 'date_format:H:i'],
             'default_timezone' => ['nullable', 'string', 'max:100'],
+            'default_run_frequency' => ['nullable', Rule::in(['daily','weekdays','weekends','selected_days','monthly','custom'])],
+            'default_run_time' => ['nullable', 'date_format:H:i'],
+            'default_run_days' => ['nullable', 'array'],
+            'default_run_days.*' => ['string'],
+            'default_schedule_is_active' => ['boolean'],
+            'default_auto_run_pipeline' => ['boolean'],
+            'default_auto_generate_ai_response' => ['boolean'],
+            'default_auto_create_script' => ['boolean'],
+            'default_auto_generate_metadata' => ['boolean'],
+            'default_auto_extract_sources' => ['boolean'],
             'coverage_mode' => ['nullable', Rule::in(['previous_period', 'today_so_far', 'yesterday', 'last_24_hours', 'next_24_hours', 'custom', 'none'])],
             'coverage_starts_offset_minutes' => ['nullable', 'integer', 'min:-10080', 'max:10080'],
             'coverage_ends_offset_minutes' => ['nullable', 'integer', 'min:-10080', 'max:10080'],

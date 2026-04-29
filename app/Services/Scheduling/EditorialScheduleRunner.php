@@ -123,6 +123,9 @@ class EditorialScheduleRunner
         return match ($schedule->run_frequency ?: 'daily') {
             'once' => null,
             'weekly' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
+            'weekdays' => $this->nextByWeekdays($fromLocal, $runTime, [1,2,3,4,5])->utc(),
+            'weekends' => $this->nextByWeekdays($fromLocal, $runTime, [0,6])->utc(),
+            'selected_days' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
             'monthly' => $this->nextMonthly($schedule, $fromLocal, $runTime)->utc(),
             'custom' => $schedule->next_run_at,
             default => $this->nextDaily($fromLocal, $runTime)->utc(),
@@ -165,6 +168,18 @@ class EditorialScheduleRunner
         }
 
         return $fromLocal->copy()->addWeek();
+    }
+
+    private function nextByWeekdays(Carbon $fromLocal, string $runTime, array $days): Carbon
+    {
+        for ($i = 0; $i < 14; $i++) {
+            $candidate = $fromLocal->copy()->addDays($i)->setTimeFromTimeString($runTime);
+            if (in_array($candidate->dayOfWeek, $days, true) && $candidate->greaterThan($fromLocal)) {
+                return $candidate;
+            }
+        }
+
+        return $fromLocal->copy()->addDay();
     }
 
     private function nextMonthly(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): Carbon

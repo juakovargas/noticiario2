@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BulletinType extends Model
@@ -23,7 +24,16 @@ class BulletinType extends Model
         'edition_type',
         'target_duration_seconds',
         'default_schedule_time',
+        'default_run_frequency',
+        'default_run_time',
+        'default_run_days',
         'default_timezone',
+        'default_schedule_is_active',
+        'default_auto_run_pipeline',
+        'default_auto_generate_ai_response',
+        'default_auto_create_script',
+        'default_auto_generate_metadata',
+        'default_auto_extract_sources',
         'coverage_mode',
         'coverage_starts_offset_minutes',
         'coverage_ends_offset_minutes',
@@ -44,6 +54,13 @@ class BulletinType extends Model
         return [
             'include_future_agenda' => 'boolean',
             'include_historical_context' => 'boolean',
+            'default_run_days' => 'array',
+            'default_schedule_is_active' => 'boolean',
+            'default_auto_run_pipeline' => 'boolean',
+            'default_auto_generate_ai_response' => 'boolean',
+            'default_auto_create_script' => 'boolean',
+            'default_auto_generate_metadata' => 'boolean',
+            'default_auto_extract_sources' => 'boolean',
             'is_active' => 'boolean',
             'metadata' => 'array',
         ];
@@ -77,6 +94,11 @@ class BulletinType extends Model
     public function editorialSchedules(): HasMany
     {
         return $this->schedules();
+    }
+
+    public function primarySchedule(): HasOne
+    {
+        return $this->hasOne(EditorialSchedule::class)->where('is_primary', true);
     }
 
     public function promptRuns(): HasMany

@@ -390,3 +390,26 @@ Limitations:
 - Script body creation continues to prefer parsed `SCRIPT` blocks and only falls back to raw response text when structure is missing.
 - Unstructured fallback behavior is preserved and still records parser warnings.
 - French translation apostrophe safety in `translations.ts` is preserved and additional parser/script UX messages were added for en/es/fr.
+
+## SCRIPT AUTO PRODUCTION METADATA
+- Added ScriptProductionMetadataGenerator service for draft metadata generation without external AI.
+- Script creation from Bulletin Prompt Run now auto-fills missing production metadata and marks metadata provenance flags in script metadata.
+
+## INTERNAL MESSAGES
+- Added internal_messages table and InternalMessage model/service.
+- Added simple manager relationship on users (manager_id) for routing rejection notifications.
+- Added messages inbox/show pages and secure routes for recipient-only access.
+- Added header messages link with unread count from shared Inertia props.
+- Script rejection now triggers internal notification to manager/responsible fallback user.
+- Limitations: simple inbox only, no realtime sockets, no external email dispatch yet.
+
+## CURRENT ROADMAP
+1. feature/operations-monitoring-dashboard-alerts
+2. feature/audio-production-foundation
+3. feature/video-production-foundation
+4. feature/publishing-foundation
+5. feature/public-viewer-content-and-search
+6. feature/media-picker-and-assets
+7. feature/live-source-checking-optional
+8. feature/privacy-consent-and-public-seo-hardening
+

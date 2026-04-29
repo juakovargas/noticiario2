@@ -38,6 +38,7 @@ use App\Http\Controllers\Editor\NewsSourceController;
 use App\Http\Controllers\Editor\NewsSourceImportController;
 use App\Http\Controllers\Editor\ScriptController;
 use App\Http\Controllers\Editor\ScriptReviewController;
+use App\Http\Controllers\InternalMessageController;
 use App\Http\Controllers\Editor\ScriptProductionMetadataController;
 use App\Http\Controllers\Editor\SourceReferenceController;
 use App\Http\Controllers\Editor\WorldMapController as EditorWorldMapController;

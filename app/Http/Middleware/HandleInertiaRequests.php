@@ -8,6 +8,7 @@ use App\Support\Seo\SeoSettingsResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
+use App\Models\InternalMessage;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -92,6 +93,7 @@ class HandleInertiaRequests extends Middleware
                         'public_url' => $user->profileImage->public_url,
                     ] : null,
                 ] : null,
+                'unreadMessagesCount' => $user ? InternalMessage::query()->where('recipient_id', $user->id)->whereNull('read_at')->whereNull('archived_at')->count() : 0,
             ],
 
             'impersonation' => [

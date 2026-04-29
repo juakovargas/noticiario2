@@ -25,6 +25,7 @@ class User extends Authenticatable
         'timezone',
         'avatar_path',
         'profile_image_id',
+        'manager_id',
         'date_format',
         'time_format',
         'appearance',
@@ -62,6 +63,16 @@ class User extends Authenticatable
     public function bulletinPromptRuns(): HasMany
     {
         return $this->hasMany(BulletinPromptRun::class, 'created_by');
+    }
+
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(User::class, 'manager_id');
     }
 
     public function checkedSourceReferences(): HasMany

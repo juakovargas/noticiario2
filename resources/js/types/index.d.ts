@@ -27,6 +27,9 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     auth: {
         user: User | null;
     };
+    messages?: {
+        unread_count: number;
+    };
     impersonation: {
         active: boolean;
         impersonator_id: number | null;

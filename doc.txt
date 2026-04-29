@@ -413,3 +413,11 @@ Limitations:
 7. feature/live-source-checking-optional
 8. feature/privacy-consent-and-public-seo-hardening
 
+
+## 5E. INTERNAL MESSAGES + HEADER SAFETY
+
+- Added authenticated internal message routes (`messages.index/show/mark-read/archive`) backed by Inertia pages.
+- Header message button in Admin/Editor/Viewer layouts is defensive and only renders when `messages.index` exists in Ziggy.
+- Shared Inertia prop now exposes `messages.unread_count` safely (falls back to 0 if guest or table missing).
+- Translation duplicate-key checker script is available via `npm run check:translations`.
+- Non-production emergency logout behavior remains unchanged.

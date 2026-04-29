@@ -6,7 +6,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import { Link, usePage } from '@inertiajs/react';
-import { Eye, LayoutGrid, Map } from 'lucide-react';
+import { Eye, LayoutGrid, Mail, Map } from 'lucide-react';
 import { PropsWithChildren } from 'react';
 import { PageProps } from '@/types';
 
@@ -18,6 +18,8 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
     const page = usePage<PageProps>();
     const impersonation = page.props.impersonation;
     const { t } = useTranslations();
+    const canOpenMessages = route().has?.('messages.index') ?? false;
+    const unreadMessagesCount = page.props.messages?.unread_count ?? 0;
 
     return (
         <div className="min-h-screen bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
@@ -77,7 +79,15 @@ export default function ViewerLayout({ children, title }: ViewerLayoutProps): JS
                     <div className="flex items-center gap-2 md:gap-3">
                         <LanguageSwitcher />
                         <ThemeSwitcher />
-                                <Button asChild variant="outline" size="sm"><Link href={route('messages.index')}>{t('Messages')} {((page.props as any).auth?.unreadMessagesCount ?? 0) > 0 ? `(${Math.min(99, (page.props as any).auth.unreadMessagesCount)}${((page.props as any).auth.unreadMessagesCount>99?'+' : '')})` : ''}</Link></Button>
+                                {canOpenMessages && (
+                                    <Button asChild variant="outline" size="sm" className="gap-2">
+                                        <Link href={route('messages.index')}>
+                                            <Mail className="h-4 w-4" />
+                                            {t('Messages')}
+                                            {unreadMessagesCount > 0 && ` (${unreadMessagesCount > 99 ? '99+' : unreadMessagesCount})`}
+                                        </Link>
+                                    </Button>
+                                )}
                         <div className="hidden items-center gap-2 md:flex">
                             <UserAvatar user={page.props.auth.user} size="sm" />
                             <p className="text-sm text-slate-600 dark:text-slate-300">{page.props.auth.user?.name}</p>

@@ -21,6 +21,12 @@ class TestAiProviderCommand extends Command
         $this->info('Provider configuration test');
         $this->line('Provider: '.$provider->name.' ('.$provider->slug.')');
         $this->line('Environment key configured: '.($provider->hasConfiguredApiKey() ? 'yes' : 'no'));
+        $this->line('Model: '.($this->option('model') ?: $provider->default_model ?: '(missing)'));
+        $this->line('Base URL: '.($provider->base_url ?: '(missing)'));
+        $this->line('Temperature: '.var_export($provider->temperatureForRequest(), true).' ['.gettype($provider->temperatureForRequest()).']');
+        $this->line('Max tokens: '.var_export($provider->maxTokensForRequest(), true).' ['.gettype($provider->maxTokensForRequest()).']');
+        $this->line('Timeout seconds: '.var_export($provider->timeoutSecondsForRequest(), true).' ['.gettype($provider->timeoutSecondsForRequest()).']');
+        $this->line('Request payload: numeric options will be sent as numeric JSON values.');
         if ($this->option('dry-run')) { $this->info('Dry run complete.'); return self::SUCCESS; }
         $prompt = (string) ($this->option('prompt') ?: 'Return exactly: OK');
         $model = $this->option('model') ?: $provider->default_model;

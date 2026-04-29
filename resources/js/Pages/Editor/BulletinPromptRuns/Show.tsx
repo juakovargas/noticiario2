@@ -201,12 +201,13 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                     {latestAiLog && (
                         <div className="rounded border bg-slate-50 p-3 text-xs">
                             <p><strong>{t('AI request log')}:</strong> {latestAiLog.status}</p>
+                            {latestAiLog.status === 'failed' && <p className="text-red-700">{t('The request failed before a response was saved')}. {t('Check provider configuration, model, limits and numeric options')}.</p>}
                             <p><strong>{t('AI provider')}:</strong> {latestAiLog.provider?.name || '-'}</p>
                             <p><strong>{t('Model')}:</strong> {latestAiLog.model || '-'}</p>
                             <p><strong>{t('Duration')}:</strong> {latestAiLog.duration_ms || '-'} ms</p>
                             <p><strong>{t('Total tokens')}:</strong> {latestAiLog.total_tokens ?? '-'}</p>
                             <p><strong>{t('Estimated cost')}:</strong> {latestAiLog.estimated_cost ?? '-'}</p>
-                            <Link className="text-cyan-700" href={route('admin.ai-request-logs.show', latestAiLog.id)}>{t('Open AI request log')}</Link>
+                            <Link className="text-cyan-700" href={route('editor.ai-request-logs.show', latestAiLog.id)}>{t('Open editor AI request log')}</Link>
                         </div>
                     )}
                 </CardContent>

@@ -367,3 +367,15 @@ Limitations:
   4. Inspect parsed response.
   5. Create script.
   6. Extract and verify sources.
+
+## AI PROVIDER REQUEST NORMALIZATION AND GROQ FIXES
+
+- AI provider numeric options are normalized before external calls.
+- `temperature` is sent as a JSON number and `max_tokens` as a JSON integer.
+- Empty/null numeric options are omitted from provider payloads.
+- Groq continues using the OpenAI-compatible `/chat/completions` endpoint.
+- Editor panel now uses an editor-safe AI request log route for logs related to the editor's own prompt runs.
+- Prompt run failure UI now explains that no response was saved and points to safe log details.
+- Spanish prompt headings are kept language-consistent (no mixed English workflow headings).
+- API keys remain environment-only and are not exposed in logs/UI.
+- Tests include numeric payload normalization coverage for Groq/OpenAI-compatible requests.

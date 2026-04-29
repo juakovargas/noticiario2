@@ -49,13 +49,42 @@ class AiProvider extends Model
         return [
             'is_active' => 'boolean',
             'is_default' => 'boolean',
-            'temperature' => 'decimal:2',
+            'timeout_seconds' => 'integer',
+            'max_tokens' => 'integer',
+            'temperature' => 'float',
             'cost_input_per_1k_tokens' => 'decimal:6',
             'cost_output_per_1k_tokens' => 'decimal:6',
+            'daily_request_limit' => 'integer',
+            'monthly_request_limit' => 'integer',
             'daily_cost_limit' => 'decimal:6',
             'monthly_cost_limit' => 'decimal:6',
             'metadata' => 'array',
         ];
+    }
+
+    public function temperatureForRequest(): ?float
+    {
+        if (blank($this->temperature)) {
+            return null;
+        }
+
+        return max(0, min(2, (float) $this->temperature));
+    }
+
+    public function maxTokensForRequest(): ?int
+    {
+        if (blank($this->max_tokens)) {
+            return null;
+        }
+
+        return max(1, (int) $this->max_tokens);
+    }
+
+    public function timeoutSecondsForRequest(): int
+    {
+        $timeout = blank($this->timeout_seconds) ? 60 : (int) $this->timeout_seconds;
+
+        return max(5, min(300, $timeout));
     }
 
     protected static function booted(): void

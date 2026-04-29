@@ -15,6 +15,10 @@ use App\Services\Ai\AiUsageLimitService;
 use App\Services\Ai\Exceptions\AiProviderException;
 use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
 use App\Services\PromptGeneration\BulletinPromptRunService;
+use App\Services\BackgroundTasks\BackgroundTaskService;
+use App\Jobs\GenerateBulletinPromptJob;
+use App\Jobs\GenerateBulletinPromptRunAiResponseJob;
+use App\Jobs\ExtractSourceReferencesJob;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +34,7 @@ class BulletinPromptRunController extends Controller
         private readonly AiClientManager $aiClientManager,
         private readonly AiCostCalculator $costCalculator,
         private readonly AiUsageLimitService $usageLimitService,
+        private readonly BackgroundTaskService $backgroundTaskService,
     ) {
     }
 
@@ -364,6 +369,31 @@ class BulletinPromptRunController extends Controller
         }
     }
 
+
+    public function generatePromptQueued(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $task = $this->backgroundTaskService->create('generate_bulletin_prompt', $bulletinPromptRun, $request->user());
+        GenerateBulletinPromptJob::dispatch($bulletinPromptRun->id, $task->id);
+
+        return back()->with('success', 'Task queued successfully');
+    }
+
+    public function generateAiResponseQueued(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $data = $request->validate(['ai_provider_id' => ['nullable', 'exists:ai_providers,id'], 'model' => ['nullable', 'string', 'max:255']]);
+        $task = $this->backgroundTaskService->create('generate_ai_response', $bulletinPromptRun, $request->user());
+        GenerateBulletinPromptRunAiResponseJob::dispatch($bulletinPromptRun->id, $data['ai_provider_id'] ?? null, $request->user()?->id, $task->id, $data['model'] ?? null);
+
+        return back()->with('success', 'Task queued successfully');
+    }
+
+    public function extractSourcesQueued(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $task = $this->backgroundTaskService->create('extract_sources', $bulletinPromptRun, $request->user());
+        ExtractSourceReferencesJob::dispatch('bulletin_prompt_run', $bulletinPromptRun->id, $request->user()?->id, $task->id);
+
+        return back()->with('success', 'Task queued successfully');
+    }
     public function saveResponse(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
         $data = $request->validate([

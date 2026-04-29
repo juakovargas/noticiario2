@@ -74,6 +74,16 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.schedules.next' },
         ],
     },
+    'editor.automation.index': {
+        titleKey: 'help.editor.automation.title',
+        summaryKey: 'help.editor.automation.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.automation.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.automation.actions' },
+            { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.automation.next' },
+        ],
+        tipsKeys: ['help.editor.automation.warningAi', 'help.editor.automation.warningInactive', 'help.editor.automation.warningFailures'],
+    },
     'editor.editorialscheduleruns.index': {
         titleKey: 'help.editor.scheduleRuns.title',
         summaryKey: 'help.editor.scheduleRuns.summary',

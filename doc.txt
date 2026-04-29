@@ -490,3 +490,15 @@ Current roadmap:
 7. feature/media-picker-and-assets
 8. feature/live-source-checking-optional
 9. feature/privacy-consent-and-public-seo-hardening
+
+## EDITORIAL AUTOMATION CONTROL PANEL FIXES
+
+- Fixed `BulletinType` to expose `schedules()` and `editorialSchedules()` relationships to `EditorialSchedule` through `bulletin_type_id`.
+- `AutomationStatusService` now aggregates safe automation overview data per informativo, including null-safe relationships, schedule flags, latest execution summary, and attention reasons.
+- The Automation Control Panel no longer crashes when a bulletin type has no schedules and now renders robust empty states.
+- Automation UI now displays informativos, schedule counts, next/last execution, latest prompt/script links, and manual-attention diagnostics.
+- Added Automation action to recalculate next run safely from the panel.
+- Added page-specific contextual help for Editor Automation (en/es/fr), including AI credit and unattended automation warnings.
+- AI automation remains disabled unless schedule/provider flags are explicitly enabled.
+- Inactive schedules are ignored by runner/cron execution paths.
+- Future branches must provide real contextual help on touched pages and must avoid leaving generic English help text in Spanish UI.

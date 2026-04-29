@@ -69,6 +69,16 @@ class BulletinType extends Model
         return $this->belongsTo(PromptProfile::class, 'default_prompt_profile_id');
     }
 
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(EditorialSchedule::class);
+    }
+
+    public function editorialSchedules(): HasMany
+    {
+        return $this->schedules();
+    }
+
     public function promptRuns(): HasMany
     {
         return $this->hasMany(BulletinPromptRun::class);

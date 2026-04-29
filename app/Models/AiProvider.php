@@ -17,6 +17,7 @@ class AiProvider extends Model
         'anthropic',
         'ollama',
         'custom_openai_compatible',
+        'groq',
         'mock',
     ];
 

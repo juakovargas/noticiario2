@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AiProvider;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
+use App\Services\Ai\Contracts\LaravelAiSdkGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\Concerns\InteractsWithPermissions;
@@ -117,5 +118,49 @@ class BulletinPromptRunAiGenerationTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertDatabaseHas('ai_request_logs', ['bulletin_prompt_run_id' => $run->id, 'limit_blocked' => true, 'error_code' => 'limit_reached']);
+    }
+
+    public function test_laravel_ai_driver_can_generate_and_still_logs_request(): void
+    {
+        app()->instance(LaravelAiSdkGateway::class, new class implements LaravelAiSdkGateway
+        {
+            public function generateText(string $providerAlias, string $model, string $prompt, array $options = []): array
+            {
+                return [
+                    'text' => "TITLE: SDK Demo\n\nINTRO: Intro from sdk",
+                    'model' => $model,
+                    'input_tokens' => 9,
+                    'output_tokens' => 12,
+                    'total_tokens' => 21,
+                    'finish_reason' => 'stop',
+                ];
+            }
+        });
+
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $provider = AiProvider::query()->create([
+            'name' => 'OpenAI SDK',
+            'slug' => 'openai-sdk',
+            'provider_type' => 'openai',
+            'client_driver' => 'laravel_ai',
+            'base_url' => 'https://api.openai.com/v1',
+            'api_key_env_name' => 'OPENAI_API_KEY',
+            'default_model' => 'gpt-4.1-mini',
+            'is_active' => true,
+            'is_default' => true,
+            'timeout_seconds' => 60,
+        ]);
+        $run = BulletinPromptRun::factory()->create(['generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run), ['ai_provider_id' => $provider->id])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('ai_request_logs', [
+            'bulletin_prompt_run_id' => $run->id,
+            'status' => 'success',
+            'model' => 'gpt-4.1-mini',
+        ]);
+        $this->assertNotNull($run->fresh()->ai_response_text);
     }
 }

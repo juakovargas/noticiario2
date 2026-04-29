@@ -24,6 +24,7 @@ class AiProvider extends Model
         'name',
         'slug',
         'provider_type',
+        'client_driver',
         'base_url',
         'api_key_env_name',
         'default_model',
@@ -54,6 +55,15 @@ class AiProvider extends Model
             'monthly_cost_limit' => 'decimal:6',
             'metadata' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (AiProvider $provider): void {
+            if (blank($provider->client_driver)) {
+                $provider->client_driver = 'custom';
+            }
+        });
     }
 
     public function editorialRequests(): HasMany

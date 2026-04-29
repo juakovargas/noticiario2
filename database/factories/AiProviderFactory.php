@@ -12,6 +12,7 @@ class AiProviderFactory extends Factory
             'name' => 'Provider '.$this->faker->unique()->word(),
             'slug' => $this->faker->unique()->slug(),
             'provider_type' => 'openai',
+            'client_driver' => 'custom',
             'base_url' => 'https://api.openai.com/v1',
             'api_key_env_name' => 'OPENAI_API_KEY',
             'default_model' => 'gpt-4o-mini',

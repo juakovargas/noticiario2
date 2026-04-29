@@ -38,6 +38,8 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
             { label: t('World Map'), href: route('admin.world-map.index'), routeName: 'admin.world-map.*', icon: <Map className="h-4 w-4" /> },
             { label: t('SEO & Tracking'), href: route('admin.seo-settings.edit'), routeName: 'admin.seo-settings.*', icon: <ChartNoAxesCombined className="h-4 w-4" /> },
             { label: t('Home Page'), href: route('admin.home-page-settings.index'), routeName: 'admin.home-page-settings.*', icon: <Globe className="h-4 w-4" /> },
+            { label: t('Operations'), href: route('admin.operations.index'), routeName: 'admin.operations.*', icon: <ChartNoAxesCombined className="h-4 w-4" /> },
+            { label: t('Operation Alert Settings'), href: route('admin.operation-alert-settings.index'), routeName: 'admin.operation-alert-settings.*', icon: <ChartNoAxesCombined className="h-4 w-4" /> },
         ],
         [t],
     );

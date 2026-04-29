@@ -323,3 +323,29 @@ Current limitations:
 5. feature/media-picker-and-assets
 6. feature/live-source-checking-optional
 7. feature/privacy-consent-and-public-seo-hardening
+
+## OPERATIONS MONITORING AND ALERTS
+
+Implemented in this branch:
+- operational_events table + OperationalEvent model/service as unified operational event stream.
+- worker_heartbeats table + `noticiario:worker-heartbeat` command.
+- `noticiario:check-operations-health` command for stalled tasks, overdue schedules, failed jobs, AI failures, and worker heartbeat checks.
+- operation_alert_settings table/model and admin CRUD pages.
+- OperationAlertNotification mail notification with cooldown-aware sending logic.
+- Admin Operations Dashboard with polling-based refresh and recent events.
+- Operational events list/detail pages.
+
+Limitations:
+- Polling based updates (no websockets yet).
+- No Horizon/Redis requirement.
+- Alert delivery depends on mail configuration.
+- No external uptime monitor integration yet.
+
+## CURRENT ROADMAP
+1. feature/audio-production-foundation
+2. feature/video-production-foundation
+3. feature/publishing-foundation
+4. feature/public-viewer-content-and-search
+5. feature/media-picker-and-assets
+6. feature/live-source-checking-optional
+7. feature/privacy-consent-and-public-seo-hardening

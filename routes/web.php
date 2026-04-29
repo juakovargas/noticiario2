@@ -14,6 +14,9 @@ use App\Http\Controllers\Admin\PromptProfileController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\Admin\BackgroundTaskController;
+use App\Http\Controllers\Admin\OperationsDashboardController;
+use App\Http\Controllers\Admin\OperationalEventController;
+use App\Http\Controllers\Admin\OperationAlertSettingController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\BulletinTypeController;
@@ -137,6 +140,15 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::resource('home-page-settings', HomePageSettingController::class)->except('show');
         Route::get('/background-tasks', [BackgroundTaskController::class, 'index'])->name('background-tasks.index');
         Route::get('/background-tasks/{backgroundTask}', [BackgroundTaskController::class, 'show'])->name('background-tasks.show');
+
+        Route::get('/operations', [OperationsDashboardController::class, 'index'])->name('operations.index');
+        Route::get('/operations/summary', [OperationsDashboardController::class, 'summaryData'])->name('operations.summary');
+        Route::get('/operations/events', [OperationalEventController::class, 'index'])->name('operations.events.index');
+        Route::get('/operations/events/{operationalEvent}', [OperationalEventController::class, 'show'])->name('operations.events.show');
+        Route::get('/operation-alert-settings', [OperationAlertSettingController::class, 'index'])->name('operation-alert-settings.index');
+        Route::get('/operation-alert-settings/{operationAlertSetting}/edit', [OperationAlertSettingController::class, 'edit'])->name('operation-alert-settings.edit');
+        Route::put('/operation-alert-settings/{operationAlertSetting}', [OperationAlertSettingController::class, 'update'])->name('operation-alert-settings.update');
+
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])

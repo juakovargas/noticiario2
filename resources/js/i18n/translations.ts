@@ -2386,5 +2386,8 @@ export const translations: Record<string, Record<string, string>> = {
         'La planification est inactive': 'La planification est inactive',
         'La planification n’a pas de prochaine date d’exécution': 'La planification n’a pas de prochaine date d’exécution',
 
+
+
+
     },
 };

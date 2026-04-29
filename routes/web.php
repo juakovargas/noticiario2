@@ -51,8 +51,22 @@ use App\Http\Controllers\Viewer\WorldMapController as ViewerWorldMapController;
 use App\Support\AuthRedirect;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 Route::get('/', [PublicHomeController::class, 'index'])->name('home');
+
+if (! app()->isProduction()) {
+    Route::get('/emergency-logout', function (Request $request) {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
+    })->name('emergency.logout');
+}
 
 Route::get('/dashboard', function () {
     $user = request()->user();

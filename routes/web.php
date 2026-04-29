@@ -81,6 +81,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/preferences/appearance', [PreferenceController::class, 'updateAppearance'])->name('preferences.appearance.update');
 });
 
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/messages', [InternalMessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{internalMessage}', [InternalMessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{internalMessage}/mark-read', [InternalMessageController::class, 'markRead'])->name('messages.mark-read');
+    Route::post('/messages/{internalMessage}/archive', [InternalMessageController::class, 'archive'])->name('messages.archive');
+});
+
 Route::middleware(['auth', 'verified', 'permission:admin.access'])
     ->prefix('admin')
     ->name('admin.')

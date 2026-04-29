@@ -19,6 +19,7 @@ use App\Services\BackgroundTasks\BackgroundTaskService;
 use App\Jobs\GenerateBulletinPromptJob;
 use App\Jobs\GenerateBulletinPromptRunAiResponseJob;
 use App\Jobs\ExtractSourceReferencesJob;
+use App\Services\Pipelines\BulletinPromptRunPipeline;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class BulletinPromptRunController extends Controller
         private readonly AiCostCalculator $costCalculator,
         private readonly AiUsageLimitService $usageLimitService,
         private readonly BackgroundTaskService $backgroundTaskService,
+        private readonly BulletinPromptRunPipeline $pipelineService,
     ) {
     }
 
@@ -421,6 +423,41 @@ class BulletinPromptRunController extends Controller
         return to_route('editor.scripts.show', $script)->with('success', 'Script created from prompt run.');
     }
 
+
+    public function runPipeline(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $data = $request->validate([
+            'ai_provider_id' => ['nullable', 'exists:ai_providers,id'],
+            'model' => ['nullable', 'string', 'max:255'],
+            'force_regenerate_prompt' => ['nullable', 'boolean'],
+            'force_regenerate_ai_response' => ['nullable', 'boolean'],
+            'generate_metadata' => ['nullable', 'boolean'],
+            'extract_sources' => ['nullable', 'boolean'],
+            'force_recreate_script' => ['nullable', 'boolean'],
+        ]);
+
+        $summary = $this->pipelineService->run($bulletinPromptRun, $request->user(), $data);
+
+        if (! $summary['success']) {
+            return back()->with('error', $summary['errors'][0] ?? 'Pipeline failed and needs manual review.');
+        }
+
+        return back()->with('success', 'Pipeline completed successfully.');
+    }
+
+    public function retryPipeline(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
+    {
+        $summary = $this->pipelineService->run($bulletinPromptRun, $request->user(), [
+            'generate_metadata' => true,
+            'extract_sources' => true,
+        ]);
+
+        if (! $summary['success']) {
+            return back()->with('error', $summary['errors'][0] ?? 'Pipeline failed and needs manual review.');
+        }
+
+        return back()->with('success', 'Pipeline completed successfully.');
+    }
     public function archive(BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
         if ($bulletinPromptRun->status !== 'archived') {

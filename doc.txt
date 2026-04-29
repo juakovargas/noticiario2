@@ -445,3 +445,25 @@ Limitations:
 - Admin-safe read-only script viewer is available at `/admin/scripts/{script}`.
 - Admin script viewer is read-only and keeps the user in the Admin panel.
 - Impersonation remains the only explicit/intended way for admin users to test another user panel experience.
+
+## AUTOMATED SCRIPT PIPELINE
+
+- Implemented reusable service: `App\Services\Pipelines\BulletinPromptRunPipeline`.
+- Full pipeline steps now supported from one flow: generate prompt -> generate AI response -> parse response -> create script -> generate metadata -> extract sources.
+- Added editor manual action: Run full pipeline.
+- Added retry action: Retry pipeline.
+- Added command: `php artisan noticiario:run-prompt-pipeline {bulletinPromptRunId}` with force/skip/dry-run options.
+- Added pipeline state fields on `bulletin_prompt_runs` for status/timestamps/error/metadata.
+- Existing manual buttons remain available (prompt generation, AI response, save response, create script).
+- Pipeline avoids overwriting existing response/script unless force options are used.
+- Pipeline failures are stored in run state and can be retried.
+
+## CURRENT ROADMAP
+1. feature/operations-monitoring-dashboard-alerts
+2. feature/audio-production-foundation
+3. feature/video-production-foundation
+4. feature/publishing-foundation
+5. feature/public-viewer-content-and-search
+6. feature/media-picker-and-assets
+7. feature/live-source-checking-optional
+8. feature/privacy-consent-and-public-seo-hardening

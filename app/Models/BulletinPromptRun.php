@@ -30,6 +30,12 @@ class BulletinPromptRun extends Model
         'response_received_at',
         'script_created_at',
         'metadata',
+        'pipeline_status',
+        'pipeline_started_at',
+        'pipeline_finished_at',
+        'pipeline_failed_at',
+        'pipeline_error_message',
+        'pipeline_metadata',
     ];
 
     protected function casts(): array
@@ -41,6 +47,10 @@ class BulletinPromptRun extends Model
             'response_received_at' => 'datetime',
             'script_created_at' => 'datetime',
             'metadata' => 'array',
+            'pipeline_started_at' => 'datetime',
+            'pipeline_finished_at' => 'datetime',
+            'pipeline_failed_at' => 'datetime',
+            'pipeline_metadata' => 'array',
         ];
     }
 

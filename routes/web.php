@@ -277,6 +277,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/source-references/extract-queued', [BulletinPromptRunController::class, 'extractSourcesQueued'])->name('bulletin-prompt-runs.source-references.extract-queued');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/run-pipeline', [BulletinPromptRunController::class, 'runPipeline'])->name('bulletin-prompt-runs.run-pipeline');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/retry-pipeline', [BulletinPromptRunController::class, 'retryPipeline'])->name('bulletin-prompt-runs.retry-pipeline');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/archive', [BulletinPromptRunController::class, 'archive'])->name('bulletin-prompt-runs.archive');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/restore', [BulletinPromptRunController::class, 'restore'])->name('bulletin-prompt-runs.restore');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/mark-completed', [BulletinPromptRunController::class, 'markCompleted'])->name('bulletin-prompt-runs.mark-completed');

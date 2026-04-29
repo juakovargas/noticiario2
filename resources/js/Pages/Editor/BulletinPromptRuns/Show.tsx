@@ -85,6 +85,20 @@ export default function Show({ run, promptContext, sourceReferences = [], source
             </div>
 
 
+
+            <Card className="mb-4">
+                <CardContent className="space-y-3 pt-6 text-sm">
+                    <h3 className="font-semibold">{t('Automated pipeline')}</h3>
+                    <p className="text-slate-600">{t('This can send the generated prompt to the configured AI provider')}</p>
+                    <p><strong>{t('Pipeline status')}:</strong> {run.pipeline_status ?? t('not_started')}</p>
+                    {run.pipeline_error_message ? <p className="text-red-700"><strong>{t('Last pipeline error')}:</strong> {run.pipeline_error_message}</p> : null}
+                    <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => router.post(route('editor.bulletin-prompt-runs.run-pipeline', run.id), { generate_metadata: true, extract_sources: true }, { preserveScroll: true })}>{t('Run full pipeline')}</Button>
+                        <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.retry-pipeline', run.id), {}, { preserveScroll: true })}>{t('Retry pipeline')}</Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card className="mb-4">
                 <CardContent className="space-y-3 pt-6 text-sm">
                     <h3 className="font-semibold">{t('Workflow')}</h3>

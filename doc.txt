@@ -287,3 +287,39 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 6. feature/media-picker-and-assets
 7. feature/live-source-checking-optional
 8. feature/privacy-consent-and-public-seo-hardening
+
+## QUEUE WORKER FOUNDATION
+
+Implemented queue worker foundation for long-running editorial tasks.
+- Recommended queue connection: `QUEUE_CONNECTION=database`.
+- Queue tables are available via Laravel jobs migration: `jobs`, `failed_jobs`, `job_batches`.
+- Added `background_tasks` table for app-level task tracking.
+- Added `BackgroundTask` model with status scopes and user relation.
+- Added `BackgroundTaskService` for create/running/progress/completed/failed updates with safe error trimming.
+- Added `TracksBackgroundTask` job trait.
+- Added queued jobs:
+  - `GenerateBulletinPromptJob`
+  - `GenerateBulletinPromptRunAiResponseJob`
+  - `ExtractSourceReferencesJob`
+- Added queued Bulletin Prompt Run actions to dispatch jobs without blocking request.
+- Added Admin Background Tasks pages (index/show).
+- Local worker command: `php artisan queue:work`.
+- Failed job commands:
+  - `php artisan queue:failed`
+  - `php artisan queue:retry all`
+  - `php artisan queue:flush`
+
+Current limitations:
+- No Horizon/Redis requirement.
+- No audio/video jobs yet.
+- No publishing jobs yet.
+- No Supervisor config yet.
+
+## CURRENT ROADMAP
+1. feature/audio-production-foundation
+2. feature/video-production-foundation
+3. feature/publishing-foundation
+4. feature/public-viewer-content-and-search
+5. feature/media-picker-and-assets
+6. feature/live-source-checking-optional
+7. feature/privacy-consent-and-public-seo-hardening

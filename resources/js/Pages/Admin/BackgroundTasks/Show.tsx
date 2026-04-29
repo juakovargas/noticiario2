@@ -1,0 +1,2 @@
+import AdminLayout from '@/Layouts/AdminLayout'; import { Head } from '@inertiajs/react'; import { useTranslations } from '@/i18n/useTranslations';
+export default function Show({task}:{task:any}){ const {t}=useTranslations(); return <AdminLayout><Head title={t('Background Task')} /><h1 className='mb-4 text-xl font-semibold'>{t('Background Task')} #{task.id}</h1><pre className='text-xs'>{JSON.stringify(task,null,2)}</pre></AdminLayout>; }

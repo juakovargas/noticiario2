@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\SeoSettingController;
 use App\Http\Controllers\Admin\PromptProfileController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
+use App\Http\Controllers\Admin\BackgroundTaskController;
 use App\Http\Controllers\Editor\AiPromptTemplateController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
 use App\Http\Controllers\Editor\BulletinTypeController;
@@ -134,6 +135,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::get('/seo-settings', [SeoSettingController::class, 'edit'])->name('seo-settings.edit');
         Route::put('/seo-settings', [SeoSettingController::class, 'update'])->name('seo-settings.update');
         Route::resource('home-page-settings', HomePageSettingController::class)->except('show');
+        Route::get('/background-tasks', [BackgroundTaskController::class, 'index'])->name('background-tasks.index');
+        Route::get('/background-tasks/{backgroundTask}', [BackgroundTaskController::class, 'show'])->name('background-tasks.show');
     });
 
 Route::middleware(['auth', 'verified', 'permission:editor.access'])
@@ -228,7 +231,10 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/bulletin-types/{bulletinType}/prompt-runs', [BulletinPromptRunController::class, 'store'])->name('bulletin-types.prompt-runs.store');
         Route::put('/bulletin-prompt-runs/{bulletinPromptRun}/schedule', [BulletinPromptRunController::class, 'updateSchedule'])->name('bulletin-prompt-runs.update-schedule');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt', [BulletinPromptRunController::class, 'generatePrompt'])->name('bulletin-prompt-runs.generate-prompt');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-prompt-queued', [BulletinPromptRunController::class, 'generatePromptQueued'])->name('bulletin-prompt-runs.generate-prompt-queued');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-ai-response', [BulletinPromptRunController::class, 'generateAiResponse'])->name('bulletin-prompt-runs.generate-ai-response');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/generate-ai-response-queued', [BulletinPromptRunController::class, 'generateAiResponseQueued'])->name('bulletin-prompt-runs.generate-ai-response-queued');
+        Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/source-references/extract-queued', [BulletinPromptRunController::class, 'extractSourcesQueued'])->name('bulletin-prompt-runs.source-references.extract-queued');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/save-response', [BulletinPromptRunController::class, 'saveResponse'])->name('bulletin-prompt-runs.save-response');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/create-script', [BulletinPromptRunController::class, 'createScript'])->name('bulletin-prompt-runs.create-script');
         Route::post('/bulletin-prompt-runs/{bulletinPromptRun}/archive', [BulletinPromptRunController::class, 'archive'])->name('bulletin-prompt-runs.archive');

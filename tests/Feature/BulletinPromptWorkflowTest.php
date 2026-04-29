@@ -179,6 +179,29 @@ class BulletinPromptWorkflowTest extends TestCase
     }
 
     #[Test]
+    public function script_can_be_created_from_prompt_run_without_edition(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $type = BulletinType::query()->create(['name' => 'No Edition Type', 'slug' => 'no-edition-type', 'default_timezone' => 'UTC']);
+        $run = BulletinPromptRun::query()->create([
+            'bulletin_type_id' => $type->id,
+            'title' => 'Run without edition',
+            'status' => 'response_received',
+            'ai_response_text' => "**TITLE:** Demo\n\n**INTRO:** Intro\n\n**NEWS ITEMS:**\n1. **HEADLINE:** A\n**SUMMARY:** S\n**SCRIPT:** Script block A\n**SOURCE HINTS:**\n- https://a.test\n\n**OUTRO:** O",
+            'parsed_response' => (new \App\Services\EditorialScheduling\AiResponseParser())->parse("**TITLE:** Demo\n\n**INTRO:** Intro\n\n**NEWS ITEMS:**\n1. **HEADLINE:** A\n**SUMMARY:** S\n**SCRIPT:** Script block A\n**SOURCE HINTS:**\n- https://a.test\n\n**OUTRO:** O"),
+        ]);
+
+        $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.create-script', $run))->assertRedirect();
+        $run->refresh();
+        $script = Script::query()->findOrFail($run->script_id);
+
+        $this->assertNull($script->edition_id);
+        $this->assertSame($run->id, $script->bulletin_prompt_run_id);
+        $this->assertStringContainsString('Script block A', $script->body ?? '');
+        $this->assertTrue((bool) data_get($script->metadata, 'parsed_response_used'));
+    }
+
+    #[Test]
     public function existing_script_is_not_overwritten_when_creating_again_or_updating_response(): void
     {
         $editor = $this->createUserWithPermissions(['editor.access']);

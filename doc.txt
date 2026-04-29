@@ -379,3 +379,14 @@ Limitations:
 - Spanish prompt headings are kept language-consistent (no mixed English workflow headings).
 - API keys remain environment-only and are not exposed in logs/UI.
 - Tests include numeric payload normalization coverage for Groq/OpenAI-compatible requests.
+
+## AI RESPONSE PARSER AND SCRIPT CREATION FIXES
+
+- AI response parser now supports Markdown heading variants (for example `**TITLE:**`, `# TITLE:`, `### TITLE:`) and inline heading values.
+- Parser heading recognition now accepts English, Spanish and French label variants for title/intro/news item fields/outro/notes.
+- Structured Groq-style responses with bold Markdown labels are parsed as structured responses instead of being flagged as unstructured.
+- Script creation from Bulletin Prompt Runs now supports runs without editions by allowing `scripts.edition_id` to be nullable.
+- `scripts.edition_id` remains a foreign key to editions and now uses `nullOnDelete`, reflecting that Prompt Run -> Script can be valid without an Edition.
+- Script body creation continues to prefer parsed `SCRIPT` blocks and only falls back to raw response text when structure is missing.
+- Unstructured fallback behavior is preserved and still records parser warnings.
+- French translation apostrophe safety in `translations.ts` is preserved and additional parser/script UX messages were added for en/es/fr.

@@ -57,6 +57,24 @@ class AiResponseParserTest extends TestCase
     }
 
     #[Test]
+    public function it_parses_markdown_bolded_headings_and_numbered_items(): void
+    {
+        $text = "**TITLE:** Noticias de la Mañana en España\n\n**INTRO:** Buenos días...\n\n**NEWS ITEMS:**\n1. **HEADLINE:** Economía Española\n**SUMMARY:** Resumen 1\n**SCRIPT:** Narración 1\n**EDITORIAL ANGLE:** Ángulo 1\n**SOURCE HINTS:**\n- https://one.test\n\n2. **HEADLINE:** Medio Ambiente\n**SUMMARY:** Resumen 2\n**SCRIPT:** Narración 2\n**EDITORIAL ANGLE:** Ángulo 2\n**SOURCE HINTS:**\n- EFE\n\n3. **HEADLINE:** Política\n**SUMMARY:** Resumen 3\n**SCRIPT:** Narración 3\n**EDITORIAL ANGLE:** Ángulo 3\n**SOURCE HINTS:**\n- https://three.test\n\n4. **HEADLINE:** Cultura\n**SUMMARY:** Resumen 4\n**SCRIPT:** Narración 4\n**EDITORIAL ANGLE:** Ángulo 4\n**SOURCE HINTS:**\n- RTVE\n\n**OUTRO:** Hasta luego\n\n**NOTES:** Nota final";
+
+        $parsed = (new AiResponseParser())->parse($text);
+
+        $this->assertSame('Noticias de la Mañana en España', $parsed['title']);
+        $this->assertSame('Buenos días...', $parsed['intro']);
+        $this->assertCount(4, $parsed['items']);
+        $this->assertSame('Economía Española', $parsed['items'][0]['headline']);
+        $this->assertSame('Narración 1', $parsed['items'][0]['script']);
+        $this->assertSame(['https://one.test'], $parsed['items'][0]['source_hints']);
+        $this->assertSame('Hasta luego', $parsed['outro']);
+        $this->assertSame('Nota final', $parsed['notes']);
+        $this->assertNotContains('unstructured_response', $parsed['warnings']);
+    }
+
+    #[Test]
     public function it_handles_unstructured_response_without_exceptions(): void
     {
         $text = 'Completely unstructured response from model.';

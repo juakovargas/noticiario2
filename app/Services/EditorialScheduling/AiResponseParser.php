@@ -100,10 +100,10 @@ class AiResponseParser
         $normalized = $this->normalizeLabel($line);
 
         return match ($normalized) {
-            'TITLE', 'TITULO', 'TÍTULO' => 'title',
-            'INTRO', 'INTRODUCTION', 'INTRODUCCION', 'INTRODUCCIÓN', 'ENTRADILLA' => 'intro',
-            'NEWS ITEMS', 'ITEMS', 'NOTICIAS' => 'news_items',
-            'OUTRO', 'CIERRE' => 'outro',
+            'TITLE', 'TITULO', 'TÍTULO', 'TITRE' => 'title',
+            'INTRO', 'INTRODUCTION', 'INTRODUCCION', 'INTRODUCCIÓN', 'ENTRADILLA', 'INTRODUCTION' => 'intro',
+            'NEWS ITEMS', 'ITEMS', 'NOTICIAS', 'ACTUALITES', 'ACTUALITÉS' => 'news_items',
+            'OUTRO', 'CIERRE', 'CONCLUSION' => 'outro',
             'NOTES', 'NOTAS' => 'notes',
             default => null,
         };
@@ -120,7 +120,7 @@ class AiResponseParser
             return [];
         }
 
-        preg_match_all('/(?:(?<=\n)|^)\s*(?:\d+[.)]\s*)?(?:HEADLINE|TITULAR)\s*:/iu', $text, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all('/(?:(?<=\n)|^)\s*(?:\d+[.)]\s*)?(?:[*_#\s]*)?(?:HEADLINE|TITULAR|TITRE DE LA NOUVELLE)(?:[*_\s]*)\s*:/iu', $text, $matches, PREG_OFFSET_CAPTURE);
 
         if (empty($matches[0])) {
             return [];
@@ -140,11 +140,11 @@ class AiResponseParser
                 continue;
             }
 
-            $headline = $this->extractField($block, ['HEADLINE', 'TITULAR'], ['SUMMARY', 'RESUMEN', 'SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
-            $summary = $this->extractField($block, ['SUMMARY', 'RESUMEN'], ['SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
-            $script = $this->extractField($block, ['SCRIPT', 'GUION', 'GUIÓN'], ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
-            $editorialAngle = $this->extractField($block, ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL'], ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES']);
-            $sourceHintsText = $this->extractField($block, ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES'], []);
+            $headline = $this->extractField($block, ['HEADLINE', 'TITULAR', 'TITRE DE LA NOUVELLE'], ['SUMMARY', 'RESUMEN', 'RÉSUMÉ', 'SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'ANGLE ÉDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES', 'SOURCES']);
+            $summary = $this->extractField($block, ['SUMMARY', 'RESUMEN', 'RÉSUMÉ'], ['SCRIPT', 'GUION', 'GUIÓN', 'EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'ANGLE ÉDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES', 'SOURCES']);
+            $script = $this->extractField($block, ['SCRIPT', 'GUION', 'GUIÓN'], ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'ANGLE ÉDITORIAL', 'SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES', 'SOURCES']);
+            $editorialAngle = $this->extractField($block, ['EDITORIAL ANGLE', 'ENFOQUE EDITORIAL', 'ANGLE ÉDITORIAL'], ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES', 'SOURCES']);
+            $sourceHintsText = $this->extractField($block, ['SOURCE HINTS', 'PISTAS DE FUENTES', 'FUENTES', 'SOURCES'], []);
             $sourceHints = $this->parseSourceHints($sourceHintsText);
 
             if ($headline === null && $summary === null && $script === null && $editorialAngle === null && $sourceHints === []) {
@@ -176,8 +176,8 @@ class AiResponseParser
             : null;
 
         $pattern = $nextPattern !== null
-            ? '/(?:^|\n)\s*(?:\d+[.)]\s*)?(?:'.$labelPattern.')\s*:\s*(.*?)\s*(?=\n\s*(?:\d+[.)]\s*)?(?:'.$nextPattern.')\s*:|$)/isu'
-            : '/(?:^|\n)\s*(?:\d+[.)]\s*)?(?:'.$labelPattern.')\s*:\s*(.*?)\s*$/isu';
+            ? '/(?:^|\n)\s*(?:\d+[.)]\s*)?(?:[*_#\s]*)?(?:'.$labelPattern.')(?:[*_\s]*)\s*:\s*(.*?)\s*(?=\n\s*(?:\d+[.)]\s*)?(?:[*_#\s]*)?(?:'.$nextPattern.')(?:[*_\s]*)\s*:|$)/isu'
+            : '/(?:^|\n)\s*(?:\d+[.)]\s*)?(?:[*_#\s]*)?(?:'.$labelPattern.')(?:[*_\s]*)\s*:\s*(.*?)\s*$/isu';
 
         if (preg_match($pattern, $block, $match) !== 1) {
             return null;
@@ -282,21 +282,29 @@ class AiResponseParser
         ];
     }
 
+    private function normalizeLabel(string $line): string
+    {
+        $beforeColon = explode(':', $line, 2)[0] ?? $line;
+        $clean = trim($beforeColon);
+        $clean = preg_replace('/^\d+[.)]\s*/u', '', $clean) ?? $clean;
+        $clean = preg_replace('/^#+\s*/u', '', $clean) ?? $clean;
+        $clean = preg_replace('/^\*+\s*/u', '', $clean) ?? $clean;
+        $clean = preg_replace('/\s*\*+$/u', '', $clean) ?? $clean;
+        $clean = preg_replace('/\s+/u', ' ', $clean) ?? $clean;
+
+        return mb_strtoupper(trim($clean));
+    }
+
     private function extractInlineContent(string $line): ?string
     {
-        if (preg_match('/^[^:]+:\s*(.*)$/u', trim($line), $matches) !== 1) {
+        if (! str_contains($line, ':')) {
             return null;
         }
 
-        return trim((string) ($matches[1] ?? ''));
-    }
+        $parts = explode(':', $line, 2);
+        $value = trim($parts[1] ?? '');
 
-    private function normalizeLabel(string $line): string
-    {
-        $beforeColon = explode(':', trim($line), 2)[0] ?? '';
-        $withoutIndex = (string) preg_replace('/^\s*\d+[.)]\s*/u', '', $beforeColon);
-
-        return mb_strtoupper(trim($withoutIndex));
+        return $value !== '' ? $value : null;
     }
 
     private function nullIfEmpty(?string $value): ?string
@@ -307,6 +315,7 @@ class AiResponseParser
 
         $trimmed = trim($value);
 
-        return $trimmed === '' ? null : $trimmed;
+        return $trimmed !== '' ? $trimmed : null;
     }
+
 }

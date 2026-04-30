@@ -679,3 +679,13 @@ Roadmap (current):
 - Obsolete French translation instruction is removed from default prompt generation paths.
 - Prompt run pages show prompt length and approximate token estimate to help keep prompts short.
 - Target length: under 1200 characters where possible; prompts above 1800 should be considered long.
+
+## 16. PLAIN FINAL SCRIPT PROMPTS
+
+- Default prompt mode for bulletin prompt runs is `final_plain_script` (Guion final simple / Simple final script / Script final simple).
+- Normal generation flow now asks the model to return only the final narration script in continuous plain text.
+- Structured blocks (`TITLE`, `INTRO`, `NEWS ITEMS`, `SCRIPT`, `OUTRO`, `NOTES`) are no longer part of normal prompt output.
+- `structured_script` remains available only for advanced/debug usage when explicitly selected.
+- Prompt profiles are intended to contribute tone/style only and should not inject output schema blocks.
+- Sports Preview and other demo bulletin types use simple final script mode in seeded defaults.
+- Target prompt size for normal runs is short (roughly 700-1200 chars when possible) to help Gemini/Groq reliability and future audio generation.

@@ -1,5 +1,13 @@
 export const translations: Record<string, Record<string, string>> = {
     en: {
+
+        'Simple final script': 'Simple final script',
+        'Plain final script': 'Plain final script',
+        'Advanced structured script': 'Advanced structured script',
+        'Advanced / debug': 'Advanced / debug',
+        'Structured mode is only for advanced debugging': 'Structured mode is only for advanced debugging',
+        'Manual actions / debugging': 'Manual actions / debugging',
+        'This prompt contains structured instructions that do not match simple final script mode': 'This prompt contains structured instructions that do not match simple final script mode',
         Trabajo: 'Work',
         'Panel de trabajo': 'Dashboard',
         Automatización: 'Automation',
@@ -1264,6 +1272,14 @@ export const translations: Record<string, Record<string, string>> = {
 },
 
     es: {
+
+        'Simple final script': 'Guion final simple',
+        'Plain final script': 'Guion final simple',
+        'Advanced structured script': 'Guion estructurado avanzado',
+        'Advanced / debug': 'Avanzado / depuración',
+        'Structured mode is only for advanced debugging': 'El modo estructurado es solo para depuración avanzada',
+        'Manual actions / debugging': 'Acciones manuales / depuración',
+        'This prompt contains structured instructions that do not match simple final script mode': 'Este prompt contiene instrucciones estructuradas que no corresponden al modo Guion final simple',
         Trabajo: 'Trabajo',
         'Panel de trabajo': 'Panel de trabajo',
         Automatización: 'Automatización',
@@ -2503,6 +2519,14 @@ export const translations: Record<string, Record<string, string>> = {
         'help.editor.scripts.warning2': 'Estos indicadores preparan las siguientes fases de producción.',
 },
     fr: {
+
+        'Simple final script': 'Script final simple',
+        'Plain final script': 'Script final simple',
+        'Advanced structured script': 'Script structuré avancé',
+        'Advanced / debug': 'Avancé / débogage',
+        'Structured mode is only for advanced debugging': "Le mode structuré est uniquement destiné au débogage avancé",
+        'Manual actions / debugging': 'Actions manuelles / débogage',
+        'This prompt contains structured instructions that do not match simple final script mode': "Ce prompt contient des instructions structurées qui ne correspondent pas au mode script final simple",
         Trabajo: 'Travail',
         'Panel de trabajo': 'Tableau de travail',
         Automatización: 'Automatisation',

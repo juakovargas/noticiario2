@@ -657,3 +657,14 @@ Roadmap (current):
 - Bulletin Prompt Run show page now exposes clearer pipeline status details for retry-after/rate-limited-until.
 - Manual fallback actions remain available for debugging, but full pipeline is the default workflow.
 - Future queue/cron retries should continue when provider availability returns.
+
+## SIMPLIFIED PROMPT OUTPUT MODES
+
+- `final_script` is now the recommended default mode for automation and audio workflows.
+- `structured_script` remains available for debug and advanced editorial extraction workflows.
+- Final script prompts are shorter and easier to parse, reducing provider load and token pressure.
+- AI responses in `final_script` mode can be converted directly into script body with minimal parsing.
+- Source hints are requested in a compact section and stored as metadata/source references.
+- Obsolete French translation instruction was removed from default prompt generation.
+- Prompt profiles should focus on tone/editorial style and should not inject output schema unless explicitly intended.
+- Shorter prompts reduce parsing fragility, especially for Gemini grounded flows.

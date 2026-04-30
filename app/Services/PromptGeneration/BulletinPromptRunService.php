@@ -77,7 +77,8 @@ class BulletinPromptRunService
 
     public function saveResponse(BulletinPromptRun $run, string $responseText): BulletinPromptRun
     {
-        $parsed = $this->parser->parse($responseText);
+        $mode = (string) ($run->bulletinType?->output_mode ?? "final_script");
+        $parsed = $this->parser->parse($responseText, $mode);
 
         $currentStatus = (string) $run->status;
 
@@ -114,7 +115,9 @@ class BulletinPromptRunService
             $parsedResponseUsed = false;
         }
 
-        $sourceHints = collect($items)
+        $sourceHints = collect($parsed['source_hints'] ?? [])->whenEmpty(fn ($c) => collect($items)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->flatMap(fn (array $item): array => is_array($item['source_hints'] ?? null) ? $item['source_hints'] : []))
             ->filter(fn (mixed $item): bool => is_array($item))
             ->flatMap(fn (array $item): array => is_array($item['source_hints'] ?? null) ? $item['source_hints'] : [])
             ->map(fn (mixed $hint): string => trim((string) $hint))
@@ -144,6 +147,8 @@ class BulletinPromptRunService
                 'news_item_count' => count($items),
                 'source_hints' => $sourceHints,
                 'parser_warnings' => is_array($parsed['warnings'] ?? null) ? $parsed['warnings'] : [],
+                'output_mode' => $run->bulletinType?->output_mode ?? 'final_script',
+                'verification_notes' => $notes !== '' ? $notes : null,
                 'notes' => $notes !== '' ? $notes : null,
                 'parsed_response' => $parsed,
             ],

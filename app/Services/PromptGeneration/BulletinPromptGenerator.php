@@ -20,6 +20,13 @@ class BulletinPromptGenerator
         $context = $this->coverageWindowResolver->resolve($run);
 
         $promptLanguage = $type->prompt_language ?: 'es';
+        $outputMode = $type->output_mode ?: 'final_script';
+
+        if ($outputMode === 'final_script') {
+            return $promptLanguage === 'en'
+                ? $this->generateEnglishFinalScriptPrompt($type, $profile, $context)
+                : $this->generateSpanishFinalScriptPrompt($type, $profile, $context);
+        }
 
         return $promptLanguage === 'en'
             ? $this->generateEnglishPrompt($type, $profile, $context)
@@ -133,7 +140,6 @@ class BulletinPromptGenerator
                 '- No uses tablas Markdown.',
                 '- Mantén los encabezados exactamente como se solicitaron.',
                 '- Incluye al menos una pista de fuente por noticia cuando sea posible.',
-                '- Añade una traducción al francés por cada noticia bajo el encabezado FRENCH TRANSLATION:, manteniendo el resto del contenido en el idioma final del boletín.',
             ]);
         }
 
@@ -235,6 +241,72 @@ class BulletinPromptGenerator
         return trim(implode("\n", $lines));
     }
 
+
+    private function generateSpanishFinalScriptPrompt($type, $profile, array $context): string
+    {
+        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+
+        return trim(implode("\n", [
+            'Eres redactor de un informativo breve en vídeo.',
+            'Escribe un guion final listo para locución. No inventes datos.',
+            '',
+            'Contexto:',
+            '- Informativo: '.$type->name,
+            '- País/zona: '.($type->location?->name ?? 'Global'),
+            '- Tema: '.($type->newsCategory?->name ?? 'General'),
+            '- Idioma: '.($type->language?->name ?? 'No especificado'),
+            '- Duración objetivo: '.($type->target_duration_seconds ?? 'N/A').' segundos',
+            '- Ventana: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']),
+            '- Tono editorial: ligero='.$profile->humor_level.'/10, formalidad='.$profile->formality_level.'/10, optimismo='.$profile->optimism_level.'/10.',
+            '',
+            'Instrucciones:',
+            '- Selecciona '.$minItems.'-'.$maxItems.' temas relevantes.',
+            '- '.($type->include_future_agenda ? 'Marca claramente como agenda los eventos futuros.' : 'Evita agenda futura salvo necesidad editorial clara.'),
+            '- '.($type->include_historical_context ? 'Incluye contexto histórico breve solo cuando aporte claridad.' : 'No añadas contexto histórico innecesario.'),
+            '- Prioriza fuentes oficiales o medios reconocidos.',
+            '- Añade fuentes/URLs si las tienes. Si una fuente no es clara, escribe "requiere verificación".',
+            '- Frases cortas y naturales para voz. Sin tablas ni Markdown complejo.',
+            '',
+            'Devuelve exactamente:',
+            'TITLE:',
+            'SCRIPT:',
+            'SOURCES:',
+            'VERIFICATION NOTES:',
+        ]));
+    }
+
+    private function generateEnglishFinalScriptPrompt($type, $profile, array $context): string
+    {
+        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+
+        return trim(implode("\n", [
+            'You are writing a short digital video bulletin.',
+            'Write a final narration script ready for voice-over. Do not invent facts.',
+            '',
+            'Context:',
+            '- Bulletin: '.$type->name,
+            '- Location: '.($type->location?->name ?? 'Global'),
+            '- Topic: '.($type->newsCategory?->name ?? 'General'),
+            '- Language: '.($type->language?->name ?? 'Unspecified'),
+            '- Target duration: '.($type->target_duration_seconds ?? 'N/A').' seconds',
+            '- Window: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']),
+            '- Editorial tone: humor='.$profile->humor_level.'/10, formality='.$profile->formality_level.'/10, optimism='.$profile->optimism_level.'/10.',
+            '',
+            'Instructions:',
+            '- Select '.$minItems.'-'.$maxItems.' relevant items.',
+            '- '.($type->include_future_agenda ? 'Mark future events as upcoming agenda.' : 'Avoid future agenda unless editorially essential.'),
+            '- '.($type->include_historical_context ? 'Keep historical context brief and useful.' : 'Skip unnecessary historical context.'),
+            '- Prioritize official or recognized sources.',
+            '- Add sources/URLs when available. If unclear, write "requires verification".',
+            '- Use short natural spoken sentences. No tables or complex Markdown.',
+            '',
+            'Return exactly:',
+            'TITLE:',
+            'SCRIPT:',
+            'SOURCES:',
+            'VERIFICATION NOTES:',
+        ]));
+    }
     private function resolveNewsItemRange(?int $min, ?int $max, ?int $duration): array
     {
         if ($min && $max) {

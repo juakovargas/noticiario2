@@ -14,6 +14,7 @@ class AiResponseData
         public readonly ?int $totalTokens,
         public readonly ?string $finishReason,
         public readonly ?int $durationMs,
+        public readonly ?array $metadata = null,
     ) {
     }
 }

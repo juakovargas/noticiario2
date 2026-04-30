@@ -19,6 +19,8 @@ class AiProvider extends Model
         'custom_openai_compatible',
         'groq',
         'mock',
+        'gemini',
+        'google_gemini',
     ];
 
     protected $fillable = [
@@ -26,6 +28,7 @@ class AiProvider extends Model
         'slug',
         'provider_type',
         'client_driver',
+        'provider_category',
         'base_url',
         'api_key_env_name',
         'default_model',
@@ -42,6 +45,12 @@ class AiProvider extends Model
         'daily_cost_limit',
         'monthly_cost_limit',
         'metadata',
+        'capabilities',
+        'is_testing',
+        'is_local',
+        'supports_grounding',
+        'supports_citations',
+        'supports_streaming',
     ];
 
     protected function casts(): array
@@ -59,6 +68,12 @@ class AiProvider extends Model
             'daily_cost_limit' => 'decimal:6',
             'monthly_cost_limit' => 'decimal:6',
             'metadata' => 'array',
+            'capabilities' => 'array',
+            'is_testing' => 'boolean',
+            'is_local' => 'boolean',
+            'supports_grounding' => 'boolean',
+            'supports_citations' => 'boolean',
+            'supports_streaming' => 'boolean',
         ];
     }
 
@@ -104,6 +119,23 @@ class AiProvider extends Model
     public function aiRequestLogs(): HasMany
     {
         return $this->hasMany(AiRequestLog::class);
+    }
+
+
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeDefault($query)
+    {
+        return $query->where('is_default', true);
+    }
+
+    public function supportsCapability(string $capability): bool
+    {
+        return in_array($capability, $this->capabilities ?? [], true);
     }
 
     public function requiresApiKey(): bool

@@ -159,6 +159,8 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
 
         Route::resource('languages', LanguageController::class)->except('show');
         Route::resource('ai-providers', AiProviderController::class);
+        Route::post('/ai-providers/{aiProvider}/toggle-active', [AiProviderController::class, 'toggleActive'])->name('ai-providers.toggle-active');
+        Route::post('/ai-providers/{aiProvider}/make-default', [AiProviderController::class, 'makeDefault'])->name('ai-providers.make-default');
         Route::get('/ai-request-logs', [AiRequestLogController::class, 'index'])->name('ai-request-logs.index');
         Route::get('/ai-request-logs/{aiRequestLog}', [AiRequestLogController::class, 'show'])->name('ai-request-logs.show');
         Route::resource('prompt-profiles', PromptProfileController::class);

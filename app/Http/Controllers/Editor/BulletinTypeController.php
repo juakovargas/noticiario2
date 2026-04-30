@@ -165,7 +165,7 @@ class BulletinTypeController extends Controller
             'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
             'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'promptProfiles' => PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
-            'scriptProviders' => AiProvider::query()->where('is_active', true)->where(function ($q): void {
+            'scriptProviders' => AiProvider::query()->where('is_active', true)->where('is_testing', false)->where(function ($q): void {
                 $q->where('provider_category', 'text')->orWhere('provider_category', 'grounded_text')->orWhereJsonContains('capabilities', 'script_generation')->orWhereJsonContains('capabilities', 'news_grounding');
             })->orderByDesc('is_default')->orderBy('name')->get(['id','name','provider_category','capabilities']),
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],

@@ -177,7 +177,7 @@ class BulletinPromptRunController extends Controller
             'aiRequestLogs.provider:id,name',
         ]);
 
-        $activeProvider = AiProvider::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->first();
+        $activeProvider = AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->orderBy('name')->first();
 
         $sourceCounts = $bulletinPromptRun->sourceReferences
             ->whereNull('archived_at')
@@ -293,8 +293,9 @@ class BulletinPromptRunController extends Controller
             $provider = AiProvider::query()->find($data['ai_provider_id']);
         }
 
+        $provider ??= AiProvider::query()->where('is_active', true)->where('slug', 'groq')->first();
         $provider ??= AiProvider::query()->where('is_active', true)->where('is_default', true)->first();
-        $provider ??= AiProvider::query()->where('is_active', true)->orderByDesc('is_default')->first();
+        $provider ??= AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->first();
 
         if (! $provider || ! $provider->is_active) {
             return back()->with('error', 'No active AI provider configured.');

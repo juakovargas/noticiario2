@@ -17,8 +17,8 @@ class AiResponseParser
 
         $sections = $this->extractTopLevelSections($raw);
 
-        if ($mode === "final_script") {
-            return $this->parseFinalScript($raw, $sections);
+        if (in_array($mode, ["final_script", "final_plain_script", "plain_script"], true)) {
+            return $this->parseFinalPlainScript($raw, $sections, $mode);
         }
         $items = $this->parseItems((string) ($sections['news_items'] ?? ''));
 
@@ -315,6 +315,33 @@ class AiResponseParser
      * @param  array<int, string>  $warnings
      * @return array<string, mixed>
      */
+
+    private function parseFinalPlainScript(string $raw, array $sections, string $mode): array
+    {
+        $body = preg_replace('/^(TITLE|SCRIPT|SALIDA|OUTPUT)\s*:/mi', '', $raw) ?? $raw;
+        $body = trim($body);
+        $sourceHints = [];
+        if (preg_match('/(?:^|\n)(SOURCES|FUENTES)\s*:\s*(.+)$/is', $body, $m)) {
+            $sourceHints = array_values(array_filter(array_map('trim', preg_split('/\n|;/', trim($m[2])))));
+        }
+
+        return [
+            'title' => $this->nullIfEmpty($sections['title'] ?? null),
+            'intro' => null,
+            'items' => [],
+            'outro' => null,
+            'notes' => null,
+            'warnings' => [],
+            'raw' => $raw,
+            'body' => $body,
+            'source_hints' => $sourceHints,
+            'metadata' => [
+                'output_mode' => $mode,
+                'parsed_response_used' => 'simple_plain_text',
+                'parser_warnings' => [],
+            ],
+        ];
+    }
     private function baseResult(string $raw, array $warnings): array
     {
         return [

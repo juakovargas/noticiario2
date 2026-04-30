@@ -20,335 +20,160 @@ class BulletinPromptGenerator
         $context = $this->coverageWindowResolver->resolve($run);
 
         $promptLanguage = $type->prompt_language ?: 'es';
-        $outputMode = $type->output_mode ?: 'final_script';
+        $outputMode = $type->output_mode ?: 'final_plain_script';
 
-        if ($outputMode === 'final_script') {
+        if ($outputMode === 'structured_script') {
             return $promptLanguage === 'en'
-                ? $this->generateEnglishFinalScriptPrompt($type, $profile, $context)
-                : $this->generateSpanishFinalScriptPrompt($type, $profile, $context);
+                ? $this->generateStructuredPromptEn($type, $context)
+                : $this->generateStructuredPromptEs($type, $context);
         }
 
         return $promptLanguage === 'en'
-            ? $this->generateEnglishPrompt($type, $profile, $context)
-            : $this->generateSpanishPrompt($type, $profile, $context);
+            ? $this->generateFinalPlainPromptEn($type, $profile, $context)
+            : $this->generateFinalPlainPromptEs($type, $profile, $context);
     }
 
-    private function generateSpanishPrompt($type, $profile, array $context): string
+    private function generateFinalPlainPromptEs($type, $profile, array $context): string
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+        [$objective, $structure] = $this->editionGuidanceEs((string) $type->edition_type, (string) ($type->newsCategory?->name ?? 'general'));
+        $tone = $this->toneSummaryEs($profile);
 
         $lines = [
-            'Eres un redactor y guionista de informativos en vídeo para España.',
-            'Tu tarea es escribir un guion periodístico claro, coherente y fácil de escuchar.',
-            'No inventes datos ni hechos.',
+            'Eres redactor de un informativo breve en vídeo para '.($type->location?->name ?? 'audiencia general').'.',
+            'Escribe un guion periodístico claro, natural y listo para locución.',
             '',
-            'CONFIGURACIÓN DEL NOTICIARIO:',
-            '- Tipo de noticiario: '.$type->name,
-            '- Ubicación: '.($type->location?->name ?? 'Global'),
-            '- Categoría: '.($type->newsCategory?->name ?? 'General'),
-            '- Idioma final del guion: '.($type->language?->name ?? 'No especificado'),
-            '- Duración objetivo (segundos): '.($type->target_duration_seconds ?? 'N/A'),
+            'DURACIÓN: '.($type->target_duration_seconds ?? 75).' segundos.',
+            'TEMA: '.($type->newsCategory?->name ?? 'General').'.',
+            'VENTANA: '.$this->compactCoverageWindowEs($context).'.',
+            'OBJETIVO: '.$objective,
             '',
-            'FECHA Y HORA DE EMISIÓN:',
-            '- Fecha de emisión: '.$context['scheduled_for']->format('Y-m-d'),
-            '- Hora de emisión: '.$context['scheduled_for']->format('H:i'),
-            '- Zona horaria: '.$context['timezone'],
+            'ESTRUCTURA:',
+            '- 1 frase breve de apertura.',
+            '- '.$minItems.'-'.$maxItems.' noticias relevantes en frases cortas (guía: '.$structure.').',
+            '- 1 frase final neutra de cierre.',
             '',
-            'VENTANA DE COBERTURA:',
-            '- Modo de cobertura: '.$context['coverage_mode'],
-            '- Desde: '.$this->formatWindow($context['coverage_from'], $context['timezone']),
-            '- Hasta: '.$this->formatWindow($context['coverage_to'], $context['timezone']),
-            '- Significado editorial: '.($context['description'] ?: $this->defaultCoverageMeaningEs($context['coverage_mode'])),
-            '- Agenda futura: '.($type->include_future_agenda ? 'Incluir próximos eventos y marcarlos como agenda.' : 'No incluir agenda futura salvo necesidad editorial crítica.'),
-            '- Contexto histórico: '.($type->include_historical_context ? 'Incluir contexto breve cuando ayude a entender la noticia.' : 'Usar contexto histórico mínimo.'),
-            '',
-            'REGLAS DE SELECCIÓN DE NOTICIAS:',
-            '- Selecciona las noticias más relevantes para la ubicación y categoría configuradas.',
-            '- Respeta estrictamente la ventana de cobertura.',
-            '- Prioriza información reciente y confirmada.',
-            '- Evita historias desactualizadas salvo que sigan en desarrollo.',
-            '',
-            'REQUISITOS DE FUENTES Y CALIDAD:',
-            '- Prioriza fuentes reconocidas y verificables.',
-            '- Da preferencia a fuentes oficiales, agencias y medios de alta reputación.',
-            '- Ejemplos orientativos para España: EFE, Europa Press, RTVE, La Moncloa, BOE, ministerios e instituciones públicas, AEMET, INE, gobiernos autonómicos cuando aplique, y grandes medios nacionales.',
-            '- En deportes prioriza clubes oficiales, ligas/federaciones, UEFA/FIFA/LaLiga/RFEF; y medios deportivos reputados cuando sea útil (Marca, AS, Mundo Deportivo, Sport).',
-            '- En ciencia/salud prioriza instituciones oficiales, universidades, centros de investigación y autoridades sanitarias.',
-            '- Si usas una fuente poco conocida, marca claramente que requiere verificación.',
-            '- Incluye al menos una pista de fuente por noticia.',
-            '- Si no hay fuente fiable, escribe exactamente: "requiere verificación".',
-            '',
-            'NÚMERO DE NOTICIAS:',
-            '- Mínimo de noticias: '.$minItems,
-            '- Máximo de noticias: '.$maxItems,
-            '',
-            'PERSONALIDAD EDITORIAL (0-10):',
-            '- Happiness level: '.($profile->happiness_level ?? 'N/A'),
-            '- Optimism level: '.($profile->optimism_level ?? 'N/A'),
-            '- Seriousness level: '.($profile->seriousness_level ?? 'N/A'),
-            '- Humor level: '.($profile->humor_level ?? 'N/A'),
-            '- Irony level: '.($profile->irony_level ?? 'N/A'),
-            '- Formality level: '.($profile->formality_level ?? 'N/A'),
-            '- Source strictness level: '.($profile->source_strictness_level ?? 'N/A'),
-            '',
-            'MODO DE SALIDA: '.$type->output_mode,
+            'CRITERIOS:',
+            '- No inventes datos.',
+            '- Usa frases cortas y naturales.',
+            '- Respeta la ventana temporal.',
+            '- Si algo no está confirmado, dilo con cautela.',
+            '- Tono: '.$tone.'.',
+            '- Fuentes: '.($this->isHighStrictness($profile) ? "usa fuentes oficiales o medios reconocidos. Si no hay fuente fiable, escribe 'requiere verificación'." : 'prioriza fuentes fiables; si una información no está clara, indica que requiere verificación.'),
         ];
 
-        if ($type->output_mode === 'plain_script') {
-            $lines = array_merge($lines, [
-                '- Entrega únicamente el guion final listo para presentador.',
-                '- Sin markdown, sin tablas y sin bloques técnicos.',
-            ]);
-        } else {
-            $lines = array_merge($lines, [
-                '- Devuelve exactamente estos encabezados y en este orden:',
-                'TITLE:',
-                'Título breve del boletín completo.',
-                '',
-                'INTRO:',
-                'Texto de apertura listo para presentador.',
-                '',
-                'NEWS ITEMS:',
-                '1. HEADLINE:',
-                'Titular breve de la noticia.',
-                '',
-                'SUMMARY:',
-                'Resumen factual breve de apoyo editorial, no para locución final.',
-                '',
-                'SCRIPT:',
-                'Bloque principal de narración para presentador. Este bloque se usa para construir el guion final.',
-                '',
-                'EDITORIAL ANGLE:',
-                'Por qué importa esta noticia o cómo enmarcarla.',
-                '',
-                'SOURCE HINTS:',
-                '- Nombre de fuente y URL si está disponible.',
-                '- Si la fuente es débil o poco clara, marca "needs verification" o "requiere verificación".',
-                '',
-                'OUTRO:',
-                'Texto de cierre listo para presentador.',
-                '',
-                'NOTES:',
-                'Advertencias, incertidumbre, límites de fuentes y notas de verificación.',
-                '',
-                'REGLAS DE FORMATO IMPORTANTES:',
-                '- Los bloques SCRIPT son la narración principal.',
-                '- SUMMARY es solo apoyo interno/editorial.',
-                '- No pongas toda la narración únicamente en SUMMARY.',
-                '- Usa frases cortas y naturales para SCRIPT.',
-                '- Escribe SCRIPT en el idioma final del boletín.',
-                '- No uses tablas Markdown.',
-                '- Mantén los encabezados exactamente como se solicitaron.',
-                '- Incluye al menos una pista de fuente por noticia cuando sea posible.',
-            ]);
+        if ($this->supportsGrounding($runProvider = null)) {
+            $lines[] = '- Si el proveedor aporta fuentes o citas, tenlas en cuenta y evita afirmaciones sin respaldo.';
         }
+
+        $lines = array_merge($lines, [
+            '',
+            'TÍTULO: '.$type->name.' - '.$context['scheduled_for']->format('Y-m-d'),
+            'FECHA: '.$context['scheduled_for']->format('Y-m-d'),
+            'BLOQUE: '.($type->edition_type ?? 'general'),
+            'SECCIÓN: '.($type->newsCategory?->name ?? 'general'),
+            '',
+            'Salida: SOLO texto plano continuo, sin listas, sin markdown y sin encabezados.',
+        ]);
 
         return trim(implode("\n", $lines));
     }
 
-    private function generateEnglishPrompt($type, $profile, array $context): string
+    private function generateFinalPlainPromptEn($type, $profile, array $context): string
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
-
-        $lines = [
-            'You are an editor and scriptwriter for a digital news bulletin.',
-            'Write a clear presenter-ready script and do not invent facts.',
-            '',
-            'BULLETIN CONFIGURATION:',
-            '- Bulletin type: '.$type->name,
-            '- Location: '.($type->location?->name ?? 'Global'),
-            '- Category: '.($type->newsCategory?->name ?? 'General'),
-            '- Final script language: '.($type->language?->name ?? 'Unspecified'),
-            '- Target duration (seconds): '.($type->target_duration_seconds ?? 'N/A'),
-            '',
-            'BROADCAST TIMING:',
-            '- Broadcast date: '.$context['scheduled_for']->format('Y-m-d'),
-            '- Broadcast time: '.$context['scheduled_for']->format('H:i'),
-            '- Timezone: '.$context['timezone'],
-            '',
-            'COVERAGE WINDOW:',
-            '- Coverage mode: '.$context['coverage_mode'],
-            '- From: '.$this->formatWindow($context['coverage_from'], $context['timezone']),
-            '- To: '.$this->formatWindow($context['coverage_to'], $context['timezone']),
-            '- Editorial meaning: '.($context['description'] ?: $this->defaultCoverageMeaningEn($context['coverage_mode'])),
-            '- Future agenda: '.($type->include_future_agenda ? 'Include upcoming events and mark them as upcoming.' : 'Do not include future agenda unless strictly essential.'),
-            '- Historical context: '.($type->include_historical_context ? 'Include brief context when needed.' : 'Only include minimal historical context.'),
-            '',
-            'NEWS SELECTION RULES:',
-            '- Select the most relevant news for the configured location and category.',
-            '- Respect the coverage window.',
-            '- Prioritize recent confirmed information.',
-            '',
-            'SOURCE QUALITY REQUIREMENTS:',
-            '- Prioritize recognized and verifiable sources.',
-            '- Prefer official sources, agencies, and major reputable media.',
-            '- Include at least one source hint per news item.',
-            '- If no reliable source is available, explicitly write "requires verification".',
-            '',
-            'NEWS COUNT:',
-            '- Minimum news items: '.$minItems,
-            '- Maximum news items: '.$maxItems,
-            '',
-            'OUTPUT MODE: '.$type->output_mode,
-        ];
-
-        if ($type->output_mode === 'plain_script') {
-            $lines[] = '- Return only clean presenter-ready script text. No markdown.';
-        } else {
-            $lines = array_merge($lines, [
-                '- Return exactly these headings and keep this order:',
-                'TITLE:',
-                'Short title for the whole bulletin.',
-                '',
-                'INTRO:',
-                'Presenter-ready opening text.',
-                '',
-                'NEWS ITEMS:',
-                '1. HEADLINE:',
-                'Short headline for this item.',
-                '',
-                'SUMMARY:',
-                'Brief factual summary, not for narration.',
-                '',
-                'SCRIPT:',
-                'Presenter-ready narration text for this item. This is the main block used to build the final script.',
-                '',
-                'EDITORIAL ANGLE:',
-                'Why this item matters or how it should be framed.',
-                '',
-                'SOURCE HINTS:',
-                '- Source name and URL when available.',
-                '- If source is weak/unclear, mark as "needs verification".',
-                '',
-                'OUTRO:',
-                'Presenter-ready closing text.',
-                '',
-                'NOTES:',
-                'Warnings, uncertainty, source limitations, or verification notes.',
-                '',
-                'IMPORTANT FORMAT RULES:',
-                '- SCRIPT sections are the main narration blocks.',
-                '- SUMMARY is only internal/editorial support.',
-                '- Do not place the full narration only in SUMMARY.',
-                '- Use short natural sentences for SCRIPT.',
-                '- Write SCRIPT in the final bulletin language.',
-                '- Do not use Markdown tables.',
-                '- Keep headings exactly as requested.',
-                '- Include at least one source hint per news item when possible.',
-            ]);
-        }
-
-        return trim(implode("\n", $lines));
-    }
-
-
-    private function generateSpanishFinalScriptPrompt($type, $profile, array $context): string
-    {
-        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+        $tone = 'serious, neutral and professional';
 
         return trim(implode("\n", [
-            'Eres redactor de un informativo breve en vídeo.',
-            'Escribe un guion final listo para locución. No inventes datos.',
+            'You are writing a short video news bulletin for '.($type->location?->name ?? 'a general audience').'.',
+            'Write a clear journalistic narration script ready for voice-over.',
             '',
-            'Contexto:',
-            '- Informativo: '.$type->name,
-            '- País/zona: '.($type->location?->name ?? 'Global'),
-            '- Tema: '.($type->newsCategory?->name ?? 'General'),
-            '- Idioma: '.($type->language?->name ?? 'No especificado'),
-            '- Duración objetivo: '.($type->target_duration_seconds ?? 'N/A').' segundos',
-            '- Ventana: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']),
-            '- Tono editorial: ligero='.$profile->humor_level.'/10, formalidad='.$profile->formality_level.'/10, optimismo='.$profile->optimism_level.'/10.',
+            'DURATION: '.($type->target_duration_seconds ?? 75).' seconds.',
+            'TOPIC: '.($type->newsCategory?->name ?? 'General').'.',
+            'WINDOW: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            'OBJECTIVE: Summarize the most relevant developments in the configured window.',
             '',
-            'Instrucciones:',
-            '- Selecciona '.$minItems.'-'.$maxItems.' temas relevantes.',
-            '- '.($type->include_future_agenda ? 'Marca claramente como agenda los eventos futuros.' : 'Evita agenda futura salvo necesidad editorial clara.'),
-            '- '.($type->include_historical_context ? 'Incluye contexto histórico breve solo cuando aporte claridad.' : 'No añadas contexto histórico innecesario.'),
-            '- Prioriza fuentes oficiales o medios reconocidos.',
-            '- Añade fuentes/URLs si las tienes. Si una fuente no es clara, escribe "requiere verificación".',
-            '- Frases cortas y naturales para voz. Sin tablas ni Markdown complejo.',
+            'STRUCTURE:',
+            '- One short opening sentence.',
+            '- '.$minItems.'-'.$maxItems.' relevant items in short spoken sentences.',
+            '- One short neutral closing sentence.',
             '',
-            'Devuelve exactamente:',
-            'TITLE:',
-            'SCRIPT:',
-            'SOURCES:',
-            'VERIFICATION NOTES:',
+            'CRITERIA:',
+            '- Do not invent facts.',
+            '- Use short natural spoken sentences.',
+            '- Respect the time window.',
+            '- If something is not confirmed, use cautious wording.',
+            '- Tone: '.$tone.'.',
+            '- Sources: prioritize reliable sources; if unclear, state it requires verification.',
+            '',
+            'TITLE: '.$type->name.' - '.$context['scheduled_for']->format('Y-m-d'),
+            'DATE: '.$context['scheduled_for']->format('Y-m-d'),
+            'BLOCK: '.($type->edition_type ?? 'general'),
+            'SECTION: '.($type->newsCategory?->name ?? 'general'),
+            '',
+            'Output: ONLY continuous plain text, no lists, no markdown, no headings.',
         ]));
     }
 
-    private function generateEnglishFinalScriptPrompt($type, $profile, array $context): string
+    private function generateStructuredPromptEs($type, array $context): string
     {
-        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
-
-        return trim(implode("\n", [
-            'You are writing a short digital video bulletin.',
-            'Write a final narration script ready for voice-over. Do not invent facts.',
-            '',
-            'Context:',
-            '- Bulletin: '.$type->name,
-            '- Location: '.($type->location?->name ?? 'Global'),
-            '- Topic: '.($type->newsCategory?->name ?? 'General'),
-            '- Language: '.($type->language?->name ?? 'Unspecified'),
-            '- Target duration: '.($type->target_duration_seconds ?? 'N/A').' seconds',
-            '- Window: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']),
-            '- Editorial tone: humor='.$profile->humor_level.'/10, formality='.$profile->formality_level.'/10, optimism='.$profile->optimism_level.'/10.',
-            '',
-            'Instructions:',
-            '- Select '.$minItems.'-'.$maxItems.' relevant items.',
-            '- '.($type->include_future_agenda ? 'Mark future events as upcoming agenda.' : 'Avoid future agenda unless editorially essential.'),
-            '- '.($type->include_historical_context ? 'Keep historical context brief and useful.' : 'Skip unnecessary historical context.'),
-            '- Prioritize official or recognized sources.',
-            '- Add sources/URLs when available. If unclear, write "requires verification".',
-            '- Use short natural spoken sentences. No tables or complex Markdown.',
-            '',
-            'Return exactly:',
-            'TITLE:',
-            'SCRIPT:',
-            'SOURCES:',
-            'VERIFICATION NOTES:',
-        ]));
+        return "MODO AVANZADO structured_script\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\nOUTRO:\nNOTES:";
     }
+
+    private function generateStructuredPromptEn($type, array $context): string
+    {
+        return "ADVANCED MODE structured_script\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\nOUTRO:\nNOTES:";
+    }
+
     private function resolveNewsItemRange(?int $min, ?int $max, ?int $duration): array
     {
-        if ($min && $max) {
-            return [$min, $max];
-        }
-
-        $inferred = match (true) {
-            $duration !== null && $duration <= 60 => [3, 4],
-            $duration !== null && $duration <= 90 => [4, 5],
-            $duration !== null && $duration <= 180 => [5, 8],
-            default => [7, 10],
-        };
-
+        if ($min && $max) return [$min, $max];
+        $inferred = $duration !== null && $duration <= 60 ? [3, 4] : ($duration !== null && $duration <= 90 ? [4, 5] : [4, 6]);
         return [$min ?? $inferred[0], $max ?? $inferred[1]];
     }
 
+    private function compactCoverageWindowEs(array $context): string
+    {
+        $from = $this->formatWindow($context['coverage_from'], $context['timezone']);
+        $to = $this->formatWindow($context['coverage_to'], $context['timezone']);
+        return strtolower((string) $context['coverage_mode']).", de {$from} a {$to}";
+    }
+
+    private function toneSummaryEs($profile): string
+    {
+        $serious = (int) ($profile->seriousness_level ?? 5);
+        $formal = (int) ($profile->formality_level ?? 5);
+        $humor = (int) ($profile->humor_level ?? 0);
+        $optimism = (int) ($profile->optimism_level ?? 5);
+
+        $parts = [];
+        $parts[] = ($serious >= 7 || $formal >= 7) ? 'serio, formal y profesional' : 'claro, cercano y profesional';
+        if ($optimism >= 7) $parts[] = 'positivo y constructivo';
+        if ($humor >= 6) $parts[] = 'con humor suave';
+
+        return implode(', ', $parts);
+    }
+
+    private function isHighStrictness($profile): bool
+    {
+        return (int) ($profile->source_strictness_level ?? 0) >= 7;
+    }
+
+    private function editionGuidanceEs(string $editionType, string $category): array
+    {
+        return match ($editionType) {
+            'morning' => ['Resumir las noticias más relevantes cerradas del periodo anterior.', '1 frase de apertura, 3-5 noticias breves y 1 cierre corto'],
+            'afternoon' => ['Actualizar los hechos relevantes del día y lo que sigue abierto.', 'Apertura breve, 4-6 noticias y cierre útil'],
+            'night' => ['Recapitular el día y adelantar con cautela lo importante de mañana.', 'Apertura, 4-6 noticias, cierre de resumen'],
+            'special' => [str_contains(strtolower($category), 'sport') || str_contains(strtolower($category), 'deport') ? 'Adelantar los eventos deportivos relevantes de las próximas 24 horas.' : 'Crear un boletín breve con las noticias más relevantes de la ventana configurada.', 'Apertura breve, 4-6 eventos o noticias, cierre ligero'],
+            default => ['Crear un boletín breve con las noticias más relevantes de la ventana configurada.', 'Apertura breve, 4-6 noticias y cierre corto'],
+        };
+    }
+
+    private function supportsGrounding($provider): bool { return false; }
+
     private function formatWindow(?Carbon $date, string $timezone): string
     {
-        return $date ? $date->copy()->timezone($timezone)->format('Y-m-d H:i').' '.$timezone : 'N/A';
-    }
-
-    private function defaultCoverageMeaningEs(string $mode): string
-    {
-        return match ($mode) {
-            'today_so_far' => 'Cubrir noticias confirmadas de hoy hasta la hora de emisión.',
-            'yesterday' => 'Cubrir noticias del día anterior completo.',
-            'last_24_hours' => 'Cubrir noticias confirmadas de las últimas 24 horas.',
-            'next_24_hours' => 'Centrar el boletín en agenda y previsiones de las próximas 24 horas.',
-            'custom', 'previous_period' => 'Cubrir noticias cerradas dentro de la ventana definida por offsets.',
-            default => 'Aplicar criterio editorial y priorizar actualidad confirmada.',
-        };
-    }
-
-    private function defaultCoverageMeaningEn(string $mode): string
-    {
-        return match ($mode) {
-            'today_so_far' => 'Cover confirmed news from local start of day to broadcast time.',
-            'yesterday' => 'Cover the full previous local day.',
-            'last_24_hours' => 'Cover confirmed developments from the last 24 hours.',
-            'next_24_hours' => 'Focus on upcoming agenda and previews for the next 24 hours.',
-            'custom', 'previous_period' => 'Cover confirmed news inside the configured offset window.',
-            default => 'Apply editorial judgement and prioritize confirmed recent developments.',
-        };
+        return $date ? $date->copy()->timezone($timezone)->format('d/m/Y H:i').' '.$timezone : 'N/A';
     }
 }

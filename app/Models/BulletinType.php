@@ -21,6 +21,7 @@ class BulletinType extends Model
         'news_category_id',
         'language_id',
         'default_prompt_profile_id',
+        'ai_provider_id',
         'edition_type',
         'target_duration_seconds',
         'default_schedule_time',
@@ -84,6 +85,11 @@ class BulletinType extends Model
     public function promptProfile(): BelongsTo
     {
         return $this->belongsTo(PromptProfile::class, 'default_prompt_profile_id');
+    }
+
+    public function aiProvider(): BelongsTo
+    {
+        return $this->belongsTo(AiProvider::class);
     }
 
     public function schedules(): HasMany

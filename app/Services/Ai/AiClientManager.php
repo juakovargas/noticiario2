@@ -4,6 +4,7 @@ namespace App\Services\Ai;
 
 use App\Data\AiResponse;
 use App\Models\AiProvider;
+use App\Services\Ai\Clients\GeminiClient;
 use App\Services\Ai\Clients\LaravelAiSdkClient;
 use App\Services\Ai\Clients\OllamaClient;
 use App\Services\Ai\Clients\OpenAiCompatibleClient;
@@ -42,6 +43,7 @@ class AiClientManager
         return match ($provider->provider_type) {
             'openai', 'openrouter', 'custom_openai_compatible', 'groq' => new OpenAiCompatibleClient(),
             'ollama' => new OllamaClient(),
+            'gemini', 'google_gemini' => new GeminiClient(),
             'mock' => new class implements AiClient {
                 public function generateText(AiProvider $provider, string $prompt, array $options = []): AiResponseData
                 {

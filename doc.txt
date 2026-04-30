@@ -597,3 +597,21 @@ Current roadmap:
 3. feature/audio-production-foundation-edge-tts
 4. feature/video-production-foundation-remotion
 5. feature/publishing-foundation
+
+## PROVIDER CATEGORIES AND GEMINI GROUNDED
+
+- AI providers now support category + capabilities metadata for broader provider configuration (text, grounded_text, local, testing).
+- Groq remains available as the fast script generation provider.
+- Gemini Grounded is added as a real provider option for grounded/current-news script generation using `GEMINI_API_KEY`.
+- Mock provider remains testing-only and should not be default outside explicit testing setup.
+- Local/Ollama provider support is preserved.
+- Bulletin Types can now choose a preferred script provider; pipeline resolves this preferred provider before global default.
+- Grounding metadata from Gemini responses is captured in AI response metadata for source-candidate workflows.
+- Audio/video providers remain future phases and are not implemented in this branch.
+- Gemini key setup: Google AI Studio -> API keys -> Create API key, then assign to `GEMINI_API_KEY` in environment.
+
+Roadmap (current):
+1. feature/source-confidence-from-ai-citations
+2. feature/audio-production-foundation-edge-tts
+3. feature/video-production-foundation-remotion
+4. feature/publishing-foundation

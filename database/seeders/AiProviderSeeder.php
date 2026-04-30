@@ -10,65 +10,22 @@ class AiProviderSeeder extends Seeder
     public function run(): void
     {
         $providers = [
-            [
-                'name' => 'OpenRouter',
-                'slug' => 'openrouter',
-                'provider_type' => 'openrouter',
-                'client_driver' => 'custom',
-                'base_url' => 'https://openrouter.ai/api/v1',
-                'api_key_env_name' => 'OPENROUTER_API_KEY',
-                'default_model' => 'openai/gpt-4o-mini',
-                'is_active' => false,
-                'is_default' => false,
-                'timeout_seconds' => 60,
-            ],
-            [
-                'name' => 'OpenAI',
-                'slug' => 'openai',
-                'provider_type' => 'openai',
-                'client_driver' => 'custom',
-                'base_url' => 'https://api.openai.com/v1',
-                'api_key_env_name' => 'OPENAI_API_KEY',
-                'default_model' => 'gpt-4o-mini',
-                'is_active' => false,
-                'is_default' => false,
-                'timeout_seconds' => 60,
-            ],
-            [
-                'name' => 'Groq',
-                'slug' => 'groq',
-                'provider_type' => 'groq',
-                'client_driver' => 'custom',
-                'base_url' => 'https://api.groq.com/openai/v1',
-                'api_key_env_name' => 'GROQ_API_KEY',
-                'default_model' => 'llama-3.3-70b-versatile',
-                'is_active' => false,
-                'is_default' => false,
-                'timeout_seconds' => 60,
-                'max_tokens' => 3000,
-                'temperature' => 0.4,
-                'daily_request_limit' => 1000,
-                'monthly_request_limit' => 30000,
-            ],
-            [
-                'name' => 'Local Ollama',
-                'slug' => 'local-ollama',
-                'provider_type' => 'ollama',
-                'client_driver' => 'custom',
-                'base_url' => 'http://localhost:11434',
-                'api_key_env_name' => null,
-                'default_model' => 'llama3.1:8b',
-                'is_active' => false,
-                'is_default' => false,
-                'timeout_seconds' => 60,
-            ],
+            ['name'=>'Groq','slug'=>'groq','provider_type'=>'groq','client_driver'=>'custom','provider_category'=>'text','capabilities'=>['script_generation','fast_inference'],'base_url'=>'https://api.groq.com/openai/v1','api_key_env_name'=>'GROQ_API_KEY','default_model'=>'llama-3.3-70b-versatile','is_active'=>true,'is_default'=>false,'supports_grounding'=>false,'supports_citations'=>false,'is_testing'=>false,'is_local'=>false,'timeout_seconds'=>60],
+            ['name'=>'Gemini Grounded','slug'=>'gemini-grounded','provider_type'=>'gemini','client_driver'=>'custom','provider_category'=>'grounded_text','capabilities'=>['script_generation','news_grounding','google_search_grounding','citations'],'base_url'=>'https://generativelanguage.googleapis.com/v1beta','api_key_env_name'=>'GEMINI_API_KEY','default_model'=>'gemini-2.0-flash','is_active'=>false,'is_default'=>false,'supports_grounding'=>true,'supports_citations'=>true,'is_testing'=>false,'is_local'=>false,'timeout_seconds'=>60],
+            ['name'=>'Mock','slug'=>'mock','provider_type'=>'mock','client_driver'=>'custom','provider_category'=>'testing','capabilities'=>['mock','testing'],'is_active'=>false,'is_default'=>false,'is_testing'=>true,'is_local'=>false,'timeout_seconds'=>15],
+            ['name'=>'Local Ollama','slug'=>'local-ollama','provider_type'=>'ollama','client_driver'=>'custom','provider_category'=>'local','capabilities'=>['local_processing','script_review','reformatting'],'base_url'=>'http://localhost:11434','default_model'=>'llama3.1:8b','is_active'=>false,'is_default'=>false,'is_testing'=>false,'is_local'=>true,'timeout_seconds'=>60],
         ];
-
         foreach ($providers as $provider) {
-            AiProvider::query()->updateOrCreate(
-                ['slug' => $provider['slug']],
-                $provider,
-            );
+            AiProvider::query()->updateOrCreate(['slug'=>$provider['slug']], $provider);
+        }
+
+        $currentDefault = AiProvider::query()->where('is_default', true)->first();
+        if (! $currentDefault || $currentDefault->provider_type === 'mock') {
+            $groq = AiProvider::query()->where('slug', 'groq')->first();
+            if ($groq) {
+                AiProvider::query()->where('id', '!=', $groq->id)->update(['is_default' => false]);
+                $groq->update(['is_default' => true]);
+            }
         }
     }
 }

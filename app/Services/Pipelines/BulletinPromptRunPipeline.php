@@ -86,7 +86,7 @@ class BulletinPromptRunPipeline
                 if (! $options['allow_ai_call']) {
                     $summary['warnings'][] = 'Waiting for manual action.';
                 } else {
-                    $provider = $this->resolveProvider($options['ai_provider_id']);
+                    $provider = $this->resolveProvider($run, $options['ai_provider_id']);
                     if (! $provider || ! $provider->is_active) {
                         return $this->fail($run, $summary, 'ai_provider', 'Provider missing.');
                     }
@@ -186,12 +186,24 @@ class BulletinPromptRunPipeline
         return $summary;
     }
 
-    private function resolveProvider(?int $providerId): ?AiProvider
+    private function resolveProvider(BulletinPromptRun $run, ?int $providerId): ?AiProvider
     {
-        return $providerId
-            ? AiProvider::query()->find($providerId)
-            : (AiProvider::query()->where('is_active', true)->where('slug', 'groq')->first()
-                ?? AiProvider::query()->where('is_active', true)->where('is_default', true)->first()
-                ?? AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->first());
+        if ($providerId) {
+            return AiProvider::query()->find($providerId);
+        }
+
+        $preferredId = $run->bulletinType?->ai_provider_id ?? null;
+        if ($preferredId) {
+            $preferred = AiProvider::query()->active()->find($preferredId);
+            if ($preferred) {
+                return $preferred;
+            }
+        }
+
+        return AiProvider::query()->active()->where('is_default', true)->where('is_testing', false)->first()
+            ?? AiProvider::query()->active()->where('slug', 'groq')->first()
+            ?? AiProvider::query()->active()->where('provider_category', 'grounded_text')->first()
+            ?? AiProvider::query()->active()->where('provider_type', '!=', 'mock')->first()
+            ?? AiProvider::query()->active()->first();
     }
 }

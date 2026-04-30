@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Editor;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiProvider;
 use App\Models\BulletinType;
 use App\Models\Language;
 use App\Models\Location;
@@ -127,6 +128,7 @@ class BulletinTypeController extends Controller
             'news_category_id' => ['nullable', 'exists:news_categories,id'],
             'language_id' => ['nullable', 'exists:languages,id'],
             'default_prompt_profile_id' => ['nullable', 'exists:prompt_profiles,id'],
+            'ai_provider_id' => ['nullable', 'exists:ai_providers,id'],
             'edition_type' => ['nullable', 'string', 'max:50'],
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'default_schedule_time' => ['nullable', 'date_format:H:i'],
@@ -163,6 +165,9 @@ class BulletinTypeController extends Controller
             'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
             'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'promptProfiles' => PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
+            'scriptProviders' => AiProvider::query()->where('is_active', true)->where(function ($q): void {
+                $q->where('provider_category', 'text')->orWhere('provider_category', 'grounded_text')->orWhereJsonContains('capabilities', 'script_generation')->orWhereJsonContains('capabilities', 'news_grounding');
+            })->orderByDesc('is_default')->orderBy('name')->get(['id','name','provider_category','capabilities']),
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
             'coverageModes' => ['previous_period', 'today_so_far', 'yesterday', 'last_24_hours', 'next_24_hours', 'custom', 'none'],
             'promptLanguages' => ['es', 'en', 'fr'],

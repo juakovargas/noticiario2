@@ -552,3 +552,29 @@ Current roadmap:
 - Failures store failed step/message on bulletin prompt runs and remain visible for retry/debug.
 - Prompt-only action remains available for manual workflows without AI call.
 - CLI commands share the same pipeline service: noticiario:run-prompt-pipeline and noticiario:run-schedule-now.
+
+## TEST DATABASE SAFETY
+
+- Development database is `noticiario2`.
+- Test database must be `noticiario2_testing`.
+- Tests must be run with:
+  - `php artisan test --env=testing`
+- Test database can be prepared with:
+  - `php artisan migrate:fresh --seed --env=testing`
+- Never run `migrate:fresh` without `--env=testing` unless intentionally deleting development data.
+- PHPUnit is configured to force testing-safe values including MySQL + `DB_DATABASE=noticiario2_testing`.
+- A safety guard in `tests/TestCase.php` blocks test execution when database names are not clearly test databases.
+- Guard allows only:
+  - `:memory:`
+  - names containing `_testing`
+  - names ending with `_test`
+- Running tests with a non-test database throws:
+  - `Refusing to run tests against non-testing database: {database}`
+- Command to verify safety:
+  - `php artisan noticiario:check-test-database --env=testing`
+- Composer safe script:
+  - `composer test:safe`
+- Recommended MySQL setup command:
+  - `CREATE DATABASE IF NOT EXISTS noticiario2_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+- `.env.testing` / `.env.testing.example` must use:
+  - `DB_DATABASE=noticiario2_testing`

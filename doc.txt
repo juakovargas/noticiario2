@@ -545,3 +545,10 @@ Current roadmap:
 - Added direct actions to view executions and scripts filtered by informativo (bulletin type).
 - Internal technical status codes are mapped to human-readable translation keys in automation UI.
 - Date/time presentation is simplified for operational readability (time without seconds where relevant).
+
+## FULL AUTOMATED SCRIPT PIPELINE
+- Automation button now runs full pipeline and can redirect directly to the created script.
+- Pipeline steps automated: prompt generation, AI response generation, response parsing, script creation, metadata generation, source extraction.
+- Failures store failed step/message on bulletin prompt runs and remain visible for retry/debug.
+- Prompt-only action remains available for manual workflows without AI call.
+- CLI commands share the same pipeline service: noticiario:run-prompt-pipeline and noticiario:run-schedule-now.

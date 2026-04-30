@@ -585,6 +585,16 @@ export const translations: Record<string, Record<string, string>> = {
         'The AI response was parsed successfully': 'The AI response was parsed successfully',
         'The AI response could not be parsed and the raw response was used': 'The AI response could not be parsed and the raw response was used',
         'Do not use Markdown bold around section headings': 'Do not use Markdown bold around section headings',
+
+        'Run full pipeline now': 'Run full pipeline now',
+        'Run missed pipeline now': 'Run missed pipeline now',
+        'Create prompt only': 'Create prompt only',
+        'This will send the prompt to the configured AI provider and may consume one request': 'This will send the prompt to the configured AI provider and may consume one request',
+        'Pipeline completed. Script created.': 'Pipeline completed. Script created.',
+        'Pipeline completed': 'Pipeline completed',
+        'Pipeline failed': 'Pipeline failed',
+        'The process stopped at this step': 'The process stopped at this step',
+
         'No script blocks detected': 'No script blocks detected',
         'The final script may use the full response fallback': 'The final script may use the full response fallback',
         'Response status': 'Response status',
@@ -1777,6 +1787,16 @@ export const translations: Record<string, Record<string, string>> = {
         'The AI response was parsed successfully': 'La respuesta de IA se analizó correctamente',
         'The AI response could not be parsed and the raw response was used': 'No se pudo analizar la respuesta de IA y se usó la respuesta en bruto',
         'Do not use Markdown bold around section headings': 'No uses negritas Markdown en los encabezados de sección',
+
+        'Run full pipeline now': 'Ejecutar pipeline completo ahora',
+        'Run missed pipeline now': 'Ejecutar pipeline atrasado ahora',
+        'Create prompt only': 'Crear solo prompt',
+        'This will send the prompt to the configured AI provider and may consume one request': 'Esto enviará el prompt al proveedor de IA configurado y puede consumir una solicitud',
+        'Pipeline completed. Script created.': 'Pipeline completado. Guion creado.',
+        'Pipeline completed': 'Pipeline completado',
+        'Pipeline failed': 'Pipeline falló',
+        'The process stopped at this step': 'El proceso se detuvo en este paso',
+
         'No script blocks detected': 'No se detectaron bloques de guion',
         'The final script may use the full response fallback': 'El guion final puede usar el fallback de respuesta completa',
         'Response status': 'Estado de respuesta',
@@ -2726,5 +2746,15 @@ export const translations: Record<string, Record<string, string>> = {
         'The AI response was parsed successfully': "La réponse IA a été analysée avec succès",
         'The AI response could not be parsed and the raw response was used': "La réponse IA n'a pas pu être analysée et la réponse brute a été utilisée",
         'Do not use Markdown bold around section headings': "N'utilisez pas le gras Markdown autour des en-têtes de section",
+
+        'Run full pipeline now': 'Exécuter le pipeline complet maintenant',
+        'Run missed pipeline now': 'Exécuter le pipeline en retard maintenant',
+        'Create prompt only': 'Créer uniquement le prompt',
+        'This will send the prompt to the configured AI provider and may consume one request': 'Cela enverra le prompt au fournisseur IA configuré et peut consommer une requête',
+        'Pipeline completed. Script created.': 'Pipeline terminé. Script créé.',
+        'Pipeline completed': 'Pipeline terminé',
+        'Pipeline failed': 'Échec du pipeline',
+        'The process stopped at this step': 'Le processus s'est arrêté à cette étape',
+
     },
 };

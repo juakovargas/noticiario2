@@ -2754,7 +2754,6 @@ export const translations: Record<string, Record<string, string>> = {
         'Pipeline completed. Script created.': 'Pipeline terminé. Script créé.',
         'Pipeline completed': 'Pipeline terminé',
         'Pipeline failed': 'Échec du pipeline',
-        'The process stopped at this step': 'Le processus s'est arrêté à cette étape',
-
+        'The process stopped at this step': "Le processus s'est arrêté à cette étape",
     },
 };

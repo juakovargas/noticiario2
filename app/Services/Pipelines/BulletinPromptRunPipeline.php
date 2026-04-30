@@ -190,7 +190,8 @@ class BulletinPromptRunPipeline
     {
         return $providerId
             ? AiProvider::query()->find($providerId)
-            : (AiProvider::query()->where('is_active', true)->where('is_default', true)->first()
-                ?? AiProvider::query()->where('is_active', true)->orderByDesc('is_default')->first());
+            : (AiProvider::query()->where('is_active', true)->where('slug', 'groq')->first()
+                ?? AiProvider::query()->where('is_active', true)->where('is_default', true)->first()
+                ?? AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->first());
     }
 }

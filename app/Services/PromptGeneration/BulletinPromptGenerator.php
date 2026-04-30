@@ -133,6 +133,7 @@ class BulletinPromptGenerator
                 '- No uses tablas Markdown.',
                 '- Mantén los encabezados exactamente como se solicitaron.',
                 '- Incluye al menos una pista de fuente por noticia cuando sea posible.',
+                '- Añade una traducción al francés por cada noticia bajo el encabezado FRENCH TRANSLATION:, manteniendo el resto del contenido en el idioma final del boletín.',
             ]);
         }
 

@@ -36,45 +36,34 @@ class BulletinPromptGenerator
     private function generateFinalPlainPromptEs($type, $profile, array $context): string
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
-        [$objective, $structure] = $this->editionGuidanceEs((string) $type->edition_type, (string) ($type->newsCategory?->name ?? 'general'));
+        [$objective, $rule] = $this->editionGuidanceEs((string) $type->edition_type, (string) ($type->newsCategory?->name ?? 'general'));
         $tone = $this->toneSummaryEs($profile);
 
         $lines = [
-            'Eres redactor de un informativo breve en vídeo para '.($type->location?->name ?? 'audiencia general').'.',
+            'Eres redactor y guionista de informativos breves en vídeo.',
             'Escribe un guion periodístico claro, natural y listo para locución.',
             '',
-            'DURACIÓN: '.($type->target_duration_seconds ?? 75).' segundos.',
-            'TEMA: '.($type->newsCategory?->name ?? 'General').'.',
-            'VENTANA: '.$this->compactCoverageWindowEs($context).'.',
-            'OBJETIVO: '.$objective,
+            'Fecha de emisión: '.$context['scheduled_for']->timezone($context['timezone'])->format('d/m/Y H:i').'.',
+            'Informativo: '.$type->name.'.',
+            'Localización: '.($type->location?->name ?? 'Global').'.',
+            'Categoría: '.($type->newsCategory?->name ?? 'General').'.',
+            'Idioma: '.($type->language?->name ?? 'Español').'.',
+            'Duración objetivo: '.($type->target_duration_seconds ?? 75).' segundos.',
+            'Propósito: '.$objective,
+            'Ventana informativa: de '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            'Tono: '.$tone.'.',
             '',
-            'ESTRUCTURA:',
-            '- 1 frase breve de apertura.',
-            '- '.$minItems.'-'.$maxItems.' noticias relevantes en frases cortas (guía: '.$structure.').',
-            '- 1 frase final neutra de cierre.',
-            '',
-            'CRITERIOS:',
+            'Reglas:',
             '- No inventes datos.',
             '- Usa frases cortas y naturales.',
-            '- Respeta la ventana temporal.',
+            '- Incluye '.$minItems.' a '.$maxItems.' noticias o eventos.',
+            '- '.$rule,
             '- Si algo no está confirmado, dilo con cautela.',
-            '- Tono: '.$tone.'.',
-            '- Fuentes: '.($this->isHighStrictness($profile) ? "usa fuentes oficiales o medios reconocidos. Si no hay fuente fiable, escribe 'requiere verificación'." : 'prioriza fuentes fiables; si una información no está clara, indica que requiere verificación.'),
+            '- Prioriza información verificable.',
+            '',
+            'Devuelve SOLO el guion final en texto plano continuo.',
+            'No uses títulos, encabezados, listas, markdown, notas ni bloques separados.',
         ];
-
-        if ($this->supportsGrounding($runProvider = null)) {
-            $lines[] = '- Si el proveedor aporta fuentes o citas, tenlas en cuenta y evita afirmaciones sin respaldo.';
-        }
-
-        $lines = array_merge($lines, [
-            '',
-            'TÍTULO: '.$type->name.' - '.$context['scheduled_for']->format('Y-m-d'),
-            'FECHA: '.$context['scheduled_for']->format('Y-m-d'),
-            'BLOQUE: '.($type->edition_type ?? 'general'),
-            'SECCIÓN: '.($type->newsCategory?->name ?? 'general'),
-            '',
-            'Salida: SOLO texto plano continuo, sin listas, sin markdown y sin encabezados.',
-        ]);
 
         return trim(implode("\n", $lines));
     }
@@ -94,24 +83,14 @@ class BulletinPromptGenerator
             'OBJECTIVE: Summarize the most relevant developments in the configured window.',
             '',
             'STRUCTURE:',
-            '- One short opening sentence.',
-            '- '.$minItems.'-'.$maxItems.' relevant items in short spoken sentences.',
-            '- One short neutral closing sentence.',
-            '',
-            'CRITERIA:',
+            '- Include '.$minItems.' to '.$maxItems.' relevant items or events.',
             '- Do not invent facts.',
             '- Use short natural spoken sentences.',
-            '- Respect the time window.',
             '- If something is not confirmed, use cautious wording.',
-            '- Tone: '.$tone.'.',
             '- Sources: prioritize reliable sources; if unclear, state it requires verification.',
             '',
-            'TITLE: '.$type->name.' - '.$context['scheduled_for']->format('Y-m-d'),
-            'DATE: '.$context['scheduled_for']->format('Y-m-d'),
-            'BLOCK: '.($type->edition_type ?? 'general'),
-            'SECTION: '.($type->newsCategory?->name ?? 'general'),
-            '',
-            'Output: ONLY continuous plain text, no lists, no markdown, no headings.',
+            'Return ONLY the final narration script in continuous plain text.',
+            'Do not use headings, markdown, sections, notes, or separated blocks.',
         ]));
     }
 
@@ -165,12 +144,10 @@ class BulletinPromptGenerator
             'morning' => ['Resumir las noticias más relevantes cerradas del periodo anterior.', '1 frase de apertura, 3-5 noticias breves y 1 cierre corto'],
             'afternoon' => ['Actualizar los hechos relevantes del día y lo que sigue abierto.', 'Apertura breve, 4-6 noticias y cierre útil'],
             'night' => ['Recapitular el día y adelantar con cautela lo importante de mañana.', 'Apertura, 4-6 noticias, cierre de resumen'],
-            'special' => [str_contains(strtolower($category), 'sport') || str_contains(strtolower($category), 'deport') ? 'Adelantar los eventos deportivos relevantes de las próximas 24 horas.' : 'Crear un boletín breve con las noticias más relevantes de la ventana configurada.', 'Apertura breve, 4-6 eventos o noticias, cierre ligero'],
+            'special' => [str_contains(strtolower($category), 'sport') || str_contains(strtolower($category), 'deport') ? 'Adelantar los eventos deportivos relevantes de las próximas 24 horas.' : 'Crear un boletín breve con las noticias más relevantes de la ventana configurada.', 'Marca como agenda los eventos futuros.'],
             default => ['Crear un boletín breve con las noticias más relevantes de la ventana configurada.', 'Apertura breve, 4-6 noticias y cierre corto'],
         };
     }
-
-    private function supportsGrounding($provider): bool { return false; }
 
     private function formatWindow(?Carbon $date, string $timezone): string
     {

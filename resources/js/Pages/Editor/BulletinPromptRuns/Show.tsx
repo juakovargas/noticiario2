@@ -57,6 +57,9 @@ export default function Show({ run, promptContext, sourceReferences = [], source
     const promptLength = (run.generated_prompt ?? '').length;
     const approxTokens = Math.ceil(promptLength / 4);
     const outputModeLabel = run.bulletin_type?.output_mode === 'final_plain_script' ? t('Simple final script') : run.bulletin_type?.output_mode === 'plain_script' ? t('Plain script') : t('Structured script');
+    const forbiddenMarkers = ['TITLE:', 'INTRO:', 'NEWS ITEMS:', 'SUMMARY:', 'SCRIPT:', 'SOURCE HINTS:', 'OUTRO:', 'NOTES:', 'structured_script', 'MODO AVANZADO'];
+    const hasForbiddenStructuredMarkers = run.bulletin_type?.output_mode === 'final_plain_script'
+        && forbiddenMarkers.some((marker) => String(run.generated_prompt ?? '').toUpperCase().includes(marker.toUpperCase()));
 
 
     const copyPrompt = async (): Promise<void> => {
@@ -157,6 +160,7 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                         <p><strong>{t('Coverage to')}:</strong> {formatDateTime(promptContext.coverage_to)}</p>
                         <p><strong>{t('Output mode')}:</strong> {outputModeLabel}</p>
                         <p><strong>{t('Prompt length')}:</strong> {promptLength} {t('characters')} · {t('Approximate tokens')}: {approxTokens}</p>
+                        {hasForbiddenStructuredMarkers ? <p className="text-amber-700">{t('This prompt contains structured instructions that do not match simple final script mode')}.</p> : null}
                         {promptLength > 1800 ? <p className="text-amber-700">{t('This prompt is long')}. {t('Use simple final script to reduce tokens')}.</p> : null}
                         <p><strong>{t('Prompt language')}:</strong> {run.bulletin_type?.prompt_language ?? '-'}</p>
                         <p><strong>{t('Minimum news items')}:</strong> {run.bulletin_type?.min_news_items ?? '-'}</p>
@@ -186,7 +190,9 @@ export default function Show({ run, promptContext, sourceReferences = [], source
 
             <Card className="mt-4">
                 <CardContent className="space-y-3 pt-6 text-sm">
-                    <h3 className="font-semibold">{t('Manual fallback')}</h3>
+                    <details>
+                        <summary className="cursor-pointer font-semibold">{t('Manual actions / debugging')}</summary>
+                        <div className="mt-3 space-y-3">
                     <p className="text-slate-600">{t('Debug actions')}</p>
                     <p className="text-slate-600">{t('This will send the generated prompt to the configured AI provider.')}</p>
                     <p className="text-slate-600">{t('Manual copy and paste workflow is still available.')}</p>
@@ -235,6 +241,8 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                             <Link className="text-cyan-700" href={route('editor.ai-request-logs.show', latestAiLog.id)}>{t('Open editor AI request log')}</Link>
                         </div>
                     )}
+                        </div>
+                    </details>
                 </CardContent>
             </Card>
 
@@ -360,4 +368,3 @@ export default function Show({ run, promptContext, sourceReferences = [], source
         </EditorLayout>
     );
 }
-

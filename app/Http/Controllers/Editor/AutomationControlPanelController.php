@@ -49,8 +49,36 @@ class AutomationControlPanelController extends Controller
 
     public function runNow(EditorialSchedule $editorialSchedule): RedirectResponse
     {
-        $run = $this->runner->createRunForSchedule($editorialSchedule->load('bulletinType'), now()->utc()->startOfMinute(), ['generate_prompts' => true]);
+        $scheduledFor = now()->utc()->startOfMinute();
+        $run = $this->runner->createRunForSchedule($editorialSchedule->load('bulletinType'), $scheduledFor, ['generate_prompts' => true]);
+
+        if (! $run->wasRecentlyCreated) {
+            return back()->with('warning', __('Execution already exists for this scheduled time.'));
+        }
+
         return to_route('editor.editorial-schedule-runs.show', $run)->with('success', __('Manual run created.'));
+    }
+
+    public function runOverdueNow(EditorialSchedule $editorialSchedule): RedirectResponse
+    {
+        if (! $editorialSchedule->next_run_at || ! $editorialSchedule->is_active) {
+            return back()->with('warning', __('Schedule is not overdue.'));
+        }
+
+        $scheduledFor = $editorialSchedule->next_run_at->copy()->utc()->startOfMinute();
+        if ($scheduledFor->isFuture()) {
+            return back()->with('warning', __('Schedule is not overdue.'));
+        }
+
+        $run = $this->runner->createRunForSchedule($editorialSchedule->load('bulletinType'), $scheduledFor, ['generate_prompts' => true]);
+
+        if (! $run->wasRecentlyCreated) {
+            $editorialSchedule->next_run_at = $this->runner->calculateNextRunAt($editorialSchedule, $scheduledFor->copy()->addMinute());
+            $editorialSchedule->save();
+            return back()->with('warning', __('Execution already exists for this scheduled time. Next run recalculated.'));
+        }
+
+        return to_route('editor.editorial-schedule-runs.show', $run)->with('success', __('Missed execution processed and next run scheduled.'));
     }
 
     public function recalculateNextRun(EditorialSchedule $editorialSchedule): RedirectResponse

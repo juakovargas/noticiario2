@@ -534,3 +534,14 @@ Current roadmap:
 5. Build audio generation foundation.
 6. Build video generation foundation.
 7. Build publishing/distribution foundation.
+
+## AUTOMATION OPERATIONAL TABLE
+
+- Automation page now uses an operational table with compact columns for status, scheduling, next/last execution, production and actions.
+- Status now includes on/off switch-style control via schedule toggle action.
+- Inactive schedules preserve configured frequency/time/timezone data and are ignored by the runner.
+- Overdue schedules are detected and shown with operational status and overdue duration.
+- Added manual missed-run recovery action to process the overdue scheduled time and then reschedule next run.
+- Added direct actions to view executions and scripts filtered by informativo (bulletin type).
+- Internal technical status codes are mapped to human-readable translation keys in automation UI.
+- Date/time presentation is simplified for operational readability (time without seconds where relevant).

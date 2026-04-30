@@ -40,6 +40,7 @@ const initialFilters = {
     sort: 'created_at',
     direction: 'desc',
     show_archived: '',
+    bulletin_type_id: '',
 };
 
 export default function Index({ scripts, filters, statuses, editions, languages }: Props): JSX.Element {
@@ -94,6 +95,8 @@ export default function Index({ scripts, filters, statuses, editions, languages 
                                 <option key={edition.id} value={edition.id}>{edition.title}</option>
                             ))}
                         </select>
+
+                        <Input value={String((form as any).bulletin_type_id ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, bulletin_type_id: e.target.value }))} placeholder={t('Filter by bulletin type')} />
 
                         <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}>
                             <option value="">{t('All languages')}</option>

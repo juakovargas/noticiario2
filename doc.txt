@@ -581,12 +581,19 @@ Current roadmap:
 
 ## SCRIPTS EDITORIAL CONTROL CENTER
 
-- Scripts page now works as an editorial control center focused on generated scripts.
-- Scripts list now exposes origin informativo using bulletin type relations where available.
-- Added direct Informativo filter (`bulletin_type_id`) for scripts and links from automation context.
-- Added grouping selector (none, informativo, execution date, status) in Scripts list UI.
-- Added execution date visibility with scheduling fallback from prompt run and creation date.
-- Added origin visibility for manual/AI-assisted generation paths and unknown fallbacks.
-- Added editorial + production readiness indicators to support next audio/video/publication phases.
-- Added direct actions to open Script review and related prompt run from the control center.
-- Updated contextual help intent for Scripts as a pre-production control surface; this page does not generate audio/video yet.
+- Scripts index in Editor is now an editorial control center focused on evaluating generated scripts before future production stages.
+- The list now resolves origin informativo from prompt run relationships/metadata and supports filtering by informativo (Bulletin Type).
+- Grouping is available by informativo, execution date, and status.
+- Execution date is shown with a priority chain: schedule run scheduled_for -> prompt run scheduled_for -> prompt run created_at -> script created_at.
+- Origin mode badges now differentiate automatic, manual, manual with AI, imported, and unknown.
+- Editorial/production readiness indicators now surface review status, source verification health, metadata completeness, and ready-for-production markers.
+- Script rows keep route-safe action links for script view/review and prompt run access where available.
+- This page prepares future audio/video/publication phases without implementing generation in this branch.
+
+## CURRENT ROADMAP
+
+1. feature/gemini-grounded-ai-provider
+2. feature/source-confidence-from-ai-citations
+3. feature/audio-production-foundation-edge-tts
+4. feature/video-production-foundation-remotion
+5. feature/publishing-foundation

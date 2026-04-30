@@ -114,7 +114,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
     'admin.airequestlogs.index': FALLBACK,
     'admin.airequestlogs.show': FALLBACK,
     'editor.aiprompttemplates.index': FALLBACK,
-    'editor.scripts.index': { titleKey: 'help.editor.scripts.title', summaryKey: 'help.editor.scripts.summary', sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scripts.what' }, { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scripts.actions' }], tipsKeys: ['help.editor.workflow.daily','help.editor.workflow.aiWarning'] },
+    'editor.scripts.index': { titleKey: 'help.editor.scripts.title', summaryKey: 'help.editor.scripts.summary', sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scripts.what' }, { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scripts.actions' }, { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.scripts.next' }], tipsKeys: ['help.editor.scripts.warning1','help.editor.scripts.warning2'] },
     'editor.scripts.productionedit': FALLBACK,
     'editor.scripts.review': FALLBACK,
     'editor.scripts.show': FALLBACK,

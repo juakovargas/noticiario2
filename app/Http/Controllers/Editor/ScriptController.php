@@ -46,7 +46,7 @@ class ScriptController extends Controller
             'direction' => (string) $request->query('direction', 'desc'),
             'include_archived' => $request->boolean('include_archived'),
             'bulletin_type_id' => (string) $request->query('bulletin_type_id', ''),
-            'group_by' => (string) $request->query('group_by', ''),
+            'group_by' => (string) $request->query('group_by', 'none'),
         ];
 
         $allowedSorts = ['title', 'status', 'language', 'estimated_duration_seconds', 'approved_at', 'created_at'];
@@ -64,7 +64,9 @@ class ScriptController extends Controller
                     'bulletinPromptRun.bulletinType.location:id,name',
                     'bulletinPromptRun.bulletinType.newsCategory:id,name',
                     'bulletinPromptRun.bulletinType.language:id,name,code',
-                    'bulletinPromptRun.editorialScheduleRun:id,scheduled_for',
+                    'bulletinPromptRun.editorialScheduleRun:id,editorial_schedule_id,scheduled_for',
+                    'bulletinPromptRun.editorialScheduleRun.editorialSchedule:id,bulletin_type_id',
+                    'bulletinPromptRun.aiRequestLogs:id,bulletin_prompt_run_id,status,created_at',
                 ])
                 ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                     $search = $filters['search'];
@@ -83,7 +85,7 @@ class ScriptController extends Controller
                 ->when($filters['ready_for_production'] === 'no', fn (Builder $q) => $q->whereNull('ready_for_production_at'))
                 ->when($filters['bulletin_type_id'] !== '', function (Builder $q) use ($filters): void {
                     $q->where(function (Builder $sub) use ($filters): void {
-                        $sub->whereHas('bulletinPromptRun', fn (Builder $bpr) => $bpr->where('bulletin_type_id', $filters['bulletin_type_id']))
+                        $sub->whereHas('bulletinPromptRun', fn (Builder $bpr) => $bpr->where('bulletin_type_id', $filters['bulletin_type_id'])->orWhereHas('editorialScheduleRun.editorialSchedule', fn (Builder $es) => $es->where('bulletin_type_id', $filters['bulletin_type_id'])))
                             ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.bulletin_type_id')) = ?", [$filters['bulletin_type_id']]);
                     });
                 })
@@ -94,7 +96,9 @@ class ScriptController extends Controller
                 ->when($filters['source_verification_status'] !== '', fn (Builder $q) => $q->whereHas('sourceReferences', fn (Builder $s) => $s->where('verification_status', $filters['source_verification_status'])))
                 ->when($filters['execution_mode'] !== '', function (Builder $q) use ($filters): void {
                     if ($filters['execution_mode'] === 'automatic') $q->where(function (Builder $s): void { $s->whereHas('bulletinPromptRun', fn (Builder $b) => $b->whereNotNull('editorial_schedule_run_id'))->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')) = 'automation_pipeline'"); });
-                    if ($filters['execution_mode'] === 'manual') $q->whereNull('bulletin_prompt_run_id')->whereRaw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')), 'manual') IN ('manual','imported')");
+                    if ($filters['execution_mode'] === 'manual') $q->where(function (Builder $s): void { $s->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')) = 'manual'")->orWhereNull('bulletin_prompt_run_id'); });
+                    if ($filters['execution_mode'] === 'manual_ai') $q->whereHas('bulletinPromptRun', fn (Builder $b) => $b->whereNull('editorial_schedule_run_id'));
+                    if ($filters['execution_mode'] === 'imported') $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')) = 'imported'");
                     if ($filters['execution_mode'] === 'unknown') $q->whereNull('bulletin_prompt_run_id')->whereRaw("JSON_EXTRACT(metadata, '$.created_from') IS NULL");
                 })
                 ->when($filters['date_from'] !== '', fn (Builder $q) => $q->whereDate('created_at', '>=', Carbon::parse($filters['date_from'])->toDateString()))
@@ -118,17 +122,50 @@ class ScriptController extends Controller
                         'id' => $script->bulletinPromptRun->id,
                         'title' => $script->bulletinPromptRun->title,
                         'scheduled_for' => $script->bulletinPromptRun->scheduled_for?->toDateTimeString(),
+                        'editorial_schedule_run_scheduled_for' => $script->bulletinPromptRun->editorialScheduleRun?->scheduled_for?->toDateTimeString(),
                     ] : null,
                     'bulletin_type' => $script->bulletinPromptRun?->bulletinType ? [
                         'id' => $script->bulletinPromptRun->bulletinType->id, 'name' => $script->bulletinPromptRun->bulletinType->name,
                         'location' => $script->bulletinPromptRun->bulletinType->location?->name, 'news_category' => $script->bulletinPromptRun->bulletinType->newsCategory?->name, 'language' => $script->bulletinPromptRun->bulletinType->language?->name, 'edition_type' => $script->bulletinPromptRun->bulletinType->edition_type,
                     ] : null,
+                    'execution_date' => $script->bulletinPromptRun?->editorialScheduleRun?->scheduled_for?->toDateTimeString()
+                        ?? $script->bulletinPromptRun?->scheduled_for?->toDateTimeString()
+                        ?? $script->bulletinPromptRun?->created_at?->toDateTimeString()
+                        ?? $script->created_at?->toDateTimeString(),
+                    'origin' => $this->resolveOrigin($script),
+                    'source_verification_status' => $script->sourceReferences->pluck('verification_status')->contains('rejected') ? 'rejected'
+                        : ($script->sourceReferences->pluck('verification_status')->contains('weak') ? 'weak'
+                        : ($script->sourceReferences->pluck('verification_status')->contains('verified') ? 'verified' : 'pending')),
+                    'metadata_complete' => filled($script->final_title) && filled($script->short_description) && is_array($script->hashtags) && count($script->hashtags) > 0,
                 ]);
 
-        return Inertia::render('Editor/Scripts/Index', ['scripts' => $scripts,'filters' => $filters,'filterOptions' => [
+        $summary = [
+            'total' => $scripts->total(),
+            'generated_today' => $query->clone()->whereDate('created_at', now()->toDateString())->count(),
+            'pending_review' => $query->clone()->where('review_status', 'pending')->count(),
+            'ready_for_production' => $query->clone()->whereNotNull('ready_for_production_at')->count(),
+            'needs_attention' => $query->clone()->whereIn('review_status', ['rejected', 'changes_requested'])->count(),
+            'automatic' => $query->clone()->where(function (Builder $q): void { $q->whereHas('bulletinPromptRun', fn (Builder $b) => $b->whereNotNull('editorial_schedule_run_id'))->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')) = 'automation_pipeline'"); })->count(),
+            'manual' => $query->clone()->where(function (Builder $q): void { $q->whereNull('bulletin_prompt_run_id')->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.created_from')) IN ('manual','imported')"); })->count(),
+            'missing_metadata' => $query->clone()->where(function (Builder $q): void { $q->whereNull('final_title')->orWhereNull('short_description'); })->count(),
+            'source_issues' => $query->clone()->whereHas('sourceReferences', fn (Builder $s) => $s->whereIn('verification_status', ['weak', 'rejected', 'missing', 'broken']))->count(),
+        ];
+
+        return Inertia::render('Editor/Scripts/Index', ['scripts' => $scripts,'filters' => $filters,'summary' => $summary, 'filterOptions' => [
             'bulletinTypes' => BulletinType::query()->orderBy('name')->get(['id', 'name']),
-            'statuses' => ['draft','review','approved','rejected','archived'],'productionStatuses' => ['draft','metadata_ready','ready_for_production'],'executionModes' => ['automatic','manual','unknown'],
+            'statuses' => ['draft','review','approved','rejected','archived'],'productionStatuses' => ['draft','metadata_ready','ready_for_production'],'executionModes' => ['automatic','manual','manual_ai','imported','unknown'],
+            'groupBy' => ['none', 'bulletin_type', 'execution_date', 'status'],
         ]]);
+    }
+
+    private function resolveOrigin(Script $script): string
+    {
+        $createdFrom = data_get($script->metadata, 'created_from');
+        if ($createdFrom === 'automation_pipeline' || $script->bulletinPromptRun?->editorial_schedule_run_id) return 'automatic';
+        if ($createdFrom === 'manual_prompt_run' || $script->bulletin_prompt_run_id) return 'manual_ai';
+        if ($createdFrom === 'manual') return 'manual';
+        if ($createdFrom === 'imported') return 'imported';
+        return 'unknown';
     }
 
     public function create(Request $request): Response

@@ -615,3 +615,14 @@ Roadmap (current):
 2. feature/audio-production-foundation-edge-tts
 3. feature/video-production-foundation-remotion
 4. feature/publishing-foundation
+
+## PROVIDER ADMIN UI AND CAPABILITIES
+- Admin AI Providers now includes category-oriented provider management with quick active/default actions from index.
+- Gemini Grounded can be edited with provider_type support and capability flags for grounded news + citations.
+- Validation feedback is surfaced in the provider form with field-level error rendering and required field indicators.
+- Provider categories now represent text/script, grounded news, audio/TTS, video/media, local, and testing responsibilities.
+- Groq remains available as fast script generation provider.
+- Mock remains testing-focused and non-default by policy unless explicitly chosen.
+- Audio/video/media providers are configured as future production placeholders and separated from script selection.
+- Bulletin Type provider list continues to show only active non-testing script-capable providers.
+- API keys remain env-driven and not displayed.

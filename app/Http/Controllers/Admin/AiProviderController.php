@@ -8,6 +8,7 @@ use App\Services\Ai\AiUsageLimitService;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,7 +24,7 @@ class AiProviderController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/AiProviders/Index', [
-            'providers' => AiProvider::query()->orderByDesc('is_default')->orderBy('name')->paginate(15)->through(
+            'providers' => AiProvider::query()->orderByDesc('is_default')->orderBy('name')->get()->map(
                 fn (AiProvider $provider): array => $this->presentProvider($provider)
             ),
             'providerTypes' => $this->providerTypes(),
@@ -45,7 +46,7 @@ class AiProviderController extends Controller
 
         $this->enforceDefault($provider, $provider->is_default);
 
-        return to_route('admin.ai-providers.index')->with('success', 'AI provider created successfully.');
+        return to_route('admin.ai-providers.index')->with('success', __('Provider saved successfully.'));
     }
 
     public function show(AiProvider $aiProvider): Response
@@ -60,15 +61,40 @@ class AiProviderController extends Controller
 
     public function update(Request $request, AiProvider $aiProvider): RedirectResponse
     {
-        $data = $this->validated($request, $aiProvider);
-        $data['slug'] = $this->uniqueSlug(AiProvider::class, $data['slug'] ?: $data['name'], $aiProvider->id);
-        $data = $this->withBooleanValues($request, $data);
+        try {
+            $data = $this->validated($request, $aiProvider);
+            $data['slug'] = $this->uniqueSlug(AiProvider::class, $data['slug'] ?: $data['name'], $aiProvider->id);
+            $data = $this->withBooleanValues($request, $data);
 
-        $aiProvider->update($data);
+            $aiProvider->update($data);
 
-        $this->enforceDefault($aiProvider, $aiProvider->is_default);
+            $this->enforceDefault($aiProvider, $aiProvider->is_default);
 
-        return to_route('admin.ai-providers.index')->with('success', 'AI provider updated successfully.');
+            return to_route('admin.ai-providers.index')->with('success', __('Provider saved successfully.'));
+        } catch (\Throwable $e) {
+            Log::error('Failed to update AI provider', ['provider_id' => $aiProvider->id, 'error' => $e->getMessage()]);
+
+            return back()->withInput()->withErrors(['provider' => __('Unable to update provider. Please review the highlighted fields.')]);
+        }
+    }
+
+    public function toggleActive(AiProvider $aiProvider): RedirectResponse
+    {
+        if ($aiProvider->is_default && $aiProvider->is_active) {
+            return back()->with('error', __('Cannot deactivate the current default provider'));
+        }
+        $aiProvider->update(['is_active' => ! $aiProvider->is_active]);
+        return back()->with('success', $aiProvider->is_active ? __('Provider activated') : __('Provider deactivated'));
+    }
+
+    public function makeDefault(AiProvider $aiProvider): RedirectResponse
+    {
+        if (! $aiProvider->is_active) {
+            return back()->with('error', __('Default provider must be active'));
+        }
+        AiProvider::query()->where('id', '!=', $aiProvider->id)->update(['is_default' => false]);
+        $aiProvider->update(['is_default' => true]);
+        return back()->with('success', __('Provider set as default'));
     }
 
     public function destroy(AiProvider $aiProvider): RedirectResponse
@@ -84,6 +110,7 @@ class AiProviderController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('ai_providers', 'slug')->ignore($provider?->id)],
             'provider_type' => ['required', Rule::in($this->providerTypes())],
+            'provider_category' => ['required', 'string', 'max:50'],
             'client_driver' => ['nullable', Rule::in(['custom', 'laravel_ai'])],
             'base_url' => ['nullable', 'url'],
             'api_key_env_name' => ['nullable', 'string', 'max:255'],
@@ -101,6 +128,12 @@ class AiProviderController extends Controller
             'daily_cost_limit' => ['nullable', 'numeric', 'min:0'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0'],
             'metadata' => ['nullable', 'array'],
+            'capabilities' => ['nullable', 'array'],
+            'is_testing' => ['boolean'],
+            'is_local' => ['boolean'],
+            'supports_grounding' => ['boolean'],
+            'supports_citations' => ['boolean'],
+            'supports_streaming' => ['boolean'],
         ]);
     }
 
@@ -108,6 +141,12 @@ class AiProviderController extends Controller
     {
         $data['is_active'] = $request->boolean('is_active', true);
         $data['is_default'] = $request->boolean('is_default', false);
+        $data['is_testing'] = $request->boolean('is_testing', false);
+        $data['is_local'] = $request->boolean('is_local', false);
+        $data['supports_grounding'] = $request->boolean('supports_grounding', false);
+        $data['supports_citations'] = $request->boolean('supports_citations', false);
+        $data['supports_streaming'] = $request->boolean('supports_streaming', false);
+        $data['capabilities'] = array_values(array_filter($request->input('capabilities', [])));
         $data['client_driver'] = $data['client_driver'] ?? 'custom';
 
         return $data;
@@ -125,7 +164,7 @@ class AiProviderController extends Controller
     /** @return string[] */
     private function providerTypes(): array
     {
-        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'groq', 'mock'];
+        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'groq', 'mock', 'gemini', 'google_gemini', 'gemini_grounded', 'edge_tts', 'elevenlabs', 'google_tts', 'remotion', 'ffmpeg'];
     }
 
     /** @return array<string,mixed> */

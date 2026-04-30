@@ -32,7 +32,7 @@ class BulletinPromptRunService
             ?: PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->first();
 
         $scheduledFor = $this->resolveScheduledFor($bulletinType, $scheduledForInput);
-        $title = sprintf('%s - %s', $bulletinType->name, $scheduledFor->format('Y-m-d H:i'));
+        $title = trim((string) $bulletinType->name);
 
         $edition = Edition::query()->create([
             'location_id' => $bulletinType->location_id,

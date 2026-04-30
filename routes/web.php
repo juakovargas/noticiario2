@@ -198,7 +198,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::post('/automation/sync-schedules', [AutomationControlPanelController::class, 'syncSchedules'])->name('automation.sync-schedules');
         Route::post('/automation/schedules/{editorialSchedule}/toggle', [AutomationControlPanelController::class, 'toggleSchedule'])->name('automation.schedules.toggle');
                 Route::post('/automation/schedules/{editorialSchedule}/run-now', [AutomationControlPanelController::class, 'runNow'])->name('automation.schedules.run-now');
-        Route::post('/automation/schedules/{editorialSchedule}/run-now-and-schedule-next', [AutomationControlPanelController::class, 'runNowAndScheduleNext'])->name('automation.schedules.run-now-and-schedule-next');
+        Route::post('/automation/schedules/{editorialSchedule}/run-full-pipeline', [AutomationControlPanelController::class, 'runNowAndScheduleNext'])->name('automation.schedules.run-full-pipeline');
         Route::post('/automation/schedules/{editorialSchedule}/create-prompt-only', [AutomationControlPanelController::class, 'createPromptOnly'])->name('automation.schedules.create-prompt-only');
         Route::post('/automation/schedules/{editorialSchedule}/run-overdue-now', [AutomationControlPanelController::class, 'runOverdueNow'])->name('automation.schedules.run-overdue-now');
         Route::post('/automation/schedules/{editorialSchedule}/recalculate-next-run', [AutomationControlPanelController::class, 'recalculateNextRun'])->name('automation.schedules.recalculate-next-run');

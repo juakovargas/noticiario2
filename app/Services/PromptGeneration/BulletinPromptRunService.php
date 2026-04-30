@@ -77,7 +77,7 @@ class BulletinPromptRunService
 
     public function saveResponse(BulletinPromptRun $run, string $responseText): BulletinPromptRun
     {
-        $mode = (string) ($run->bulletinType?->output_mode ?? "final_script");
+        $mode = (string) ($run->bulletinType?->output_mode ?? "final_plain_script");
         $parsed = $this->parser->parse($responseText, $mode);
 
         $currentStatus = (string) $run->status;
@@ -147,7 +147,7 @@ class BulletinPromptRunService
                 'news_item_count' => count($items),
                 'source_hints' => $sourceHints,
                 'parser_warnings' => is_array($parsed['warnings'] ?? null) ? $parsed['warnings'] : [],
-                'output_mode' => $run->bulletinType?->output_mode ?? 'final_script',
+                'output_mode' => $run->bulletinType?->output_mode ?? 'final_plain_script',
                 'verification_notes' => $notes !== '' ? $notes : null,
                 'notes' => $notes !== '' ? $notes : null,
                 'parsed_response' => $parsed,

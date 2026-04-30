@@ -54,6 +54,10 @@ export default function Show({ run, promptContext, sourceReferences = [], source
     const aiForm = useForm({ ai_provider_id: run.ai_provider_id ?? defaultAiProviderId ?? '', model: '' });
     const scheduleForm = useForm({ scheduled_for: toDateTimeLocalInputValue(run.scheduled_for ?? new Date()) });
     const parsed = (run.parsed_response ?? null) as ParsedResponse | null;
+    const promptLength = (run.generated_prompt ?? '').length;
+    const approxTokens = Math.ceil(promptLength / 4);
+    const outputModeLabel = run.bulletin_type?.output_mode === 'final_script' ? t('Final script') : run.bulletin_type?.output_mode === 'plain_script' ? t('Plain script') : t('Structured script');
+
 
     const copyPrompt = async (): Promise<void> => {
         if (run.generated_prompt && navigator?.clipboard) {
@@ -151,7 +155,9 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                         <p><strong>{t('Coverage mode')}:</strong> {promptContext.coverage_mode}</p>
                         <p><strong>{t('Coverage from')}:</strong> {formatDateTime(promptContext.coverage_from)}</p>
                         <p><strong>{t('Coverage to')}:</strong> {formatDateTime(promptContext.coverage_to)}</p>
-                        <p><strong>{t('Output mode')}:</strong> {run.bulletin_type?.output_mode ?? '-'}</p>
+                        <p><strong>{t('Output mode')}:</strong> {outputModeLabel}</p>
+                        <p><strong>{t('Prompt length')}:</strong> {promptLength} {t('characters')} · {t('Approximate tokens')}: {approxTokens}</p>
+                        {promptLength > 1500 ? <p className="text-amber-700">{t('Prompt too long')}. {t('Consider final script mode')}.</p> : null}
                         <p><strong>{t('Prompt language')}:</strong> {run.bulletin_type?.prompt_language ?? '-'}</p>
                         <p><strong>{t('Minimum news items')}:</strong> {run.bulletin_type?.min_news_items ?? '-'}</p>
                         <p><strong>{t('Maximum news items')}:</strong> {run.bulletin_type?.max_news_items ?? '-'}</p>

@@ -7,7 +7,7 @@ class AiResponseParser
     /**
      * @return array<string, mixed>
      */
-    public function parse(string $responseText): array
+    public function parse(string $responseText, string $mode = "structured_script"): array
     {
         $raw = trim(str_replace(["\r\n", "\r"], "\n", $responseText));
 
@@ -16,6 +16,10 @@ class AiResponseParser
         }
 
         $sections = $this->extractTopLevelSections($raw);
+
+        if ($mode === "final_script") {
+            return $this->parseFinalScript($raw, $sections);
+        }
         $items = $this->parseItems((string) ($sections['news_items'] ?? ''));
 
         $title = $this->nullIfEmpty($sections['title'] ?? null);
@@ -47,6 +51,49 @@ class AiResponseParser
         ];
     }
 
+
+    private function parseFinalScript(string $raw, array $sections): array
+    {
+        $title = $this->nullIfEmpty($sections['title'] ?? null);
+        $script = $this->extractField($raw, ['SCRIPT', 'GUIÓN', 'GUION'], ['SOURCES', 'FUENTES', 'VERIFICATION NOTES', 'NOTES', 'NOTAS']);
+        $sourcesText = $this->extractField($raw, ['SOURCES', 'FUENTES'], ['VERIFICATION NOTES', 'NOTES', 'NOTAS']);
+        $notes = $this->extractField($raw, ['VERIFICATION NOTES', 'NOTES', 'NOTAS'], []);
+
+        $sourceHints = $this->parseSourceHints($sourcesText);
+        $body = $script ?: $this->stripSectionsFromRaw($raw);
+        $body = trim($body);
+
+        $warnings = [];
+        if ($script === null) {
+            $warnings[] = 'missing_script_heading';
+        }
+        if ($title === null) {
+            $warnings[] = 'missing_title';
+        }
+
+        return [
+            'title' => $title,
+            'intro' => null,
+            'items' => [],
+            'outro' => null,
+            'notes' => $notes,
+            'warnings' => $warnings,
+            'raw' => $raw,
+            'body' => $body !== '' ? $body : $raw,
+            'source_hints' => $sourceHints,
+            'verification_notes' => $notes,
+            'mode' => 'final_script',
+        ];
+    }
+
+    private function stripSectionsFromRaw(string $raw): string
+    {
+        $text = preg_replace('/^\s*TITLE\s*:\s*.*$/imu', '', $raw) ?? $raw;
+        $text = preg_replace('/^\s*SOURCES\s*:\s*[\s\S]*$/imu', '', $text) ?? $text;
+        $text = preg_replace('/^\s*VERIFICATION NOTES\s*:\s*[\s\S]*$/imu', '', $text) ?? $text;
+
+        return trim($text);
+    }
     /**
      * @return array<string, string|null>
      */

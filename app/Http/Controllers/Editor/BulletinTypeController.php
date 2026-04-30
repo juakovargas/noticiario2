@@ -107,7 +107,7 @@ class BulletinTypeController extends Controller
         $data['default_auto_create_script'] = $request->boolean('default_auto_create_script', true);
         $data['default_auto_generate_metadata'] = $request->boolean('default_auto_generate_metadata', true);
         $data['default_auto_extract_sources'] = $request->boolean('default_auto_extract_sources', true);
-        $data['output_mode'] = $data['output_mode'] ?? 'final_plain_script';
+        $data['output_mode'] = $data['output_mode'] ?? 'plain_final_script';
         $data['include_future_agenda'] = $request->boolean('include_future_agenda');
         $data['include_historical_context'] = $request->boolean('include_historical_context');
 
@@ -152,7 +152,7 @@ class BulletinTypeController extends Controller
             'min_news_items' => ['nullable', 'integer', 'min:1', 'max:50'],
             'max_news_items' => ['nullable', 'integer', 'min:1', 'max:50'],
             'prompt_language' => ['nullable', Rule::in(['es', 'en', 'fr'])],
-            'output_mode' => ['nullable', Rule::in(['final_plain_script', 'plain_script', 'structured_script', 'final_script'])],
+            'output_mode' => ['nullable', Rule::in(['plain_final_script', 'structured_script', 'plain_script', 'final_plain_script', 'final_script'])],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -171,7 +171,7 @@ class BulletinTypeController extends Controller
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
             'coverageModes' => ['previous_period', 'today_so_far', 'yesterday', 'last_24_hours', 'next_24_hours', 'custom', 'none'],
             'promptLanguages' => ['es', 'en', 'fr'],
-            'outputModes' => ['final_plain_script', 'structured_script', 'plain_script'],
+            'outputModes' => ['plain_final_script', 'structured_script'],
         ];
     }
 }

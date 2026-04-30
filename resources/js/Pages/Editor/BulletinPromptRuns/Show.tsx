@@ -56,9 +56,9 @@ export default function Show({ run, promptContext, sourceReferences = [], source
     const parsed = (run.parsed_response ?? null) as ParsedResponse | null;
     const promptLength = (run.generated_prompt ?? '').length;
     const approxTokens = Math.ceil(promptLength / 4);
-    const outputModeLabel = run.bulletin_type?.output_mode === 'final_plain_script' ? t('Simple final script') : run.bulletin_type?.output_mode === 'plain_script' ? t('Plain script') : t('Structured script');
+    const outputModeLabel = run.bulletin_type?.output_mode === 'structured_script' ? t('Structured script advanced/debug') : t('Simple final script');
     const forbiddenMarkers = ['TITLE:', 'INTRO:', 'NEWS ITEMS:', 'SUMMARY:', 'SCRIPT:', 'SOURCE HINTS:', 'OUTRO:', 'NOTES:', 'structured_script', 'MODO AVANZADO'];
-    const hasForbiddenStructuredMarkers = run.bulletin_type?.output_mode === 'final_plain_script'
+    const hasForbiddenStructuredMarkers = run.bulletin_type?.output_mode !== 'structured_script'
         && forbiddenMarkers.some((marker) => String(run.generated_prompt ?? '').toUpperCase().includes(marker.toUpperCase()));
 
 
@@ -159,7 +159,7 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                         <p><strong>{t('Coverage from')}:</strong> {formatDateTime(promptContext.coverage_from)}</p>
                         <p><strong>{t('Coverage to')}:</strong> {formatDateTime(promptContext.coverage_to)}</p>
                         <p><strong>{t('Output mode')}:</strong> {outputModeLabel}</p>
-                        <p><strong>{t('Prompt length')}:</strong> {promptLength} {t('characters')} · {t('Approximate tokens')}: {approxTokens}</p>
+                        <p><strong>{t('Prompt length')}:</strong> {run.generated_prompt ? `${promptLength} ${t('characters')} · ${t('Approximate tokens')}: ${approxTokens}` : t('Prompt not generated yet')}</p>
                         {hasForbiddenStructuredMarkers ? <p className="text-amber-700">{t('This prompt contains structured instructions that do not match simple final script mode')}.</p> : null}
                         {promptLength > 1800 ? <p className="text-amber-700">{t('This prompt is long')}. {t('Use simple final script to reduce tokens')}.</p> : null}
                         <p><strong>{t('Prompt language')}:</strong> {run.bulletin_type?.prompt_language ?? '-'}</p>

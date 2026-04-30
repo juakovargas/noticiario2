@@ -746,6 +746,8 @@ This second block gives extra details for manual fact-checking demonstrations.',
             );
         }
 
+        $this->syncPlainFinalScriptDefaults();
+
         if (app()->environment(['local', 'testing'])) {
             $schedule = EditorialSchedule::query()->where('slug', 'spain-morning-briefing')->first();
             if ($schedule) {
@@ -795,4 +797,17 @@ Confirmar cifras exactas antes de emisión.";
         }
     }
 
+    private function syncPlainFinalScriptDefaults(): void
+    {
+        $names = ['Sports Preview', 'Spain Morning Microbriefing', 'Spanish Morning Briefing', 'Spain Afternoon Briefing', 'Spain Night Recap'];
+        \App\Models\BulletinType::query()->whereIn('name', $names)->whereIn('output_mode', ['structured_script', 'plain_script', 'final_plain_script'])->update(['output_mode' => 'plain_final_script']);
+
+        \App\Models\PromptProfile::query()->whereIn('name', ['Light Humour Briefing', 'Balanced News'])->get()->each(function ($profile): void {
+            $style = trim((string) $profile->style_instructions);
+            if ($style === '' || str_contains(strtoupper($style), 'TITLE:') || str_contains(strtoupper($style), 'NEWS ITEMS')) {
+                $profile->update(['style_instructions' => 'Usa un tono ligero, cercano y positivo, con humor suave cuando encaje, sin bromas forzadas y sin perder rigor periodístico.']);
+            }
+            $profile->update(['output_instructions' => null]);
+        });
+    }
 }

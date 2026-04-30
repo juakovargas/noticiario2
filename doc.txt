@@ -689,3 +689,13 @@ Roadmap (current):
 - Prompt profiles are intended to contribute tone/style only and should not inject output schema blocks.
 - Sports Preview and other demo bulletin types use simple final script mode in seeded defaults.
 - Target prompt size for normal runs is short (roughly 700-1200 chars when possible) to help Gemini/Groq reliability and future audio generation.
+
+## PLAIN FINAL SCRIPT PROMPT FIX
+
+- Normal prompt generation now defaults to `plain_final_script` (Guion final simple).
+- Sports Preview and known seeded demo bulletin types now use plain final mode by default.
+- Normal prompts no longer include structured schema blocks (`TITLE/INTRO/NEWS ITEMS/SCRIPT/OUTRO/NOTES`).
+- `structured_script` is preserved only for explicit advanced/debug workflows.
+- Prompt profiles should define tone/style only and should not carry output schema blocks.
+- Prompt length and token estimate are shown from the actual generated prompt text.
+- In plain mode, AI response is saved and used directly as script body without requiring structured headings.

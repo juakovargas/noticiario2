@@ -4,8 +4,8 @@ namespace App\Services\Ai;
 
 use App\Models\AiProvider;
 use Carbon\CarbonInterface;
+use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
-use Throwable;
 
 class AiProviderRateLimiter
 {
@@ -39,6 +39,11 @@ class AiProviderRateLimiter
         $provider->forceFill(['last_request_at' => now()])->save();
     }
 
+    public function markRequestFinished(AiProvider $provider): void
+    {
+        $provider->forceFill(['last_request_at' => now()])->save();
+    }
+
     public function markRateLimited(AiProvider $provider, ?int $retryAfterSeconds = null, array $metadata = []): void
     {
         $wait = max(1, $retryAfterSeconds ?? $provider->initial_retry_delay_seconds ?? 5);
@@ -63,11 +68,26 @@ class AiProviderRateLimiter
         return $delay;
     }
 
-    public function isRateLimitError(Throwable|Response|array $error): bool
+    public function isRateLimitStatus(int $statusCode): bool
     {
-        if ($error instanceof Response) return $error->status() === 429;
-        if ($error instanceof Throwable) return str_contains(strtolower($error->getMessage()), '429') || str_contains(strtolower($error->getMessage()), 'rate limit');
+        return $statusCode === 429;
+    }
 
-        return (int) data_get($error, 'status') === 429 || (int) data_get($error, 'code') === 429;
+    public function parseRetryAfterSeconds(Response $response): ?int
+    {
+        $retryAfter = $response->header('Retry-After');
+        if (blank($retryAfter)) {
+            return null;
+        }
+
+        if (is_numeric($retryAfter)) {
+            return max(1, (int) $retryAfter);
+        }
+
+        try {
+            return max(1, now()->diffInSeconds(Carbon::parse((string) $retryAfter), false));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

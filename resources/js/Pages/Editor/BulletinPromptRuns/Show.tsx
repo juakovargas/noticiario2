@@ -47,7 +47,7 @@ function needsVerification(value: string): boolean {
     return /needs verification|requiere verificación|weak|fuente débil/i.test(value);
 }
 
-export default function Show({ run, promptContext, sourceReferences = [], sourceSummary = null, aiProviders = [], defaultAiProviderId = null, latestAiLog = null }: any): JSX.Element {
+export default function Show({ run, promptContext, sourceReferences = [], sourceSummary = null, aiProviders = [], defaultAiProviderId = null, latestAiLog = null, pipelineStatus = null }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime, formatDate, formatTime } = useDateFormatter();
     const form = useForm({ response_text: run.ai_response_text ?? '' });
@@ -90,10 +90,14 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                 <CardContent className="space-y-3 pt-6 text-sm">
                     <h3 className="font-semibold">{t('Automated pipeline')}</h3>
                     <p className="text-slate-600">{t('This can send the generated prompt to the configured AI provider')}</p>
-                    <p><strong>{t('Pipeline status')}:</strong> {run.pipeline_status ?? t('not_started')}</p>
+                    <p><strong>{t('Current pipeline status')}:</strong> {pipelineStatus?.status ?? run.pipeline_status ?? t('not_started')}</p>
+                    {pipelineStatus?.failed_step ? <p><strong>{t('Failed step')}:</strong> {pipelineStatus.failed_step}</p> : null}
+                    {pipelineStatus?.metadata?.pipeline_metadata?.provider_name ? <p><strong>{t('AI provider')}:</strong> {pipelineStatus.metadata.pipeline_metadata.provider_name}</p> : null}
+                    {pipelineStatus?.metadata?.pipeline_metadata?.retry_after_seconds ? <p><strong>{t('Retry after')}:</strong> {pipelineStatus.metadata.pipeline_metadata.retry_after_seconds} {t('seconds')}</p> : null}
+                    {pipelineStatus?.metadata?.pipeline_metadata?.rate_limited_until ? <p><strong>{t('Rate limited until')}:</strong> {formatDateTime(pipelineStatus.metadata.pipeline_metadata.rate_limited_until)}</p> : null}
                     {run.pipeline_error_message ? <p className="text-red-700"><strong>{t('Last pipeline error')}:</strong> {run.pipeline_error_message}</p> : null}
                     <div className="flex flex-wrap gap-2">
-                        <Button onClick={() => router.post(route('editor.bulletin-prompt-runs.run-pipeline', run.id), { generate_metadata: true, extract_sources: true }, { preserveScroll: true })}>{t('Run full pipeline')}</Button>
+                        <Button onClick={() => router.post(route('editor.bulletin-prompt-runs.run-pipeline', run.id), { generate_metadata: true, extract_sources: true, allow_ai_call: true }, { preserveScroll: true })}>{t('Run full pipeline')}</Button>
                         <Button variant="outline" onClick={() => router.post(route('editor.bulletin-prompt-runs.retry-pipeline', run.id), {}, { preserveScroll: true })}>{t('Retry pipeline')}</Button>
                     </div>
                 </CardContent>
@@ -176,7 +180,8 @@ export default function Show({ run, promptContext, sourceReferences = [], source
 
             <Card className="mt-4">
                 <CardContent className="space-y-3 pt-6 text-sm">
-                    <h3 className="font-semibold">{t('AI generation')}</h3>
+                    <h3 className="font-semibold">{t('Manual fallback')}</h3>
+                    <p className="text-slate-600">{t('Debug actions')}</p>
                     <p className="text-slate-600">{t('This will send the generated prompt to the configured AI provider.')}</p>
                     <p className="text-slate-600">{t('Manual copy and paste workflow is still available.')}</p>
                     <p className="text-slate-600">{t('Use Groq for fast manual AI testing.')}</p>
@@ -349,3 +354,4 @@ export default function Show({ run, promptContext, sourceReferences = [], source
         </EditorLayout>
     );
 }
+

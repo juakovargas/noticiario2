@@ -33,6 +33,7 @@ class GeminiClient implements AiClient
             $this->rateLimiter->markRequestStarted($provider);
             $response = Http::timeout($provider->timeoutSecondsForRequest())->withQueryParameters(['key'=>$key])->post($url, $payload);
             if ($response->successful()) {
+                $this->rateLimiter->markRequestFinished($provider);
                 $json = $response->json();
                 $text = data_get($json, 'candidates.0.content.parts.0.text', '');
                 return new AiResponseData($text, $json, $provider->provider_type, $model,
@@ -40,8 +41,8 @@ class GeminiClient implements AiClient
                     data_get($json,'candidates.0.finishReason'), null, ['grounding' => data_get($json,'candidates.0.groundingMetadata')]);
             }
 
-            if ($response->status() === 429) {
-                $retryAfter = (int) ($response->header('Retry-After') ?? 0);
+            if ($this->rateLimiter->isRateLimitStatus($response->status())) {
+                $retryAfter = $this->rateLimiter->parseRetryAfterSeconds($response) ?? 0;
                 if ($retryAfter <= 0) $retryAfter = $this->rateLimiter->calculateBackoffDelay($provider, $attempt + 1);
                 $this->rateLimiter->markRateLimited($provider, $retryAfter, ['status' => 429, 'attempt' => $attempt + 1]);
                 if ($attempt < $maxRetries && $retryAfter <= 10) {

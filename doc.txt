@@ -647,3 +647,13 @@ Roadmap (current):
 - Pipeline failures can be marked as waiting for rate limit and include retry-after timing metadata.
 - Manual retry can continue the existing run state without forcing prompt regeneration.
 - Operational policy: for automation/cron, slower execution is acceptable and preferred for stability and cost control.
+
+## GEMINI RATE LIMITS AND VISIBLE PIPELINE PROGRESS
+
+- Gemini free tier can return HTTP 429 due to RPM/TPM/RPD limits and should be treated as a slow provider.
+- Provider rate-limit settings (min delay, retries, backoff, rate_limited_until metadata) are used to throttle requests safely.
+- A 429 is persisted as a retryable/rate-limited state instead of an unexplained permanent failure.
+- Bulletin prompt run pipeline preserves generated prompt and allows safe retry from existing state.
+- Bulletin Prompt Run show page now exposes clearer pipeline status details for retry-after/rate-limited-until.
+- Manual fallback actions remain available for debugging, but full pipeline is the default workflow.
+- Future queue/cron retries should continue when provider availability returns.

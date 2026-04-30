@@ -11,6 +11,7 @@ use App\Models\PromptProfile;
 use App\Models\User;
 use App\Services\Ai\AiClientManager;
 use App\Services\Ai\AiCostCalculator;
+use App\Services\Ai\AiProviderRateLimiter;
 use App\Services\Ai\AiUsageLimitService;
 use App\Services\Ai\Exceptions\AiProviderException;
 use App\Services\PromptGeneration\BulletinCoverageWindowResolver;
@@ -37,6 +38,7 @@ class BulletinPromptRunController extends Controller
         private readonly AiUsageLimitService $usageLimitService,
         private readonly BackgroundTaskService $backgroundTaskService,
         private readonly BulletinPromptRunPipeline $pipelineService,
+        private readonly AiProviderRateLimiter $rateLimiter,
     ) {
     }
 
@@ -212,6 +214,12 @@ class BulletinPromptRunController extends Controller
                 ]),
             'defaultAiProviderId' => $activeProvider?->id,
             'latestAiLog' => $bulletinPromptRun->aiRequestLogs->sortByDesc('id')->first(),
+            'pipelineStatus' => [
+                'status' => $bulletinPromptRun->pipeline_status,
+                'failed_step' => $bulletinPromptRun->pipeline_failed_step,
+                'error_message' => $bulletinPromptRun->pipeline_error_message,
+                'metadata' => $bulletinPromptRun->pipeline_metadata,
+            ],
             'sourceReferences' => $bulletinPromptRun->sourceReferences
                 ->whereNull('archived_at')
                 ->map(fn ($reference) => [
@@ -448,7 +456,14 @@ class BulletinPromptRunController extends Controller
 
     public function retryPipeline(Request $request, BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {
+        $provider = $this->resolveProviderForRetry($bulletinPromptRun);
+        if ($provider && ! $this->rateLimiter->canCall($provider)) {
+            $wait = $this->rateLimiter->secondsUntilAvailable($provider);
+            return back()->with('error', "Provider still rate limited. Retry after {$wait} seconds.");
+        }
+
         $summary = $this->pipelineService->run($bulletinPromptRun, $request->user(), [
+            'allow_ai_call' => true,
             'generate_metadata' => true,
             'extract_sources' => true,
         ]);
@@ -458,6 +473,15 @@ class BulletinPromptRunController extends Controller
         }
 
         return back()->with('success', 'Pipeline completed successfully.');
+    }
+
+    private function resolveProviderForRetry(BulletinPromptRun $run): ?AiProvider
+    {
+        $providerId = data_get($run->pipeline_metadata, 'pipeline_metadata.provider_id')
+            ?? data_get($run->pipeline_metadata, 'provider_id')
+            ?? $run->bulletinType?->ai_provider_id;
+
+        return $providerId ? AiProvider::query()->find($providerId) : null;
     }
     public function archive(BulletinPromptRun $bulletinPromptRun): RedirectResponse
     {

@@ -578,3 +578,21 @@ Current roadmap:
   - `CREATE DATABASE IF NOT EXISTS noticiario2_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
 - `.env.testing` / `.env.testing.example` must use:
   - `DB_DATABASE=noticiario2_testing`
+
+## ONE-CLICK PIPELINE STABILIZATION
+- Automation full pipeline is the primary flow via `Run full pipeline now` / `Run missed pipeline now`.
+- Full pipeline orchestration remains centralized in `BulletinPromptRunPipeline` with tracked status, timestamps, failed step, and error message.
+- Prompt Run manual actions remain available as fallback/debug workflows.
+- Success paths now prioritize direct script visibility and script navigation links; failures include failed step context.
+
+## AI PROVIDER DEFAULTS
+- Groq is the preferred provider for real manual testing and is seeded with `llama-3.3-70b-versatile` and daily limit `1000`.
+- Mock provider must not become default in normal seeding flows.
+- Added `php artisan noticiario:ensure-groq-default` to safely restore Groq as active/default.
+
+## TRANSLATION SAFETY
+- French translations containing apostrophes must use double-quoted values or escaped apostrophes.
+- Run `npm run build` after i18n updates to catch syntax regressions.
+
+## USER LOCALE DEFAULTS
+- Demo users default to Spanish locale (`es`), timezone `Europe/Madrid`, and 24-hour time format.

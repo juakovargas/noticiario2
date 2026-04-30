@@ -8,181 +8,53 @@ import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link, router } from '@inertiajs/react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 
-interface Item {
-    id: number;
-    title: string;
-    edition: string | null;
-    edition_id: number;
-    status: string;
-    language: string | null;
-    language_display?: { code:string; name:string; native_name:string | null; flag_emoji:string | null } | null;
-    estimated_duration_seconds: number | null;
-    approved_at: string | null;
-    review_status: string;
-}
+type ScriptItem = { id:number; title:string; final_title:string|null; short_description:string|null; status:string; production_status:string; review_status:string; created_at:string|null; ready_for_production_at:string|null; bulletin_type:{id:number;name:string;location:string|null;news_category:string|null;language:string|null;edition_type:string|null}|null; origin_prompt_run:{id:number;title:string;scheduled_for:string|null}|null };
 
-interface Props {
-    scripts: { data: Item[]; links: Array<{ url: string | null; label: string; active: boolean }> };
-    filters: Record<string, string>;
-    statuses: string[];
-    editions: Array<{ id: number; title: string }>;
-    languages: Array<{ id:number; code:string; name:string; native_name:string | null; flag_emoji:string | null }>;
-}
+export default function Index({ scripts, filters, filterOptions }: any): JSX.Element {
+  const { t } = useTranslations();
+  const { formatDateTime } = useDateFormatter();
+  const [form, setForm] = useState({ ...filters });
 
-const initialFilters = {
-    search: '',
-    status: '',
-    edition_id: '',
-    language: '',
-    approved: '',
-    sort: 'created_at',
-    direction: 'desc',
-    show_archived: '',
-    bulletin_type_id: '',
-};
+  const grouped = useMemo(() => {
+    const key = form.group_by;
+    if (!key) return { [t('No grouping')]: scripts.data };
+    return (scripts.data as ScriptItem[]).reduce((acc:any, item) => {
+      const group = key === 'bulletin_type' ? (item.bulletin_type?.name ?? t('Unknown')) : key === 'status' ? item.status : (item.origin_prompt_run?.scheduled_for?.slice(0,10) ?? (item.created_at?.slice(0,10) ?? t('Unknown')));
+      acc[group] = acc[group] || []; acc[group].push(item); return acc;
+    }, {});
+  }, [scripts.data, form.group_by, t]);
 
-export default function Index({ scripts, filters, statuses, editions, languages }: Props): JSX.Element {
-    const { t } = useTranslations();
-    const { formatDateTime } = useDateFormatter();
-    const [form, setForm] = useState({ ...initialFilters, ...filters });
+  const submit = (e: FormEvent) => { e.preventDefault(); router.get(route('editor.scripts.index'), form, { preserveState: true, preserveScroll: true }); };
 
-    const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
-        event.preventDefault();
+  return <EditorLayout>
+    <Head title={t('Scripts control center')} />
+    <AdminPageHeader helpKey="editor.scripts.index" title={t('Scripts')} description={t('Scripts control center')} actionLabel={t('Create script')} actionHref={route('editor.scripts.create')} />
 
-        router.get(route('editor.scripts.index'), form, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    <div className='grid gap-3 md:grid-cols-5 mb-4'>
+      <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Total scripts')}</div><div className='text-xl font-semibold'>{scripts.total}</div></CardContent></Card>
+      <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Generated today')}</div><div className='text-xl font-semibold'>{scripts.data.filter((s:ScriptItem)=>s.created_at?.slice(0,10)===new Date().toISOString().slice(0,10)).length}</div></CardContent></Card>
+      <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Pending review')}</div><div className='text-xl font-semibold'>{scripts.data.filter((s:ScriptItem)=>s.review_status==='pending').length}</div></CardContent></Card>
+      <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Ready for production')}</div><div className='text-xl font-semibold'>{scripts.data.filter((s:ScriptItem)=>!!s.ready_for_production_at).length}</div></CardContent></Card>
+      <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Needs attention')}</div><div className='text-xl font-semibold'>{scripts.data.filter((s:ScriptItem)=>['rejected'].includes(s.review_status)).length}</div></CardContent></Card>
+    </div>
 
-    const onReset = (): void => {
-        setForm(initialFilters);
+    <Card className='mb-4'><CardContent className='pt-6'><form onSubmit={submit} className='grid gap-3 md:grid-cols-3 lg:grid-cols-5'>
+      <Input value={form.search ?? ''} onChange={(e)=>setForm((p:any)=>({...p,search:e.target.value}))} placeholder={t('Search')} />
+      <select className='rounded-md border px-3 py-2 text-sm' value={form.bulletin_type_id ?? ''} onChange={(e)=>setForm((p:any)=>({...p,bulletin_type_id:e.target.value}))}><option value=''>{t('Informativo')}</option>{filterOptions.bulletinTypes.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}</select>
+      <select className='rounded-md border px-3 py-2 text-sm' value={form.execution_mode ?? ''} onChange={(e)=>setForm((p:any)=>({...p,execution_mode:e.target.value}))}><option value=''>{t('Execution source')}</option>{filterOptions.executionModes.map((m:string)=><option key={m} value={m}>{t(m === 'automatic' ? 'Automatic' : m === 'manual' ? 'Manual' : 'Unknown')}</option>)}</select>
+      <Input type='date' value={form.date_from ?? ''} onChange={(e)=>setForm((p:any)=>({...p,date_from:e.target.value}))} />
+      <Input type='date' value={form.date_to ?? ''} onChange={(e)=>setForm((p:any)=>({...p,date_to:e.target.value}))} />
+      <select className='rounded-md border px-3 py-2 text-sm' value={form.group_by ?? ''} onChange={(e)=>setForm((p:any)=>({...p,group_by:e.target.value}))}><option value=''>{t('No grouping')}</option><option value='bulletin_type'>{t('Group by informativo')}</option><option value='execution_date'>{t('Group by execution date')}</option><option value='status'>{t('Group by status')}</option></select>
+      <Button type='submit'>{t('Apply filters')}</Button>
+    </form></CardContent></Card>
 
-        router.get(route('editor.scripts.index'), {}, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
-    const postAction = (action: string, id: number): void => {
-        router.post(route(`editor.scripts.${action}`, id), {}, { preserveScroll: true });
-    };
-
-    return (
-        <EditorLayout>
-            <Head title={t('Scripts')} />
-            <AdminPageHeader helpKey="editor.scripts.index" title={t('Scripts')} description="Editorial scripts for editions." actionLabel={t('Create script')} actionHref={route('editor.scripts.create')} />
-
-            <Card>
-                <CardContent className="pt-6">
-                    <h2 className="mb-4 text-base font-semibold text-slate-700">{t('Filters')}</h2>
-
-                    <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                        <Input value={form.search} onChange={(e) => setForm((prev) => ({ ...prev, search: e.target.value }))} placeholder={t('Search')} />
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                            <option value="">{t('All statuses')}</option>
-                            {statuses.map((status) => (
-                                <option key={status} value={status}>{status}</option>
-                            ))}
-                        </select>
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.edition_id} onChange={(e) => setForm((prev) => ({ ...prev, edition_id: e.target.value }))}>
-                            <option value="">{t('Any')}</option>
-                            {editions.map((edition) => (
-                                <option key={edition.id} value={edition.id}>{edition.title}</option>
-                            ))}
-                        </select>
-
-                        <Input value={String((form as any).bulletin_type_id ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, bulletin_type_id: e.target.value }))} placeholder={t('Filter by bulletin type')} />
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.language} onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}>
-                            <option value="">{t('All languages')}</option>
-                            {languages.map((language) => (
-                                <option key={language.id} value={language.code}>{language.flag_emoji} {language.native_name || language.name} ({language.code})</option>
-                            ))}
-                        </select>
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.approved} onChange={(e) => setForm((prev) => ({ ...prev, approved: e.target.value }))}>
-                            <option value="">{t('Any')}</option>
-                            <option value="yes">{t('Approved')}</option>
-                            <option value="no">{t('Not approved')}</option>
-                        </select>
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.sort} onChange={(e) => setForm((prev) => ({ ...prev, sort: e.target.value }))}>
-                            <option value="created_at">{t('Sort by')} {t('Created at')}</option>
-                            <option value="title">{t('Sort by')} {t('Title')}</option>
-                            <option value="status">{t('Sort by')} {t('Status')}</option>
-                            <option value="language">{t('Sort by')} {t('Language')}</option>
-                            <option value="estimated_duration_seconds">{t('Sort by')} {t('Estimated Duration')}</option>
-                            <option value="approved_at">{t('Sort by')} {t('Approved')}</option>
-                        </select>
-
-                        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={form.direction} onChange={(e) => setForm((prev) => ({ ...prev, direction: e.target.value }))}>
-                            <option value="desc">{t('Descending')}</option>
-                            <option value="asc">{t('Ascending')}</option>
-                        </select>
-
-                        <label className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm"><input type="checkbox" checked={form.show_archived === '1'} onChange={(e) => setForm((prev) => ({ ...prev, show_archived: e.target.checked ? '1' : '' }))} /> {t('Show archived')}</label>
-
-                        <div className="flex gap-2 lg:col-span-4">
-                            <Button type="submit">{t('Apply filters')}</Button>
-                            <Button type="button" variant="secondary" onClick={onReset}>{t('Reset filters')}</Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardContent className="overflow-x-auto pt-6">
-                    <table className="w-full min-w-[900px] text-sm">
-                        <thead>
-                            <tr className="border-b border-slate-200 text-slate-500">
-                                <th className="px-2 pb-3">{t('Title')}</th>
-                                <th className="px-2 pb-3">{t('Editions')}</th>
-                                <th className="px-2 pb-3">{t('Status')}</th>
-                                <th className="px-2 pb-3">{t('Language')}</th>
-                                <th className="px-2 pb-3">{t('Estimated Duration')}</th>
-                                <th className="px-2 pb-3">{t('Review status')}</th>
-                                <th className="px-2 pb-3">{t('Approved at')}</th>
-                                <th className="px-2 pb-3 text-right">{t('Actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {scripts.data.length ? (
-                                scripts.data.map((item) => (
-                                    <tr key={item.id} className="border-b border-slate-100">
-                                        <td className="px-2 py-3 font-medium">{item.title}</td>
-                                        <td className="px-2 py-3">{item.edition || '-'}</td>
-                                        <td className="px-2 py-3"><StatusBadge status={item.status} /></td>
-                                        <td className="px-2 py-3">{item.language_display ? `${item.language_display.flag_emoji ?? ""} ${item.language_display.native_name || item.language_display.name} (${item.language_display.code})` : item.language || '-'}</td>
-                                        <td className="px-2 py-3">{item.estimated_duration_seconds || '-'}</td>
-                                        <td className="px-2 py-3"><StatusBadge status={item.review_status} /></td>
-                                        <td className="px-2 py-3">{item.approved_at ? formatDateTime(item.approved_at) : t('Not approved')}</td>
-                                        <td className="px-2 py-3">
-                                            <div className="flex justify-end gap-2">
-                                                <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.show', item.id)}>{t('View')}</Link></Button>
-                                                <Button asChild size="sm" variant="secondary"><Link href={route('editor.scripts.edit', item.id)}>{t('Edit')}</Link></Button>
-                                                <Button asChild size="sm" variant="outline"><Link href={route('editor.scripts.review', item.id)}>{t('Review')}</Link></Button>
-                                                {item.status !== 'archived'
-                                                    ? <Button size="sm" variant="outline" onClick={() => postAction('archive', item.id)}>{t('Archive')}</Button>
-                                                    : <Button size="sm" variant="outline" onClick={() => postAction('restore', item.id)}>{t('Restore')}</Button>}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={8} className="px-2 py-6 text-center text-slate-500">{t('No scripts found')}</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                    <Pagination links={scripts.links} />
-                </CardContent>
-            </Card>
-        </EditorLayout>
-    );
+    {Object.entries(grouped).map(([group, rows]: any) => <Card key={group} className='mb-4'><CardContent className='pt-6 overflow-x-auto'>
+      {form.group_by ? <h3 className='font-semibold mb-3'>{group} · {rows.length}</h3> : null}
+      <table className='w-full min-w-[1100px] text-sm'><thead><tr className='border-b text-slate-500'><th className='text-left p-2'>{t('Script')}</th><th className='text-left p-2'>{t('Informativo')}</th><th className='text-left p-2'>{t('Execution date')}</th><th className='text-left p-2'>{t('Origin')}</th><th className='text-left p-2'>{t('Editorial status')}</th><th className='text-left p-2'>{t('Production readiness')}</th><th className='text-right p-2'>{t('Actions')}</th></tr></thead>
+      <tbody>{rows.length ? rows.map((item: ScriptItem) => <tr key={item.id} className='border-b'><td className='p-2'><div className='font-medium'>{item.final_title || item.title}</div><div className='text-xs text-slate-500'>{item.short_description || '-'}</div><div className='mt-1 flex gap-1'><StatusBadge status={item.status} /><StatusBadge status={item.production_status} /><StatusBadge status={item.review_status} /></div></td><td className='p-2'><div>{item.bulletin_type?.name || t('Unknown')}</div><div className='text-xs text-slate-500'>{[item.bulletin_type?.location,item.bulletin_type?.news_category,item.bulletin_type?.language,item.bulletin_type?.edition_type].filter(Boolean).join(' · ') || t('Not available')}</div></td><td className='p-2'><div>{item.origin_prompt_run?.scheduled_for ? formatDateTime(item.origin_prompt_run.scheduled_for) : (item.created_at ? formatDateTime(item.created_at) : t('Unknown'))}</div><div className='text-xs text-slate-500'>{t('Created date')}: {item.created_at ? formatDateTime(item.created_at) : '-'}</div></td><td className='p-2'>{item.origin_prompt_run ? t('Generated from manual AI response') : t('Generated manually')}</td><td className='p-2'>{item.review_status}</td><td className='p-2'>{item.ready_for_production_at ? t('Ready for production') : t('Future production phase')}</td><td className='p-2 text-right'><div className='flex gap-2 justify-end'><Button asChild size='sm' variant='outline'><Link href={route('editor.scripts.show', item.id)}>{t('View')}</Link></Button><Button asChild size='sm' variant='outline'><Link href={route('editor.scripts.review', item.id)}>{t('Review')}</Link></Button>{item.origin_prompt_run ? <Button asChild size='sm' variant='outline'><Link href={route('editor.bulletin-prompt-runs.show', item.origin_prompt_run.id)}>{t('Open prompt run')}</Link></Button> : null}</div></td></tr>) : <tr><td colSpan={7} className='p-6 text-center text-slate-500'>{t('No scripts found')} · {t('Try changing filters')}</td></tr>}</tbody></table>
+      <Pagination links={scripts.links} />
+    </CardContent></Card>)}
+  </EditorLayout>;
 }

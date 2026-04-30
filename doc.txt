@@ -578,3 +578,15 @@ Current roadmap:
   - `CREATE DATABASE IF NOT EXISTS noticiario2_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
 - `.env.testing` / `.env.testing.example` must use:
   - `DB_DATABASE=noticiario2_testing`
+
+## SCRIPTS EDITORIAL CONTROL CENTER
+
+- Scripts page now works as an editorial control center focused on generated scripts.
+- Scripts list now exposes origin informativo using bulletin type relations where available.
+- Added direct Informativo filter (`bulletin_type_id`) for scripts and links from automation context.
+- Added grouping selector (none, informativo, execution date, status) in Scripts list UI.
+- Added execution date visibility with scheduling fallback from prompt run and creation date.
+- Added origin visibility for manual/AI-assisted generation paths and unknown fallbacks.
+- Added editorial + production readiness indicators to support next audio/video/publication phases.
+- Added direct actions to open Script review and related prompt run from the control center.
+- Updated contextual help intent for Scripts as a pre-production control surface; this page does not generate audio/video yet.

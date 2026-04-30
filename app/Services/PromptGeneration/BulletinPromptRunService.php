@@ -32,7 +32,8 @@ class BulletinPromptRunService
             ?: PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->first();
 
         $scheduledFor = $this->resolveScheduledFor($bulletinType, $scheduledForInput);
-        $title = sprintf('%s - %s', $bulletinType->name, $scheduledFor->format('Y-m-d H:i'));
+        $localizedSchedule = $scheduledFor->copy()->timezone($bulletinType->default_timezone ?: config('app.timezone'))->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm');
+        $title = sprintf('%s - %s', $bulletinType->name, $localizedSchedule);
 
         $edition = Edition::query()->create([
             'location_id' => $bulletinType->location_id,

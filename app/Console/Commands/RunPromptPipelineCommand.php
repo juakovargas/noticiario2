@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 
 class RunPromptPipelineCommand extends Command
 {
-    protected $signature = 'noticiario:run-prompt-pipeline {bulletinPromptRunId} {--provider=} {--model=} {--force-prompt} {--force-ai} {--no-metadata} {--no-sources} {--dry-run}';
+    protected $signature = 'noticiario:run-prompt-pipeline {bulletinPromptRunId} {--provider=} {--model=} {--force-prompt} {--force-ai} {--no-metadata} {--no-sources} {--allow-ai} {--dry-run}';
     protected $description = 'Run full bulletin prompt run automation pipeline.';
 
     public function handle(BulletinPromptRunPipeline $pipeline): int
@@ -25,6 +25,7 @@ class RunPromptPipelineCommand extends Command
             'force_regenerate_ai_response' => (bool) $this->option('force-ai'),
             'generate_metadata' => ! (bool) $this->option('no-metadata'),
             'extract_sources' => ! (bool) $this->option('no-sources'),
+            'allow_ai_call' => (bool) $this->option('allow-ai'),
             'dry_run' => (bool) $this->option('dry-run'),
         ]);
         $this->line(json_encode($summary, JSON_PRETTY_PRINT));

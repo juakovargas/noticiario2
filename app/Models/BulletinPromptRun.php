@@ -34,6 +34,7 @@ class BulletinPromptRun extends Model
         'pipeline_started_at',
         'pipeline_finished_at',
         'pipeline_failed_at',
+        'pipeline_failed_step',
         'pipeline_error_message',
         'pipeline_metadata',
     ];

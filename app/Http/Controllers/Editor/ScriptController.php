@@ -35,6 +35,7 @@ class ScriptController extends Controller
             'sort' => (string) $request->query('sort', 'created_at'),
             'direction' => (string) $request->query('direction', 'desc'),
             'show_archived' => $request->boolean('show_archived'),
+            'bulletin_type_id' => (string) $request->query('bulletin_type_id', ''),
         ];
 
         $allowedSorts = ['title', 'status', 'language', 'estimated_duration_seconds', 'approved_at', 'created_at'];
@@ -66,6 +67,7 @@ class ScriptController extends Controller
                 ->when($filters['language'] !== '', fn (Builder $query) => $query->where('language', $filters['language']))
                 ->when($filters['approved'] === 'yes', fn (Builder $query) => $query->whereNotNull('approved_at'))
                 ->when($filters['approved'] === 'no', fn (Builder $query) => $query->whereNull('approved_at'))
+                ->when($filters['bulletin_type_id'] !== '', fn (Builder $query) => $query->whereHas('bulletinPromptRun', fn (Builder $bpr) => $bpr->where('bulletin_type_id', $filters['bulletin_type_id'])))
                 ->orderBy($sort, $direction)
                 ->orderByDesc('created_at')
                 ->paginate(15)

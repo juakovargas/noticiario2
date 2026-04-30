@@ -24,7 +24,12 @@ export default function Dashboard({ stats }: Props): JSX.Element {
     return (
         <EditorLayout>
             <Head title={t('Panel de trabajo')} />
-            <AdminPageHeader helpKey="editor.dashboard" title={t('Panel de trabajo')} description={t('Editorial workspace focused on today\'s priorities.')} />
+
+            <AdminPageHeader
+                helpKey="editor.dashboard"
+                title={t('Panel de trabajo')}
+                description={t("Editorial workspace focused on today's priorities.")}
+            />
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 {cards.map((card) => (
@@ -43,11 +48,23 @@ export default function Dashboard({ stats }: Props): JSX.Element {
                 <CardHeader>
                     <CardTitle>{t('Next recommended actions')}</CardTitle>
                 </CardHeader>
+
                 <CardContent className="grid gap-2 text-sm md:grid-cols-2">
-                    <Link className="underline" href={route('editor.automation.index')}>{t('Open Automation')}</Link>
-                    <Link className="underline" href={route('editor.bulletin-prompt-runs.index')}>{t('Review failed executions')}</Link>
-                    <Link className="underline" href={route('editor.scripts.review')}>{t('Review scripts')}</Link>
-                    <Link className="underline" href={route('editor.source-references.index')}>{t('Verify sources')}</Link>
+                    <Link className="underline" href={route('editor.automation.index')}>
+                        {t('Open Automation')}
+                    </Link>
+
+                    <Link className="underline" href={route('editor.bulletin-prompt-runs.index')}>
+                        {t('Review failed executions')}
+                    </Link>
+
+                    <Link className="underline" href={route('editor.scripts.index')}>
+                        {t('Review scripts')}
+                    </Link>
+
+                    <Link className="underline" href={route('editor.source-references.index')}>
+                        {t('Verify sources')}
+                    </Link>
                 </CardContent>
             </Card>
         </EditorLayout>

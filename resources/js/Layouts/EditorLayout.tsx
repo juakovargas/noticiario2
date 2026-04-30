@@ -27,8 +27,7 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
       { label: t('Automatización'), routeName: 'editor.automation.index' },
       { label: t('Panel de trabajo editorial'), routeName: 'editor.workbench' },
       { label: t('Ejecuciones'), routeName: 'editor.bulletin-prompt-runs.index' },
-      { label: t('Guiones'), routeName: 'editor.scripts.index' },
-      { label: t('Revisión'), routeName: 'editor.scripts.review' },
+      { label: t('Guiones y revisión'), routeName: 'editor.scripts.index' },
     ]},
     { title: t('Informativos'), items: [
       { label: t('Tipos de noticiario'), routeName: 'editor.bulletin-types.index' },

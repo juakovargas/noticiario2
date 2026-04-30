@@ -514,3 +514,23 @@ Current roadmap:
 - Active schedules are processed by runner/cron; inactive schedules are ignored.
 - Automatic AI generation remains opt-in through automation flags.
 - Weekend and different-day bulletin behavior is supported through frequency + run_days.
+
+## EDITOR PANEL NAVIGATION AND WORKFLOW CLEANUP
+
+- Editor sidebar navigation was simplified around real editorial workflow: Trabajo, Informativos, Configuración editorial, Producción and Mensajes.
+- Bulletin Types are now emphasized as core configuration for recurring informativos and a primary entry point for manual execution and related run/script views.
+- Dashboard now prioritizes daily actions: active informativos, due/generated/failed today, pending review, pending source verification, and ready-for-production counters.
+- Workbench remains the guided operational page for editorial actions while Automation remains the control panel for scheduled activity.
+- Scripts, review and source verification remain the core editorial validation path before production preparation.
+- Audio/Video/Publishing stay grouped under Production as next-phase capabilities.
+- Technical/system configuration responsibilities remain in Admin.
+- Contextual help definitions were improved for key workflow pages touched in this branch.
+
+Current roadmap:
+1. Finish recurring bulletin automation.
+2. Complete full prompt -> AI -> script -> metadata pipeline for automatic/manual execution.
+3. Improve operations monitoring for editorial and automation failures.
+4. Finalize cron scheduler integration and safe run orchestration.
+5. Build audio generation foundation.
+6. Build video generation foundation.
+7. Build publishing/distribution foundation.

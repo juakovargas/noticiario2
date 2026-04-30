@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         App\Console\Commands\SyncBulletinSchedulesCommand::class,
+        App\Console\Commands\CheckTestDatabaseCommand::class,
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

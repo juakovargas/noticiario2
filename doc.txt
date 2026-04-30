@@ -637,3 +637,13 @@ Roadmap (current):
 - Mock remains testing-only and is not auto-promoted as default in normal flows.
 - Demo seed defaults keep admin/editor/viewer in Spanish locale with Europe/Madrid and 24h time format.
 - Contextual page help + translations remain required whenever AI Provider pages are touched.
+
+## PROVIDER RATE LIMITS AND RETRY POLICY
+
+- Gemini grounded requests can hit free-tier requests-per-minute limits and return HTTP 429.
+- AI providers now support provider-level RPM/RPD/TPM and retry/backoff settings in addition to existing daily/monthly request and cost controls.
+- Gemini defaults are conservative to favor safe automation throughput over speed.
+- Retry handling now treats 429 as retryable when configured, stores rate-limit metadata, and avoids treating every 429 as permanent failure.
+- Pipeline failures can be marked as waiting for rate limit and include retry-after timing metadata.
+- Manual retry can continue the existing run state without forcing prompt regeneration.
+- Operational policy: for automation/cron, slower execution is acceptable and preferred for stability and cost control.

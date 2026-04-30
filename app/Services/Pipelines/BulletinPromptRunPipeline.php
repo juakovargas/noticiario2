@@ -128,7 +128,21 @@ class BulletinPromptRunPipeline
                             'completed_at' => now(),
                         ]);
                     } catch (AiProviderException|Throwable $exception) {
-                        $log->update(['status' => 'failed', 'error_message' => str($exception->getMessage())->limit(1000)->toString(), 'error_code' => 'provider_error', 'completed_at' => now()]);
+                        $isRetryable = $exception instanceof AiProviderException && $exception->retryable;
+                        $retryAfter = $exception instanceof AiProviderException ? $exception->retryAfterSeconds : null;
+                        $log->update([
+                            'status' => $isRetryable ? 'rate_limited' : 'failed',
+                            'error_message' => str($exception->getMessage())->limit(1000)->toString(),
+                            'error_code' => $isRetryable ? 'rate_limited' : 'provider_error',
+                            'provider_status_code' => $exception instanceof AiProviderException ? $exception->statusCode : null,
+                            'metadata' => ['retryable' => $isRetryable, 'retry_after_seconds' => $retryAfter],
+                            'completed_at' => now()
+                        ]);
+                        if ($isRetryable) {
+                            $summary['pipeline_metadata']['retry_after_seconds'] = $retryAfter;
+                            $summary['pipeline_metadata']['rate_limited_until'] = now()->addSeconds(max(1, (int) $retryAfter))->toISOString();
+                            return $this->fail($run, $summary, 'ai_response_generation', 'Provider rate limit reached. Retry after '.max(1, (int) $retryAfter).' seconds.', 'waiting_rate_limit');
+                        }
                         return $this->fail($run, $summary, 'ai_response_generation', 'AI request failed.');
                     }
                 }
@@ -177,12 +191,12 @@ class BulletinPromptRunPipeline
         }
     }
 
-    private function fail(BulletinPromptRun $run, array $summary, string $failedStep, string $message): array
+    private function fail(BulletinPromptRun $run, array $summary, string $failedStep, string $message, string $status = 'failed_permanent'): array
     {
         $summary['failed_step'] = $failedStep;
         $summary['message'] = $message;
         $summary['errors'][] = $message;
-        $run->update(['pipeline_status' => 'failed', 'pipeline_failed_at' => now(), 'pipeline_failed_step' => $failedStep, 'pipeline_error_message' => $message, 'pipeline_metadata' => $summary]);
+        $run->update(['pipeline_status' => $status, 'pipeline_failed_at' => now(), 'pipeline_failed_step' => $failedStep, 'pipeline_error_message' => $message, 'pipeline_metadata' => $summary]);
         return $summary;
     }
 

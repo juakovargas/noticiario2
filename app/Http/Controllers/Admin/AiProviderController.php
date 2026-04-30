@@ -127,6 +127,17 @@ class AiProviderController extends Controller
             'monthly_request_limit' => ['nullable', 'integer', 'min:0'],
             'daily_cost_limit' => ['nullable', 'numeric', 'min:0'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0'],
+
+            'requests_per_minute_limit' => ['nullable', 'integer', 'min:0'],
+            'requests_per_day_limit' => ['nullable', 'integer', 'min:0'],
+            'tokens_per_minute_limit' => ['nullable', 'integer', 'min:0'],
+            'min_seconds_between_requests' => ['nullable', 'integer', 'min:0'],
+            'retry_on_rate_limit' => ['boolean'],
+            'max_retries' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'initial_retry_delay_seconds' => ['nullable', 'integer', 'min:1', 'max:600'],
+            'max_retry_delay_seconds' => ['nullable', 'integer', 'min:1', 'max:1800'],
+            'backoff_multiplier' => ['nullable', 'numeric', 'min:1', 'max:10'],
+            'jitter_enabled' => ['boolean'],
             'metadata' => ['nullable', 'array'],
             'capabilities' => ['nullable', 'array'],
             'is_testing' => ['boolean'],
@@ -146,6 +157,8 @@ class AiProviderController extends Controller
         $data['supports_grounding'] = $request->boolean('supports_grounding', false);
         $data['supports_citations'] = $request->boolean('supports_citations', false);
         $data['supports_streaming'] = $request->boolean('supports_streaming', false);
+        $data['retry_on_rate_limit'] = $request->boolean('retry_on_rate_limit', true);
+        $data['jitter_enabled'] = $request->boolean('jitter_enabled', true);
         $data['capabilities'] = array_values(array_filter($request->input('capabilities', [])));
         $data['client_driver'] = $data['client_driver'] ?? 'custom';
 

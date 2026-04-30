@@ -626,3 +626,14 @@ Roadmap (current):
 - Audio/video/media providers are configured as future production placeholders and separated from script selection.
 - Bulletin Type provider list continues to show only active non-testing script-capable providers.
 - API keys remain env-driven and not displayed.
+
+## AI PROVIDERS ADMIN PAGE
+
+- AI Providers admin index/show/form now preserve operational visibility for request limits, usage, remaining requests, token costs, estimated costs, model and runtime settings.
+- Providers are grouped/filterable with translated user-facing labels by purpose.
+- Internal `grounded_text` is presented as "Noticias con búsqueda y fuentes" in Spanish-facing UI.
+- Gemini Grounded remains script-capable via `script_generation` and `news_grounding` capabilities and appears in script-oriented selections.
+- Audio/video/media providers remain preserved as future production providers and are not merged into script-only grouping.
+- Mock remains testing-only and is not auto-promoted as default in normal flows.
+- Demo seed defaults keep admin/editor/viewer in Spanish locale with Europe/Madrid and 24h time format.
+- Contextual page help + translations remain required whenever AI Provider pages are touched.

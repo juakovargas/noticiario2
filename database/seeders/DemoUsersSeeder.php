@@ -10,7 +10,7 @@ class DemoUsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedDemoUser('Admin User', 'admin@example.com', 'admin', 'en', 'Europe/Madrid');
+        $this->seedDemoUser('Admin User', 'admin@example.com', 'admin', 'es', 'Europe/Madrid');
         $this->seedDemoUser('Editor User', 'editor@example.com', 'editor', 'es', 'Europe/Madrid');
         $this->seedDemoUser('Viewer User', 'viewer@example.com', 'viewer', 'es', 'Europe/Madrid');
     }
@@ -26,12 +26,16 @@ class DemoUsersSeeder extends Seeder
                 'is_active' => true,
                 'preferred_locale' => $preferredLocale,
                 'timezone' => $timezone,
+                'date_format' => 'locale_default',
+                'time_format' => '24h',
             ],
         );
 
         $user->update([
             'preferred_locale' => $preferredLocale,
             'timezone' => $timezone,
+            'date_format' => 'locale_default',
+            'time_format' => '24h',
         ]);
 
         if (blank($user->name)) {

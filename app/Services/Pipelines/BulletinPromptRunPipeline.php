@@ -139,8 +139,11 @@ class BulletinPromptRunPipeline
                             'completed_at' => now()
                         ]);
                         if ($isRetryable) {
+                            $rateLimitedUntil = now()->addSeconds(max(1, (int) $retryAfter))->toISOString();
                             $summary['pipeline_metadata']['retry_after_seconds'] = $retryAfter;
-                            $summary['pipeline_metadata']['rate_limited_until'] = now()->addSeconds(max(1, (int) $retryAfter))->toISOString();
+                            $summary['pipeline_metadata']['rate_limited_until'] = $rateLimitedUntil;
+                            $summary['pipeline_metadata']['provider_id'] = $provider->id;
+                            $summary['pipeline_metadata']['provider_name'] = $provider->name;
                             return $this->fail($run, $summary, 'ai_response_generation', 'Provider rate limit reached. Retry after '.max(1, (int) $retryAfter).' seconds.', 'waiting_rate_limit');
                         }
                         return $this->fail($run, $summary, 'ai_response_generation', 'AI request failed.');

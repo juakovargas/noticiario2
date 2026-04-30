@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('max_news_items')->nullable()->after('include_historical_context');
             $table->unsignedTinyInteger('min_news_items')->nullable()->after('max_news_items');
             $table->string('prompt_language', 10)->nullable()->default('es')->after('min_news_items');
-            $table->string('output_mode', 50)->nullable()->default('structured_script')->after('prompt_language');
+            $table->string('output_mode', 50)->nullable()->default('plain_final_script')->after('prompt_language');
         });
     }
 

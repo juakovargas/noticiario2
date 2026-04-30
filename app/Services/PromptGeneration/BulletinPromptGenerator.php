@@ -20,7 +20,10 @@ class BulletinPromptGenerator
         $context = $this->coverageWindowResolver->resolve($run);
 
         $promptLanguage = $type->prompt_language ?: 'es';
-        $outputMode = $type->output_mode ?: 'final_plain_script';
+        $outputMode = $type->output_mode ?: 'plain_final_script';
+        if ($outputMode === 'final_plain_script') {
+            $outputMode = 'plain_final_script';
+        }
 
         if ($outputMode === 'structured_script') {
             return $promptLanguage === 'en'
@@ -28,9 +31,11 @@ class BulletinPromptGenerator
                 : $this->generateStructuredPromptEs($type, $context);
         }
 
-        return $promptLanguage === 'en'
+        $prompt = $promptLanguage === 'en'
             ? $this->generateFinalPlainPromptEn($type, $profile, $context)
             : $this->generateFinalPlainPromptEs($type, $profile, $context);
+
+        return $this->sanitizePlainPrompt($prompt);
     }
 
     private function generateFinalPlainPromptEs($type, $profile, array $context): string
@@ -102,6 +107,21 @@ class BulletinPromptGenerator
     private function generateStructuredPromptEn($type, array $context): string
     {
         return "ADVANCED MODE structured_script\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\nOUTRO:\nNOTES:";
+    }
+
+
+    private function sanitizePlainPrompt(string $prompt): string
+    {
+        $forbiddenMarkers = ['MODO AVANZADO', 'structured_script', 'TITLE:', 'INTRO:', 'NEWS ITEMS:', 'HEADLINE:', 'SUMMARY:', 'SCRIPT:', 'EDITORIAL ANGLE:', 'SOURCE HINTS:', 'OUTRO:', 'NOTES:'];
+
+        foreach ($forbiddenMarkers as $marker) {
+            if (str_contains(mb_strtoupper($prompt), mb_strtoupper($marker))) {
+                logger()->warning('Plain final script prompt contained structured marker; replacing with safe plain prompt.', ['marker' => $marker]);
+                return str_replace('Devuelve SOLO el guion final en texto plano continuo.', 'Devuelve SOLO el guion final en texto plano continuo. Evita cualquier formato estructurado.', $prompt);
+            }
+        }
+
+        return $prompt;
     }
 
     private function resolveNewsItemRange(?int $min, ?int $max, ?int $duration): array

@@ -781,3 +781,7 @@ Roadmap (current):
 - Admin > AI Providers: formulario create/edit y vista show ajustados para usar `execution_driver` en UI (persistiendo en `client_driver` backend), con opción visible `Custom Noticiario` / `Laravel AI SDK`.
 - Validación de controlador: `execution_driver` requerido (`custom|laravel_ai`) con fallback seguro a `custom`.
 - Listado de proveedores IA: tabla muestra columna Driver y Categoría junto a acciones agrupadas de Diagnóstico.
+
+- AI Providers diagnostics now use a large scrollable modal (full raw JSON visible) and layered diagnostics dropdown that no longer gets hidden by adjacent tables.
+- LaravelAiClientAdapter error wrapping now preserves previous exceptions without named-parameter failures, and diagnostics report request_was_sent more honestly for SDK/internal failures before HTTP response.
+- Grounded tests with Laravel AI SDK now report unsupported grounding clearly instead of sending fake grounding provider payload fields.

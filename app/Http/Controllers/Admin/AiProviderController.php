@@ -158,7 +158,7 @@ public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('ai_providers', 'slug')->ignore($provider?->id)],
             'provider_type' => ['required', Rule::in($this->providerTypes())],
             'provider_category' => ['required', 'string', 'max:50'],
-            'client_driver' => ['nullable', Rule::in(['custom', 'laravel_ai'])],
+            'client_driver' => ['nullable', Rule::in([AiProvider::DRIVER_CUSTOM, AiProvider::DRIVER_LARAVEL_AI])],
             'base_url' => ['nullable', 'url'],
             'api_key_env_name' => ['nullable', 'string', 'max:255'],
             'default_model' => ['nullable', 'string', 'max:255'],
@@ -207,7 +207,7 @@ public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
         $data['retry_on_rate_limit'] = $request->boolean('retry_on_rate_limit', true);
         $data['jitter_enabled'] = $request->boolean('jitter_enabled', true);
         $data['capabilities'] = array_values(array_filter($request->input('capabilities', [])));
-        $data['client_driver'] = $data['client_driver'] ?? 'custom';
+        $data['client_driver'] = in_array(($data['client_driver'] ?? null), [AiProvider::DRIVER_CUSTOM, AiProvider::DRIVER_LARAVEL_AI], true) ? $data['client_driver'] : AiProvider::DRIVER_CUSTOM;
 
         return $data;
     }
@@ -234,6 +234,8 @@ public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
             ...$provider->toArray(),
             'env_key_configured' => $provider->hasConfiguredApiKey(),
             'usage_summary' => $this->usageLimitService->checkProviderLimits($provider),
+            'execution_driver' => $provider->executionDriver(),
+            'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario',
             'last_request' => $provider->aiRequestLogs()->latest()->first(['id', 'status', 'created_at']),
         ];
     }

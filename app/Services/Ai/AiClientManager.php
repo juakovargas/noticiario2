@@ -36,7 +36,7 @@ class AiClientManager
 
     private function resolveTextClient(AiProvider $provider): AiClient
     {
-        if ($provider->client_driver === 'laravel_ai') {
+        if ($provider->usesLaravelAiDriver()) {
             return new LaravelAiSdkClient($this->laravelAiSdkGateway);
         }
 

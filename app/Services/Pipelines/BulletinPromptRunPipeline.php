@@ -133,9 +133,9 @@ class BulletinPromptRunPipeline
                         $log->update([
                             'status' => $isRetryable ? 'rate_limited' : 'failed',
                             'error_message' => str($exception->getMessage())->limit(1000)->toString(),
-                            'error_code' => $isRetryable ? 'rate_limited' : 'provider_error',
+                            'error_code' => $isRetryable ? ((str_contains($exception->getMessage(), 'No se ha llamado al proveedor') || str_contains($exception->getMessage(), 'intervalo mínimo')) ? 'internal_rate_limit' : 'provider_rate_limit') : 'provider_error',
                             'provider_status_code' => $exception instanceof AiProviderException ? $exception->statusCode : null,
-                            'metadata' => ['retryable' => $isRetryable, 'retry_after_seconds' => $retryAfter],
+                            'metadata' => ['retryable' => $isRetryable, 'retry_after_seconds' => $retryAfter, 'source' => (str_contains($exception->getMessage(), 'No se ha llamado al proveedor') || str_contains($exception->getMessage(), 'intervalo mínimo')) ? 'internal_rate_limiter' : 'provider_response', 'attempt' => data_get($provider->rate_limit_metadata, 'attempt'), 'max_retries' => data_get($provider->rate_limit_metadata, 'max_retries'), 'rate_limited_until' => optional($provider->fresh()->rate_limited_until)?->toISOString()],
                             'completed_at' => now()
                         ]);
                         if ($isRetryable) {
@@ -144,7 +144,12 @@ class BulletinPromptRunPipeline
                             $summary['pipeline_metadata']['rate_limited_until'] = $rateLimitedUntil;
                             $summary['pipeline_metadata']['provider_id'] = $provider->id;
                             $summary['pipeline_metadata']['provider_name'] = $provider->name;
-                            return $this->fail($run, $summary, 'ai_response_generation', 'Provider rate limit reached. Retry after '.max(1, (int) $retryAfter).' seconds.', 'waiting_rate_limit');
+                            $isInternal = str_contains($exception->getMessage(), 'No se ha llamado al proveedor') || str_contains($exception->getMessage(), 'intervalo mínimo');
+                            $summary['pipeline_metadata']['rate_limit_source'] = $isInternal ? 'internal_rate_limiter' : 'provider_response';
+                            $summary['pipeline_metadata']['provider_status_code'] = $exception instanceof AiProviderException ? $exception->statusCode : null;
+                            $summary['pipeline_metadata']['attempt'] = data_get($provider->rate_limit_metadata, 'attempt');
+                            $summary['pipeline_metadata']['max_retries'] = data_get($provider->rate_limit_metadata, 'max_retries');
+                            return $this->fail($run, $summary, 'ai_response_generation', $exception->getMessage(), 'waiting_rate_limit');
                         }
                         return $this->fail($run, $summary, 'ai_response_generation', 'AI request failed.');
                     }

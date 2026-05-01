@@ -22,6 +22,9 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.executionDrivers.help': 'Choose how this provider call is executed for diagnostics and comparisons.',
         'admin.aiProviders.tests.modal.executionDriver': 'Execution driver',
         'admin.aiProviders.tests.modal.driverComparisonNote': 'If both drivers return 429, the limit is likely from the provider/API project.',
+        'Diagnóstico': 'Diagnostics',
+        'Driver': 'Driver',
+        'SDK failure stage': 'SDK failure stage',
 
 
         'Simple final script': 'Simple final script',
@@ -1326,6 +1329,9 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.executionDrivers.help': 'Elige cómo se ejecuta la llamada para diagnóstico y comparación.',
         'admin.aiProviders.tests.modal.executionDriver': 'Driver de ejecución',
         'admin.aiProviders.tests.modal.driverComparisonNote': 'Si ambos drivers devuelven 429, el límite probablemente viene del proveedor/proyecto API.',
+        'Diagnóstico': 'Diagnóstico',
+        'Driver': 'Driver',
+        'SDK failure stage': 'Fase de fallo del SDK',
 
         'Simple final script': 'Guion final simple',
         'Plain final script': 'Guion final simple',
@@ -2604,6 +2610,9 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.executionDrivers.help': "Choisissez comment l'appel est exécuté pour le diagnostic et la comparaison.",
         'admin.aiProviders.tests.modal.executionDriver': "Pilote d'exécution",
         'admin.aiProviders.tests.modal.driverComparisonNote': "Si les deux pilotes renvoient 429, la limite vient probablement du fournisseur/projet API.",
+        'Diagnóstico': 'Diagnostic',
+        'Driver': 'Pilote',
+        'SDK failure stage': "Étape d'échec SDK",
 
         'Simple final script': 'Script final simple',
         'Plain final script': 'Script final simple',

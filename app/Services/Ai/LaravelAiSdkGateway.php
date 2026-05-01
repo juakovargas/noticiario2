@@ -11,7 +11,7 @@ class LaravelAiSdkGateway implements LaravelAiSdkGatewayContract
     public function generateText(string $providerAlias, string $model, string $prompt, array $options = []): array
     {
         if (! class_exists(\Laravel\Ai\Facades\Ai::class)) {
-            throw new AiProviderException('Laravel AI SDK is not installed in this environment.');
+            throw new AiProviderException('Laravel AI SDK is not installed.', requestWasSent: false, errorCode: 'sdk_package_missing');
         }
 
         try {
@@ -27,7 +27,12 @@ class LaravelAiSdkGateway implements LaravelAiSdkGatewayContract
 
             $result = $builder->text($prompt);
         } catch (\Throwable $e) {
-            throw new AiProviderException('Laravel AI SDK request failed.');
+            throw new AiProviderException(
+                message: 'Laravel AI SDK request failed.',
+                requestWasSent: false,
+                errorCode: 'sdk_call_failed',
+                previous: $e,
+            );
         }
 
         return [

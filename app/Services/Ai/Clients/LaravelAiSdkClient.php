@@ -38,9 +38,9 @@ class LaravelAiSdkClient implements AiClient
             );
         } catch (\Throwable $e) {
             throw new AiProviderException(
-                message: 'Laravel AI SDK request failed.',
+                message: $this->buildSdkSafeMessage($provider, $e),
                 requestWasSent: false,
-                errorCode: 'sdk_error',
+                errorCode: $this->resolveFailureCode($provider, $e),
                 previous: $e,
             );
         }
@@ -57,6 +57,32 @@ class LaravelAiSdkClient implements AiClient
             finishReason: isset($result['finish_reason']) ? (string) $result['finish_reason'] : null,
             durationMs: $durationMs,
         );
+    }
+
+    private function buildSdkSafeMessage(AiProvider $provider, \Throwable $error): string
+    {
+        if (! class_exists(\Laravel\Ai\Facades\Ai::class)) {
+            return 'Laravel AI SDK is not installed.';
+        }
+
+        if (($provider->api_key_env_name ?? '') === '' || ! (bool) env((string) $provider->api_key_env_name)) {
+            return 'Missing GEMINI_API_KEY for Laravel AI SDK.';
+        }
+
+        return 'Laravel AI SDK request failed: '.$error->getMessage();
+    }
+
+    private function resolveFailureCode(AiProvider $provider, \Throwable $error): string
+    {
+        if (! class_exists(\Laravel\Ai\Facades\Ai::class)) {
+            return 'sdk_package_missing';
+        }
+
+        if (($provider->api_key_env_name ?? '') === '' || ! (bool) env((string) $provider->api_key_env_name)) {
+            return 'sdk_key_missing';
+        }
+
+        return 'sdk_call_failed';
     }
 
     private function providerAlias(string $providerType): string

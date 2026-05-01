@@ -785,3 +785,11 @@ Roadmap (current):
 - AI Providers diagnostics now use a large scrollable modal (full raw JSON visible) and layered diagnostics dropdown that no longer gets hidden by adjacent tables.
 - LaravelAiClientAdapter error wrapping now preserves previous exceptions without named-parameter failures, and diagnostics report request_was_sent more honestly for SDK/internal failures before HTTP response.
 - Grounded tests with Laravel AI SDK now report unsupported grounding clearly instead of sending fake grounding provider payload fields.
+
+## AI Providers diagnostics fixes (May 2026)
+- Dropdown action label is localized as Diagnóstico/Diagnostics/Diagnostic and rendered with a fixed high z-index overlay to avoid clipping by cards/tables.
+- AI Providers list shows Driver column in active/inactive tables, plus execution driver label in diagnostics and provider detail.
+- Laravel AI SDK diagnostic traces now expose sdk_failure_stage and SDK installation/config hints (safe, no secrets).
+- Gemini custom driver continues to hit generateContent endpoint while Laravel AI SDK failures report explicit stage before HTTP.
+- Diagnostic tests now create AiRequestLog entries with diagnostic_test metadata when executed.
+- Grounding diagnostics now distinguish provider_supports_grounding and driver_supports_grounding.

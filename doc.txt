@@ -724,3 +724,17 @@ Roadmap (current):
 - Rate-limit lock can be cleared from Admin AI Providers.
 - Pipeline metadata now includes request_was_sent/rate_limit_source/grounding context for diagnostics.
 - No API keys are displayed in diagnostics.
+
+## TIMEZONE SAFETY
+- Added timezone resolver normalization for values like madrid/spain/españa to Europe/Madrid.
+- Bulletin prompt run scheduling now resolves timezone safely before Carbon usage.
+- Timezone inputs now use Laravel timezone validation in key forms.
+
+## AI PROVIDER DIAGNOSTICS
+- Admin AI Providers now shows Active providers and Inactive providers tables.
+- Added provider test actions (minimal, short script, grounded when supported) and clear lock action.
+- Added safe trace builder service for provider/request diagnostics without API key disclosure.
+- Gemini/pipeline logging now differentiates internal limiter block vs real provider response via request_was_sent and status mapping.
+
+## GROQ AND NEWS RELIABILITY
+- Operational guidance: Groq is fast but non-grounded; current news requires sources/grounding and manual verification.

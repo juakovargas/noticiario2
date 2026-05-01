@@ -132,7 +132,7 @@ class BulletinTypeController extends Controller
             'edition_type' => ['nullable', 'string', 'max:50'],
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'default_schedule_time' => ['nullable', 'date_format:H:i'],
-            'default_timezone' => ['nullable', 'string', 'max:100'],
+            'default_timezone' => ['nullable', 'string', 'max:100', 'timezone'],
             'default_run_frequency' => ['nullable', Rule::in(['daily','weekdays','weekends','selected_days','monthly','custom'])],
             'default_run_time' => ['nullable', 'date_format:H:i'],
             'default_run_days' => ['nullable', 'array'],

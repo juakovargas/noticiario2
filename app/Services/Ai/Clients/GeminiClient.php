@@ -24,7 +24,7 @@ class GeminiClient implements AiClient
             $msg = ($availability['status'] ?? null) === 'min_delay_wait'
                 ? 'The provider was not called because the minimum delay between requests is still active.'
                 : 'The provider was not called because it is temporarily rate-limited until '.($availability['rate_limited_until'] ?? now()->toISOString()).'.';
-            throw new AiProviderException($msg, 429, true, $retryAfter);
+            throw new AiProviderException($msg, null, true, $retryAfter, false, 'internal_rate_limit');
         }
 
         $model = $provider->default_model ?: 'gemini-2.0-flash';
@@ -60,12 +60,12 @@ class GeminiClient implements AiClient
                 $msg = $attempt >= $maxRetries
                     ? 'Gemini returned 429 Too Many Requests and retry attempts are exhausted.'
                     : 'Gemini returned 429 Too Many Requests. Retry available in '.$retryAfter.' seconds. Attempt '.($attempt + 1).' of '.$maxRetries.'.';
-                throw new AiProviderException($msg, 429, true, $retryAfter);
+                throw new AiProviderException($msg, 429, true, $retryAfter, true, 'provider_rate_limit');
             }
 
-            throw new AiProviderException('Gemini request failed with status '.$response->status(), $response->status(), $response->status() >= 500);
+            throw new AiProviderException('Gemini request failed with status '.$response->status(), $response->status(), $response->status() >= 500, null, true, 'provider_error');
         }
 
-        throw new AiProviderException('AI request failed.');
+        throw new AiProviderException('AI request failed.', null, false, null, false, 'provider_error');
     }
 }

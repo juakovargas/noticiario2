@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\AiProvider;
 use App\Services\Ai\AiProviderRateLimiter;
 use App\Services\Ai\AiUsageLimitService;
+use App\Services\Ai\AiClientManager;
+use App\Services\Ai\AiRequestTraceBuilder;
+use App\Services\Ai\Exceptions\AiProviderException;
+use Throwable;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +22,7 @@ class AiProviderController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function __construct(private readonly AiUsageLimitService $usageLimitService, private readonly AiProviderRateLimiter $rateLimiter)
+    public function __construct(private readonly AiUsageLimitService $usageLimitService, private readonly AiProviderRateLimiter $rateLimiter, private readonly AiClientManager $aiClientManager, private readonly AiRequestTraceBuilder $traceBuilder)
     {
     }
 
@@ -96,6 +100,37 @@ class AiProviderController extends Controller
         AiProvider::query()->where('id', '!=', $aiProvider->id)->update(['is_default' => false]);
         $aiProvider->update(['is_default' => true]);
         return back()->with('success', __('Provider set as default'));
+    }
+
+
+    public function test(Request $request, AiProvider $aiProvider): RedirectResponse
+    {
+        $type = (string) $request->input('test_type', 'minimal');
+        $prompt = match ($type) {
+            'short_script' => 'Escribe en español un guion de 20 segundos sobre una noticia ficticia de prueba, sin datos reales.',
+            'grounded' => 'Busca una noticia deportiva reciente de España y responde en una frase con una fuente.',
+            default => 'Responde solo OK.',
+        };
+
+        try {
+            $response = $this->aiClientManager->generateText($aiProvider, $prompt);
+            return back()->with('success', __('Provider test completed.'))->with('provider_test_result', [
+                'success' => true,
+                'request_was_sent' => true,
+                'provider_status_code' => 200,
+                'grounding_enabled' => $type === 'grounded',
+                'response_preview' => str($response->text)->limit(250)->toString(),
+            ]);
+        } catch (AiProviderException|Throwable $e) {
+            $status = $e instanceof AiProviderException ? $e->statusCode : null;
+            $isInternal = str_contains($e->getMessage(), 'not called because the minimum delay') || str_contains($e->getMessage(), 'not called because it is temporarily rate-limited');
+            return back()->with('error', $e->getMessage())->with('provider_test_result', [
+                'success' => false,
+                'request_was_sent' => ! $isInternal,
+                'provider_status_code' => $isInternal ? null : $status,
+                'safe_error_message' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse

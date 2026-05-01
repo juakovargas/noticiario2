@@ -10,6 +10,7 @@ use App\Models\Script;
 use App\Services\EditorialScheduling\AiResponseParser;
 use App\Support\GeneratesUniqueSlug;
 use Carbon\Carbon;
+use App\Support\Timezones\TimezoneResolver;
 use App\Services\Scripts\ScriptProductionMetadataGenerator;
 
 class BulletinPromptRunService
@@ -20,6 +21,7 @@ class BulletinPromptRunService
         private readonly BulletinPromptGenerator $promptGenerator,
         private readonly AiResponseParser $parser,
         private readonly ScriptProductionMetadataGenerator $metadataGenerator,
+    private readonly TimezoneResolver $timezoneResolver,
     ) {
     }
 
@@ -32,7 +34,8 @@ class BulletinPromptRunService
             ?: PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->first();
 
         $scheduledFor = $this->resolveScheduledFor($bulletinType, $scheduledForInput);
-        $localizedSchedule = $scheduledFor->copy()->timezone($bulletinType->default_timezone ?: config('app.timezone'))->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm');
+        $displayTimezone = $this->timezoneResolver->resolve([$bulletinType->default_timezone, $bulletinType->location?->timezone]);
+        $localizedSchedule = $scheduledFor->copy()->timezone($displayTimezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm');
         $title = sprintf('%s - %s', $bulletinType->name, $localizedSchedule);
 
         $edition = Edition::query()->create([
@@ -189,7 +192,11 @@ class BulletinPromptRunService
 
     private function resolveScheduledFor(BulletinType $bulletinType, ?string $scheduledForInput): Carbon
     {
-        $timezone = $bulletinType->default_timezone ?: config('app.timezone');
+        $timezone = $this->timezoneResolver->resolve([
+            $bulletinType->default_timezone,
+            $bulletinType->location?->timezone,
+            optional(auth()->user())->timezone,
+        ]);
 
         if ($scheduledForInput) {
             return Carbon::parse($scheduledForInput, $timezone)->startOfMinute()->utc();

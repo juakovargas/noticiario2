@@ -46,7 +46,7 @@ class UserUpdateRequest extends FormRequest
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
             'preferred_locale' => ['nullable', 'string', Rule::in($locales)],
-            'timezone' => ['nullable', 'string', 'max:100'],
+            'timezone' => ['nullable', 'string', 'max:100', 'timezone'],
             'date_format' => ['nullable', Rule::in(['locale_default', 'dd/mm/yyyy', 'yyyy-mm-dd', 'mm/dd/yyyy'])],
             'time_format' => ['nullable', Rule::in(['24h', '12h'])],
             'manager_id' => ['nullable', 'integer', 'exists:users,id', 'different:user'],

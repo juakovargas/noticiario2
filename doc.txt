@@ -766,3 +766,14 @@ Roadmap (current):
 - Gemini traces now show both base_url and final endpoint (`/models/{model}:generateContent`) plus normalized payload and provider payload (sanitized).
 - `rate_limit_source` now distinguishes internal pre-request blocking (`internal_rate_limiter`) versus provider 429 responses (`provider_rate_limit`).
 - Contextual help and translations for Admin > AI Providers were revised for Spanish, English, and French.
+
+## 5E. ADMIN AI PROVIDERS: NORMAL CRUD + EXECUTION DRIVER
+
+- Admin > AI Providers restored as a standard CRUD-style admin listing with active/inactive sections.
+- Per-provider actions are streamlined: View/Edit are visible; operational/test actions are grouped under Diagnostics.
+- Listing includes execution driver visibility (`Custom Noticiario` / `Laravel AI SDK`).
+- Provider edit form keeps execution driver selectable with safe fallback to `custom`.
+- Diagnostics remain available but secondary, and traces stay sanitized.
+- Rate-limit tracing distinguishes internal pre-request blocking vs provider-side 429 responses.
+- Gemini traces include base URL and final endpoint visibility for request debugging.
+- Contextual help for AI Providers is fully translated in en/es/fr.

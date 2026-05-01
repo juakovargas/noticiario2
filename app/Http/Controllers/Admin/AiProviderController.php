@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiProvider;
+use App\Services\Ai\AiProviderRateLimiter;
 use App\Services\Ai\AiUsageLimitService;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,7 @@ class AiProviderController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function __construct(private readonly AiUsageLimitService $usageLimitService)
+    public function __construct(private readonly AiUsageLimitService $usageLimitService, private readonly AiProviderRateLimiter $rateLimiter)
     {
     }
 
@@ -95,6 +96,13 @@ class AiProviderController extends Controller
         AiProvider::query()->where('id', '!=', $aiProvider->id)->update(['is_default' => false]);
         $aiProvider->update(['is_default' => true]);
         return back()->with('success', __('Provider set as default'));
+    }
+
+    public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
+    {
+        $this->rateLimiter->clearRateLimitLock($aiProvider);
+
+        return back()->with('success', __('Rate limit lock cleared'));
     }
 
     public function destroy(AiProvider $aiProvider): RedirectResponse

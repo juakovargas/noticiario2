@@ -750,3 +750,10 @@ Roadmap (current):
 - Test results are shown as real trace payloads (request/limiter/status metadata) and never include API keys.
 - `request_was_sent` now distinguishes internal limiter blocks from provider HTTP responses.
 - Provider status code `429` is only shown when a provider call was actually sent and returned 429.
+
+## AI Provider tests and traces (Admin)
+- `Test minimal` and `Test short script` now open a modal with real execution traces.
+- Modal shows safe summary, rate limiter details, request, response, and linked AI request log when available.
+- `request_was_sent=false` indicates internal blocking before calling provider.
+- `provider_status_code=429` only indicates real provider rate limiting when `request_was_sent=true`.
+- API keys, authorization headers, bearer tokens, and secrets are always redacted as `[REDACTED]`.

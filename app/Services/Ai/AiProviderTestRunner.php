@@ -23,16 +23,17 @@ class AiProviderTestRunner
         };
 
         $groundingEnabled = $testType === 'grounded_search';
+        $groundingSupported = ! ($groundingEnabled && $provider->usesLaravelAiDriver());
         $before = $this->rateLimiter->getAvailabilityContext($provider);
         $started = microtime(true);
 
         try {
-            $response = $this->clientManager->generateText($provider, $prompt, ['grounding_enabled' => $groundingEnabled]);
+$response = $this->clientManager->generateText($provider, $prompt, ['grounding_enabled' => $groundingSupported]);
             $duration = (int) ((microtime(true) - $started) * 1000);
             $after = $this->rateLimiter->getAvailabilityContext($provider->fresh());
             $log = AiRequestLog::query()->where('ai_provider_id', $provider->id)->latest('id')->first();
 
-            return $this->buildResponse($provider,$testType,$groundingEnabled,$prompt,true,null,$duration,$before,$after,$log,[
+return $this->buildResponse($provider,$testType,$groundingEnabled,$groundingSupported,$prompt,true,null,$duration,$before,$after,$log,[
                 'status' => 200,
                 'retry_after' => null,
                 'text' => mb_substr((string) $response->text, 0, 500),
@@ -44,17 +45,19 @@ class AiProviderTestRunner
             $status = $e instanceof AiProviderException ? $e->statusCode : null;
             $internal = $e instanceof AiProviderException && $e->errorCode === 'internal_rate_limit';
 
-            return $this->buildResponse($provider,$testType,$groundingEnabled,$prompt,false,$e,$duration,$before,$after,null,[
-                'status' => $internal ? null : $status,
+return $this->buildResponse($provider,$testType,$groundingEnabled,$groundingSupported,$prompt,false,$e,$duration,$before,$after,null,[
+'status' => $internal ? null : $status,
                 'retry_after' => null,
                 'error' => ['message' => $this->sanitizeValue($e->getMessage()), 'code' => $e instanceof AiProviderException ? $e->errorCode : 'provider_error'],
-            ],$internal);
+],$internal);
         }
     }
 
-    private function buildResponse(AiProvider $provider, string $testType, bool $groundingEnabled, string $prompt, bool $ok, ?Throwable $error, int $duration, array $before, array $after, ?AiRequestLog $log, array $response, bool $internalBlocked = false): array
+private function buildResponse(AiProvider $provider, string $testType, bool $groundingEnabled, bool $groundingSupported, string $prompt, bool $ok, ?Throwable $error, int $duration, array $before, array $after, ?AiRequestLog $log, array $response, bool $internalBlocked = false): array
     {
-        $requestWasSent = ! $internalBlocked;
+$requestWasSent = $ok
+            || ($error instanceof AiProviderException ? $error->requestWasSent : false);
+        $failedBeforeHttpResponse = ! $ok && ! $requestWasSent;
         $providerStatus = $response['status'] ?? null;
         $result = $ok ? 'success' : ($internalBlocked ? 'blocked' : (($providerStatus === 429) ? 'rate_limited' : 'error'));
 
@@ -62,7 +65,10 @@ class AiProviderTestRunner
         $clientAdapter = $provider->usesLaravelAiDriver() ? 'LaravelAiClientAdapter' : 'CustomAiClient';
 
         $trace = [
-            'summary' => ['result' => $result, 'execution_driver' => $executionDriver, 'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario', 'client_adapter' => $clientAdapter, 'sdk_provider' => $provider->usesLaravelAiDriver() ? $provider->provider_type : null, 'sdk_model' => $provider->usesLaravelAiDriver() ? $provider->default_model : null, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'rate_limit_source' => $internalBlocked ? 'internal_rate_limiter' : (($providerStatus === 429 && $requestWasSent) ? 'provider_rate_limit' : data_get($after, 'source')), 'internal_lock_set_after_provider_429' => ($providerStatus === 429 && ! $internalBlocked) ? true : false],
+            'summary' => ['result' => $result, 'execution_driver' => $executionDriver, 'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario', 'client_adapter' => $clientAdapter, 'sdk_provider' => $provider->usesLaravelAiDriver() ? $provider->provider_type : null, 'sdk_model' => $provider->usesLaravelAiDriver() ? $provider->default_model : null, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'grounding_supported' => $groundingSupported, 'rate_limit_source' => $internalBlocked ? 'internal_rate_limiter' : (($providerStatus === 429 && $requestWasSent) ? 'provider_rate_limit' : data_get($after, 'source')), 'internal_lock_set_after_provider_429' => ($providerStatus === 429 && ! $internalBlocked) ? true : false,
+                'request_failed_before_http_response' => $failedBeforeHttpResponse,
+                'sdk_exception_class' => $error ? class_basename($error) : null,
+                'sdk_exception_message_safe' => $error ? $this->sanitizeValue($error->getMessage()) : null],
             'rate_limiter' => [
                 'blocked_before_request' => $internalBlocked,
                 'status_before' => data_get($before, 'status'),
@@ -73,8 +79,13 @@ class AiProviderTestRunner
                 'rate_limited_until_before' => data_get($before, 'rate_limited_until'),
                 'rate_limited_until_after' => data_get($after, 'rate_limited_until'),
             ],
-            'request' => ['method' => 'POST', 'base_url' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/'), 'endpoint' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/').'/models/'.($provider->default_model ?: 'gemini-2.0-flash').':generateContent', 'model' => $provider->default_model ?: 'gemini-2.0-flash', 'normalized_payload' => ['prompt' => $prompt, 'max_tokens' => 60, 'grounding_enabled' => $groundingEnabled], 'provider_payload' => ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]], 'generationConfig' => ['maxOutputTokens' => 60], 'grounding_enabled' => $groundingEnabled], 'headers' => ['Authorization' => '[REDACTED]']],
+            'request' => ['method' => 'POST', 'base_url' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/'), 'endpoint' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/').'/models/'.($provider->default_model ?: 'gemini-2.0-flash').':generateContent', 'model' => $provider->default_model ?: 'gemini-2.0-flash', 'normalized_payload' => ['prompt' => $prompt, 'max_tokens' => 60, 'grounding_enabled' => $groundingEnabled], 'provider_payload' => ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]], 'generationConfig' => ['maxOutputTokens' => 60]], 'headers' => ['Authorization' => '[REDACTED]']],
             'response' => $response,
+            'sdk' => [
+                'grounding_notice' => ($groundingEnabled && ! $groundingSupported)
+                    ? 'Grounding con Laravel AI SDK aún no está implementado para este proveedor.'
+                    : null,
+            ],
         ];
 
         return [

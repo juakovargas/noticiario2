@@ -37,7 +37,12 @@ class LaravelAiSdkClient implements AiClient
                 ],
             );
         } catch (\Throwable $e) {
-            throw new AiProviderException('Laravel AI SDK request failed.', previous: $e);
+            throw new AiProviderException(
+                message: 'Laravel AI SDK request failed.',
+                requestWasSent: false,
+                errorCode: 'sdk_error',
+                previous: $e,
+            );
         }
         $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
 

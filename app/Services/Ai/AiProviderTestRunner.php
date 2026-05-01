@@ -62,7 +62,7 @@ class AiProviderTestRunner
         $clientAdapter = $provider->usesLaravelAiDriver() ? 'LaravelAiClientAdapter' : 'CustomAiClient';
 
         $trace = [
-            'summary' => ['result' => $result, 'execution_driver' => $executionDriver, 'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario', 'client_adapter' => $clientAdapter, 'sdk_provider' => $provider->usesLaravelAiDriver() ? $provider->provider_type : null, 'sdk_model' => $provider->usesLaravelAiDriver() ? $provider->default_model : null, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'rate_limit_source' => data_get($after, 'source')],
+            'summary' => ['result' => $result, 'execution_driver' => $executionDriver, 'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario', 'client_adapter' => $clientAdapter, 'sdk_provider' => $provider->usesLaravelAiDriver() ? $provider->provider_type : null, 'sdk_model' => $provider->usesLaravelAiDriver() ? $provider->default_model : null, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'rate_limit_source' => $internalBlocked ? 'internal_rate_limiter' : (($providerStatus === 429 && $requestWasSent) ? 'provider_rate_limit' : data_get($after, 'source')), 'internal_lock_set_after_provider_429' => ($providerStatus === 429 && ! $internalBlocked) ? true : false],
             'rate_limiter' => [
                 'blocked_before_request' => $internalBlocked,
                 'status_before' => data_get($before, 'status'),
@@ -73,7 +73,7 @@ class AiProviderTestRunner
                 'rate_limited_until_before' => data_get($before, 'rate_limited_until'),
                 'rate_limited_until_after' => data_get($after, 'rate_limited_until'),
             ],
-            'request' => ['method' => 'POST', 'endpoint' => rtrim((string) $provider->base_url, '/'), 'model' => $provider->default_model, 'prompt' => $prompt, 'payload' => ['prompt' => $prompt, 'max_tokens' => 60, 'grounding_enabled' => $groundingEnabled], 'headers' => ['Authorization' => '[REDACTED]']],
+            'request' => ['method' => 'POST', 'base_url' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/'), 'endpoint' => rtrim((string) ($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/').'/models/'.($provider->default_model ?: 'gemini-2.0-flash').':generateContent', 'model' => $provider->default_model ?: 'gemini-2.0-flash', 'normalized_payload' => ['prompt' => $prompt, 'max_tokens' => 60, 'grounding_enabled' => $groundingEnabled], 'provider_payload' => ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]], 'generationConfig' => ['maxOutputTokens' => 60], 'grounding_enabled' => $groundingEnabled], 'headers' => ['Authorization' => '[REDACTED]']],
             'response' => $response,
         ];
 

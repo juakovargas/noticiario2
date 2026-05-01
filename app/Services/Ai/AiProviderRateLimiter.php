@@ -9,6 +9,39 @@ use Illuminate\Http\Client\Response;
 
 class AiProviderRateLimiter
 {
+    public function getAvailabilityContext(AiProvider $provider): array
+    {
+        $now = now();
+        $metadata = is_array($provider->rate_limit_metadata) ? $provider->rate_limit_metadata : [];
+        $until = $provider->rate_limited_until;
+
+        if ($until instanceof CarbonInterface && $until->isFuture()) {
+            return [
+                'status' => 'internal_rate_limit',
+                'retry_after_seconds' => max(1, $now->diffInSeconds($until)),
+                'rate_limited_until' => $until->toISOString(),
+                'source' => 'internal_rate_limiter',
+                'message_key' => 'internal_rate_limit',
+                'metadata' => $metadata,
+            ];
+        }
+
+        if ($provider->last_request_at instanceof CarbonInterface && $provider->min_seconds_between_requests) {
+            $next = $provider->last_request_at->copy()->addSeconds((int) $provider->min_seconds_between_requests);
+            if ($next->isFuture()) {
+                return [
+                    'status' => 'min_delay_wait',
+                    'retry_after_seconds' => max(1, $now->diffInSeconds($next)),
+                    'rate_limited_until' => $next->toISOString(),
+                    'source' => 'internal_rate_limiter',
+                    'message_key' => 'min_delay_wait',
+                    'metadata' => $metadata,
+                ];
+            }
+        }
+
+        return ['status' => 'available'];
+    }
     public function canCall(AiProvider $provider): bool
     {
         return $this->secondsUntilAvailable($provider) <= 0;
@@ -49,7 +82,7 @@ class AiProviderRateLimiter
         $wait = max(1, $retryAfterSeconds ?? $provider->initial_retry_delay_seconds ?? 5);
         $provider->forceFill([
             'rate_limited_until' => now()->addSeconds($wait),
-            'rate_limit_metadata' => $metadata,
+            'rate_limit_metadata' => array_merge($metadata, ['retry_after_seconds' => $wait, 'rate_limited_until' => now()->addSeconds($wait)->toISOString()]),
         ])->save();
     }
 

@@ -699,3 +699,18 @@ Roadmap (current):
 - Prompt profiles should define tone/style only and should not carry output schema blocks.
 - Prompt length and token estimate are shown from the actual generated prompt text.
 - In plain mode, AI response is saved and used directly as script body without requiring structured headings.
+
+## AI RATE LIMIT ERROR VISIBILITY
+
+- The system now distinguishes internal limiter waits (`internal_rate_limit` and `min_delay_wait`) from real provider-side 429 responses (`provider_rate_limit`).
+- `provider_status_code = null` indicates the app blocked the call before provider contact.
+- `provider_status_code = 429` indicates Gemini responded with rate limit.
+- Retry context includes `retry_after_seconds` and `rate_limited_until` and is surfaced in logs/pipeline metadata.
+- Retryable provider-limit scenarios are treated as waiting/retryable pipeline states.
+
+## COMPACT EDITORIAL PERSONALITY IN PROMPTS
+
+- Plain final-script prompts keep a compact numeric editorial personality block.
+- Structured output schemas remain restricted to advanced structured mode and stay forbidden in normal plain flow.
+- Numeric personality remains configurable while keeping prompt compact.
+- Tone guidance remains short.

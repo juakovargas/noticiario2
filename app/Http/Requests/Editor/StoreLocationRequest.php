@@ -21,7 +21,7 @@ class StoreLocationRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'unique:locations,slug'],
             'type' => ['required', 'string', 'max:50', Rule::in(['global', 'country', 'region', 'city', 'custom'])],
             'country_code' => ['nullable', 'string', 'max:10'],
-            'timezone' => ['nullable', 'string', 'max:255'],
+            'timezone' => ['nullable', 'string', 'max:255', 'timezone'],
             'default_language_id' => ['nullable', 'exists:languages,id'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],

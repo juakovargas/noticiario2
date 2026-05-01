@@ -130,12 +130,13 @@ class BulletinPromptRunPipeline
                     } catch (AiProviderException|Throwable $exception) {
                         $isRetryable = $exception instanceof AiProviderException && $exception->retryable;
                         $retryAfter = $exception instanceof AiProviderException ? $exception->retryAfterSeconds : null;
+                        $isInternal = $exception instanceof AiProviderException ? ! $exception->requestWasSent : false;
                         $log->update([
                             'status' => $isRetryable ? 'rate_limited' : 'failed',
                             'error_message' => str($exception->getMessage())->limit(1000)->toString(),
-                            'error_code' => $isRetryable ? ((str_contains($exception->getMessage(), 'not called because') || str_contains($exception->getMessage(), 'minimum delay')) ? 'internal_rate_limit' : 'provider_rate_limit') : 'provider_error',
+                            'error_code' => $exception instanceof AiProviderException ? ($exception->errorCode ?? ($isRetryable ? 'provider_rate_limit' : 'provider_error')) : 'provider_error',
                             'provider_status_code' => $exception instanceof AiProviderException ? $exception->statusCode : null,
-                            'metadata' => ['retryable' => $isRetryable, 'retry_after_seconds' => $retryAfter, 'source' => (str_contains($exception->getMessage(), 'not called because') || str_contains($exception->getMessage(), 'minimum delay')) ? 'internal' : 'provider', 'request_was_sent' => ! (str_contains($exception->getMessage(), 'not called because') || str_contains($exception->getMessage(), 'minimum delay')), 'rate_limit_source' => (str_contains($exception->getMessage(), 'not called because') || str_contains($exception->getMessage(), 'minimum delay')) ? 'internal' : 'provider', 'grounding_enabled' => (bool) $provider->supports_grounding, 'attempt' => data_get($provider->rate_limit_metadata, 'attempt'), 'max_retries' => data_get($provider->rate_limit_metadata, 'max_retries'), 'rate_limited_until' => optional($provider->fresh()->rate_limited_until)?->toISOString(), 'min_seconds_between_requests' => $provider->min_seconds_between_requests, 'last_request_at' => optional($provider->fresh()->last_request_at)?->toISOString()],
+                            'metadata' => ['retryable' => $isRetryable, 'retry_after_seconds' => $retryAfter, 'source' => $isInternal ? 'internal' : 'provider', 'request_was_sent' => ! $isInternal, 'rate_limit_source' => $isInternal ? 'internal' : 'provider', 'grounding_enabled' => (bool) $provider->supports_grounding, 'attempt' => data_get($provider->rate_limit_metadata, 'attempt'), 'max_retries' => data_get($provider->rate_limit_metadata, 'max_retries'), 'rate_limited_until' => optional($provider->fresh()->rate_limited_until)?->toISOString(), 'min_seconds_between_requests' => $provider->min_seconds_between_requests, 'last_request_at' => optional($provider->fresh()->last_request_at)?->toISOString()],
                             'completed_at' => now()
                         ]);
                         if ($isRetryable) {
@@ -144,7 +145,7 @@ class BulletinPromptRunPipeline
                             $summary['pipeline_metadata']['rate_limited_until'] = $rateLimitedUntil;
                             $summary['pipeline_metadata']['provider_id'] = $provider->id;
                             $summary['pipeline_metadata']['provider_name'] = $provider->name;
-                            $isInternal = str_contains($exception->getMessage(), 'No se ha llamado al proveedor') || str_contains($exception->getMessage(), 'intervalo mínimo');
+                            
                             $summary['pipeline_metadata']['rate_limit_source'] = $isInternal ? 'internal_rate_limiter' : 'provider_response';
                             $summary['pipeline_metadata']['provider_status_code'] = $exception instanceof AiProviderException ? $exception->statusCode : null;
                             $summary['pipeline_metadata']['attempt'] = data_get($provider->rate_limit_metadata, 'attempt');

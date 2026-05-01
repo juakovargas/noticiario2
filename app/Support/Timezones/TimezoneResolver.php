@@ -6,16 +6,21 @@ use DateTimeZone;
 
 class TimezoneResolver
 {
-    /** @param array<int, string|null> $candidates */
-    public function resolve(array $candidates = []): string
+    public function resolve(?string $timezone, ?string $fallback = null): string
     {
-        $fallbacks = [config('app.timezone'), 'Europe/Madrid'];
+        $normalized = $this->normalize($timezone);
+        if ($this->isValid($normalized)) {
+            return (string) $normalized;
+        }
 
-        foreach (array_merge($candidates, $fallbacks) as $candidate) {
-            $normalized = $this->normalize($candidate);
-            if ($normalized !== null && $this->isValid($normalized)) {
-                return $normalized;
-            }
+        $normalizedFallback = $this->normalize($fallback);
+        if ($this->isValid($normalizedFallback)) {
+            return (string) $normalizedFallback;
+        }
+
+        $appTimezone = $this->normalize((string) config('app.timezone'));
+        if ($this->isValid($appTimezone)) {
+            return (string) $appTimezone;
         }
 
         return 'Europe/Madrid';
@@ -28,11 +33,10 @@ class TimezoneResolver
             return null;
         }
 
-        $key = mb_strtolower($value);
-        return match ($key) {
-            'madrid', 'spain', 'españa', 'espana' => 'Europe/Madrid',
-            'paris', 'france' => 'Europe/Paris',
-            'london', 'uk' => 'Europe/London',
+        return match (mb_strtolower($value)) {
+            'madrid', 'españa', 'espana', 'spain' => 'Europe/Madrid',
+            'france', 'paris' => 'Europe/Paris',
+            'uk', 'london' => 'Europe/London',
             'utc' => 'UTC',
             default => $value,
         };

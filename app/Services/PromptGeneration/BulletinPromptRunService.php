@@ -34,7 +34,7 @@ class BulletinPromptRunService
             ?: PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->first();
 
         $scheduledFor = $this->resolveScheduledFor($bulletinType, $scheduledForInput);
-        $displayTimezone = $this->timezoneResolver->resolve([$bulletinType->default_timezone, $bulletinType->location?->timezone]);
+        $displayTimezone = $this->timezoneResolver->resolve($bulletinType->default_timezone, $bulletinType->location?->timezone);
         $localizedSchedule = $scheduledFor->copy()->timezone($displayTimezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm');
         $title = sprintf('%s - %s', $bulletinType->name, $localizedSchedule);
 
@@ -192,11 +192,10 @@ class BulletinPromptRunService
 
     private function resolveScheduledFor(BulletinType $bulletinType, ?string $scheduledForInput): Carbon
     {
-        $timezone = $this->timezoneResolver->resolve([
+        $timezone = $this->timezoneResolver->resolve(
             $bulletinType->default_timezone,
-            $bulletinType->location?->timezone,
-            optional(auth()->user())->timezone,
-        ]);
+            $bulletinType->location?->timezone ?? optional(auth()->user())->timezone ?? config('app.timezone')
+        );
 
         if ($scheduledForInput) {
             return Carbon::parse($scheduledForInput, $timezone)->startOfMinute()->utc();

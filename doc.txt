@@ -738,3 +738,15 @@ Roadmap (current):
 
 ## GROQ AND NEWS RELIABILITY
 - Operational guidance: Groq is fast but non-grounded; current news requires sources/grounding and manual verification.
+
+## TIMEZONE SAFETY
+- Invalid timezone aliases like `madrid` are normalized through `TimezoneResolver`.
+- Carbon scheduling paths resolve timezone first and never pass invalid strings directly.
+- `Europe/Madrid` is the fallback for Spain/demo scenarios when app/user values are invalid.
+
+## AI PROVIDER TESTS AND TRACES
+- Admin AI Providers keeps Active/Inactive sections and direct testing actions.
+- Test minimal, short script, and grounded search return structured diagnostics.
+- Test results are shown as real trace payloads (request/limiter/status metadata) and never include API keys.
+- `request_was_sent` now distinguishes internal limiter blocks from provider HTTP responses.
+- Provider status code `429` is only shown when a provider call was actually sent and returned 429.

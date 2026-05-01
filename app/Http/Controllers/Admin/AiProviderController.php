@@ -12,6 +12,7 @@ use App\Services\Ai\AiProviderTestRunner;
 use App\Services\Ai\Exceptions\AiProviderException;
 use Throwable;
 use App\Support\GeneratesUniqueSlug;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -104,13 +105,13 @@ class AiProviderController extends Controller
     }
 
 
-    public function test(Request $request, AiProvider $aiProvider): RedirectResponse
+    public function test(Request $request, AiProvider $aiProvider): JsonResponse
     {
         $type = (string) $request->input('test_type', 'minimal');
         $normalized = $type === 'grounded' ? 'grounded_search' : $type;
         $result = $this->testRunner->run($aiProvider, $normalized);
 
-        return back()->with($result['success'] ? 'success' : 'error', $result['success'] ? __('Provider test completed.') : ($result['safe_error_message'] ?? __('Provider test failed.')))->with('provider_test_result', $result);
+        return response()->json($result, $result['ok'] ? 200 : 422);
     }
 
     public function latestTrace(AiProvider $aiProvider): Response
@@ -121,17 +122,17 @@ class AiProviderController extends Controller
         ]);
     }
 
-    public function testMinimal(AiProvider $aiProvider): RedirectResponse
+    public function testMinimal(AiProvider $aiProvider): JsonResponse
     {
         return $this->test(request()->merge(['test_type' => 'minimal']), $aiProvider);
     }
 
-    public function testShortScript(AiProvider $aiProvider): RedirectResponse
+    public function testShortScript(AiProvider $aiProvider): JsonResponse
     {
         return $this->test(request()->merge(['test_type' => 'short_script']), $aiProvider);
     }
 
-    public function testGrounded(AiProvider $aiProvider): RedirectResponse
+    public function testGrounded(AiProvider $aiProvider): JsonResponse
     {
         return $this->test(request()->merge(['test_type' => 'grounded_search']), $aiProvider);
     }

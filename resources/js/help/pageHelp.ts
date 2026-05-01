@@ -108,7 +108,15 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
     'viewer.published-content': FALLBACK,
     'viewer.world-map.index': FALLBACK,
 
-    'admin.aiproviders.index': FALLBACK,
+    'admin.aiproviders.index': {
+        titleKey: 'help.admin.aiProviders.title',
+        summaryKey: 'help.admin.aiProviders.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.admin.aiProviders.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.admin.aiProviders.actions' },
+        ],
+        tipsKeys: ['help.admin.aiProviders.tip1', 'help.admin.aiProviders.tip2'],
+    },
     'admin.aiproviders.show': FALLBACK,
     'admin.aiproviders.form': FALLBACK,
     'admin.airequestlogs.index': FALLBACK,

@@ -1,9 +1,9 @@
 export const translations: Record<string, Record<string, string>> = {
     en: {
         'help.admin.aiProviders.title': 'Diagnóstico de proveedores IA',
-        'help.admin.aiProviders.summary': 'Ejecuta pruebas minimal y short script y revisa trazas reales seguras en un modal.',
+        'help.admin.aiProviders.summary': 'Ejecuta pruebas minimal y short script, compara driver custom vs Laravel AI SDK y revisa trazas seguras.',
         'help.admin.aiProviders.what': 'Usa estas pruebas para diagnosticar proveedor/modelo/API key y límites de forma segura.',
-        'help.admin.aiProviders.actions': 'request_was_sent=false significa bloqueo interno antes de enviar; provider_status_code=429 con request_was_sent=true significa límite real del proveedor.',
+        'help.admin.aiProviders.actions': 'El driver de ejecución permite comparar integración custom y Laravel AI SDK. request_was_sent=false significa bloqueo interno antes de enviar; provider_status_code=429 con request_was_sent=true significa límite real del proveedor.',
         'help.admin.aiProviders.tip1': 'Las trazas están sanitizadas y nunca exponen API keys ni secretos.',
         'help.admin.aiProviders.tip2': 'Gemini Flash aísla comprobaciones de API/modelo sin grounding; Gemini Grounded puede tener límites más estrictos.',
         'admin.aiProviders.tests.modal.title': 'Provider test trace',
@@ -15,6 +15,14 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.tests.modal.rawTrace': 'Raw safe trace',
         'admin.aiProviders.tests.modal.close': 'Close',
         'admin.aiProviders.tests.modal.loading': 'Running test…',
+
+        'admin.aiProviders.fields.executionDriver': 'Execution driver',
+        'admin.aiProviders.executionDrivers.custom': 'Custom Noticiario',
+        'admin.aiProviders.executionDrivers.laravelAi': 'Laravel AI SDK',
+        'admin.aiProviders.executionDrivers.help': 'Choose how this provider call is executed for diagnostics and comparisons.',
+        'admin.aiProviders.tests.modal.executionDriver': 'Execution driver',
+        'admin.aiProviders.tests.modal.driverComparisonNote': 'If both drivers return 429, the limit is likely from the provider/API project.',
+
 
         'Simple final script': 'Simple final script',
         'Plain final script': 'Plain final script',
@@ -1311,6 +1319,12 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.tests.modal.rawTrace': 'Traza segura en bruto',
         'admin.aiProviders.tests.modal.close': 'Cerrar',
         'admin.aiProviders.tests.modal.loading': 'Ejecutando prueba…',
+        'admin.aiProviders.fields.executionDriver': 'Driver de ejecución',
+        'admin.aiProviders.executionDrivers.custom': 'Custom Noticiario',
+        'admin.aiProviders.executionDrivers.laravelAi': 'Laravel AI SDK',
+        'admin.aiProviders.executionDrivers.help': 'Elige cómo se ejecuta la llamada para diagnóstico y comparación.',
+        'admin.aiProviders.tests.modal.executionDriver': 'Driver de ejecución',
+        'admin.aiProviders.tests.modal.driverComparisonNote': 'Si ambos drivers devuelven 429, el límite probablemente viene del proveedor/proyecto API.',
 
         'Simple final script': 'Guion final simple',
         'Plain final script': 'Guion final simple',
@@ -2582,6 +2596,12 @@ export const translations: Record<string, Record<string, string>> = {
         'admin.aiProviders.tests.modal.rawTrace': 'Trace brute sécurisée',
         'admin.aiProviders.tests.modal.close': 'Fermer',
         'admin.aiProviders.tests.modal.loading': 'Exécution du test…',
+        'admin.aiProviders.fields.executionDriver': "Pilote d'exécution",
+        'admin.aiProviders.executionDrivers.custom': 'Custom Noticiario',
+        'admin.aiProviders.executionDrivers.laravelAi': 'Laravel AI SDK',
+        'admin.aiProviders.executionDrivers.help': "Choisissez comment l'appel est exécuté pour le diagnostic et la comparaison.",
+        'admin.aiProviders.tests.modal.executionDriver': "Pilote d'exécution",
+        'admin.aiProviders.tests.modal.driverComparisonNote': "Si les deux pilotes renvoient 429, la limite vient probablement du fournisseur/projet API.",
 
         'Simple final script': 'Script final simple',
         'Plain final script': 'Script final simple',

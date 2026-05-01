@@ -16,7 +16,7 @@ class LaravelAiSdkClient implements AiClient
 
     public function generateText(AiProvider $provider, string $prompt, array $options = []): AiResponseData
     {
-        if (! in_array($provider->provider_type, ['openai', 'openrouter'], true)) {
+        if (! in_array($provider->provider_type, ['openai', 'openrouter', 'groq', 'gemini', 'google_gemini'], true)) {
             throw new AiProviderException(sprintf('Laravel AI SDK client does not support provider type: %s', $provider->provider_type));
         }
 
@@ -28,7 +28,7 @@ class LaravelAiSdkClient implements AiClient
         $startedAt = microtime(true);
         try {
             $result = $this->gateway->generateText(
-                providerAlias: $provider->provider_type,
+                providerAlias: $this->providerAlias($provider->provider_type),
                 model: $model,
                 prompt: $prompt,
                 options: [
@@ -37,7 +37,7 @@ class LaravelAiSdkClient implements AiClient
                 ],
             );
         } catch (\Throwable $e) {
-            throw new AiProviderException('Laravel AI SDK request failed.');
+            throw new AiProviderException('Laravel AI SDK request failed.', previous: $e);
         }
         $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
 
@@ -53,4 +53,13 @@ class LaravelAiSdkClient implements AiClient
             durationMs: $durationMs,
         );
     }
+
+    private function providerAlias(string $providerType): string
+    {
+        return match ($providerType) {
+            'google_gemini' => 'gemini',
+            default => $providerType,
+        };
+    }
 }
+

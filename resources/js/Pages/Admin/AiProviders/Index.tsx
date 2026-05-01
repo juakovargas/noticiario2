@@ -33,7 +33,7 @@ export default function Index({ providers }: any): JSX.Element {
     }
   };
 
-  const row = (p: any) => <tr key={p.id} className={p.is_default ? 'bg-cyan-50 border-b' : 'border-b'}><td className='py-2'>{p.name}{p.is_default && <Badge className='ml-2'>{t('Default provider')}</Badge>}<div className='text-xs'>{p.provider_category}</div></td><td>{p.default_model || '-'}</td><td>{p.env_key_configured ? t('API key configured') : t('API key missing')}</td><td className='text-right'><div className='flex gap-1 justify-end flex-wrap'>
+  const row = (p: any) => <tr key={p.id} className={p.is_default ? 'bg-cyan-50 border-b' : 'border-b'}><td className='py-2'>{p.name}{p.is_default && <Badge className='ml-2'>{t('Default provider')}</Badge>}<div className='text-xs'>{p.provider_category}</div></td><td>{p.default_model || '-'}<div className='text-xs text-slate-500'>{p.execution_driver_label ?? p.execution_driver ?? 'custom'}</div></td><td>{p.env_key_configured ? t('API key configured') : t('API key missing')}</td><td className='text-right'><div className='flex gap-1 justify-end flex-wrap'>
     <Button size='sm' variant='outline' disabled={!!loadingKey} onClick={()=>runTest(p.id,'minimal')}>{loadingKey===`${p.id}-minimal`?t('admin.aiProviders.tests.modal.loading'):t('Test minimal')}</Button>
     <Button size='sm' variant='outline' disabled={!!loadingKey} onClick={()=>runTest(p.id,'short-script')}>{loadingKey===`${p.id}-short-script`?t('admin.aiProviders.tests.modal.loading'):t('Test short script')}</Button>
     {p.supports_grounding && <Button size='sm' variant='outline' disabled={!!loadingKey} onClick={()=>runTest(p.id,'grounded')}>{t('Test grounded search')}</Button>}

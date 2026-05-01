@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AiProvider extends Model
 {
+    public const DRIVER_CUSTOM = 'custom';
+
+    public const DRIVER_LARAVEL_AI = 'laravel_ai';
     use HasFactory, SoftDeletes;
 
     public const SUPPORTED_PROVIDER_TYPES = [
@@ -133,10 +136,28 @@ class AiProvider extends Model
     protected static function booted(): void
     {
         static::creating(function (AiProvider $provider): void {
-            if (blank($provider->client_driver)) {
-                $provider->client_driver = 'custom';
+            if (blank($provider->client_driver) || ! in_array($provider->client_driver, [self::DRIVER_CUSTOM, self::DRIVER_LARAVEL_AI], true)) {
+                $provider->client_driver = self::DRIVER_CUSTOM;
             }
         });
+    }
+
+
+    public function executionDriver(): string
+    {
+        return in_array($this->client_driver, [self::DRIVER_CUSTOM, self::DRIVER_LARAVEL_AI], true)
+            ? $this->client_driver
+            : self::DRIVER_CUSTOM;
+    }
+
+    public function usesLaravelAiDriver(): bool
+    {
+        return $this->executionDriver() === self::DRIVER_LARAVEL_AI;
+    }
+
+    public function usesCustomDriver(): bool
+    {
+        return ! $this->usesLaravelAiDriver();
     }
 
     public function editorialRequests(): HasMany

@@ -58,8 +58,11 @@ class AiProviderTestRunner
         $providerStatus = $response['status'] ?? null;
         $result = $ok ? 'success' : ($internalBlocked ? 'blocked' : (($providerStatus === 429) ? 'rate_limited' : 'error'));
 
+        $executionDriver = $provider->executionDriver();
+        $clientAdapter = $provider->usesLaravelAiDriver() ? 'LaravelAiClientAdapter' : 'CustomAiClient';
+
         $trace = [
-            'summary' => ['result' => $result, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'rate_limit_source' => data_get($after, 'source')],
+            'summary' => ['result' => $result, 'execution_driver' => $executionDriver, 'execution_driver_label' => $provider->usesLaravelAiDriver() ? 'Laravel AI SDK' : 'Custom Noticiario', 'client_adapter' => $clientAdapter, 'sdk_provider' => $provider->usesLaravelAiDriver() ? $provider->provider_type : null, 'sdk_model' => $provider->usesLaravelAiDriver() ? $provider->default_model : null, 'request_was_sent' => $requestWasSent, 'provider_status_code' => $providerStatus, 'duration_ms' => $duration, 'grounding' => $groundingEnabled, 'rate_limit_source' => data_get($after, 'source')],
             'rate_limiter' => [
                 'blocked_before_request' => $internalBlocked,
                 'status_before' => data_get($before, 'status'),
@@ -77,7 +80,7 @@ class AiProviderTestRunner
         return [
             'ok' => $ok,
             'test_type' => $testType,
-            'provider' => ['id' => $provider->id, 'name' => $provider->name, 'provider_type' => $provider->provider_type, 'model' => $provider->default_model, 'supports_grounding' => (bool) $provider->supports_grounding, 'capabilities' => $provider->capabilities],
+            'provider' => ['id' => $provider->id, 'name' => $provider->name, 'provider_type' => $provider->provider_type, 'model' => $provider->default_model, 'supports_grounding' => (bool) $provider->supports_grounding, 'capabilities' => $provider->capabilities, 'execution_driver' => $executionDriver],
             ...$trace,
             'ai_request_log' => $log ? ['id' => $log->id, 'status' => $log->status, 'error_code' => $log->error_code, 'estimated_cost' => $log->estimated_cost, 'input_tokens' => $log->input_tokens, 'output_tokens' => $log->output_tokens, 'total_tokens' => $log->total_tokens, 'created_at' => optional($log->created_at)?->toISOString(), 'url' => route('admin.ai-request-logs.show', $log)] : null,
             'safe_error_message' => $error ? $this->sanitizeValue($error->getMessage()) : null,

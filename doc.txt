@@ -757,3 +757,12 @@ Roadmap (current):
 - `request_was_sent=false` indicates internal blocking before calling provider.
 - `provider_status_code=429` only indicates real provider rate limiting when `request_was_sent=true`.
 - API keys, authorization headers, bearer tokens, and secrets are always redacted as `[REDACTED]`.
+
+## 11. AI PROVIDERS ADMIN RECOVERY (CURRENT)
+
+- Admin > AI Providers remains a full administration page (view, edit, activate/deactivate, set default, clear rate-limit lock) and diagnostics are secondary.
+- Diagnostics are grouped in a discreet/closable panel per provider instead of multiple visible test buttons per row.
+- Provider list now exposes execution driver in the Driver column and keeps default highlighting and active/inactive grouping.
+- Gemini traces now show both base_url and final endpoint (`/models/{model}:generateContent`) plus normalized payload and provider payload (sanitized).
+- `rate_limit_source` now distinguishes internal pre-request blocking (`internal_rate_limiter`) versus provider 429 responses (`provider_rate_limit`).
+- Contextual help and translations for Admin > AI Providers were revised for Spanish, English, and French.

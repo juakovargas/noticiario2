@@ -86,6 +86,16 @@ class AiProviderRateLimiter
         ])->save();
     }
 
+
+
+    public function clearRateLimitLock(AiProvider $provider): void
+    {
+        $provider->forceFill([
+            'rate_limited_until' => null,
+            'rate_limit_metadata' => null,
+        ])->save();
+    }
+
     public function calculateBackoffDelay(AiProvider $provider, int $attempt): int
     {
         $initial = max(1, (int) ($provider->initial_retry_delay_seconds ?? 5));

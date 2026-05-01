@@ -714,3 +714,13 @@ Roadmap (current):
 - Structured output schemas remain restricted to advanced structured mode and stay forbidden in normal plain flow.
 - Numeric personality remains configurable while keeping prompt compact.
 - Tone guidance remains short.
+
+## GEMINI DIAGNOSTICS AND GROUNDING SEPARATION
+
+- Gemini providers are split into Gemini Flash (`gemini-flash`) and Gemini Grounded (`gemini-grounded`) with separate capabilities.
+- Gemini Flash is used to validate API key/model behavior without Google Search grounding.
+- Gemini Grounded keeps Google Search grounding/citations and can hit stricter quota windows.
+- AI failure metadata now differentiates internal pre-call rate limiter blocks vs provider-side responses.
+- Rate-limit lock can be cleared from Admin AI Providers.
+- Pipeline metadata now includes request_was_sent/rate_limit_source/grounding context for diagnostics.
+- No API keys are displayed in diagnostics.

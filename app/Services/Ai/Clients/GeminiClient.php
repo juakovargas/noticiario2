@@ -22,8 +22,8 @@ class GeminiClient implements AiClient
         if (($availability['status'] ?? 'available') !== 'available') {
             $retryAfter = (int) ($availability['retry_after_seconds'] ?? 1);
             $msg = ($availability['status'] ?? null) === 'min_delay_wait'
-                ? 'Se está respetando el intervalo mínimo entre peticiones para evitar bloqueos.'
-                : 'No se ha llamado al proveedor porque está temporalmente bloqueado hasta '.($availability['rate_limited_until'] ?? now()->toISOString()).'.';
+                ? 'The provider was not called because the minimum delay between requests is still active.'
+                : 'The provider was not called because it is temporarily rate-limited until '.($availability['rate_limited_until'] ?? now()->toISOString()).'.';
             throw new AiProviderException($msg, 429, true, $retryAfter);
         }
 
@@ -58,12 +58,12 @@ class GeminiClient implements AiClient
                 $this->rateLimiter->markRateLimited($provider, $retryAfter, $metadata);
                 if ($attempt < $maxRetries && $retryAfter <= 10) { sleep($retryAfter); continue; }
                 $msg = $attempt >= $maxRetries
-                    ? 'Se agotaron los reintentos por límite del proveedor. Vuelve a intentarlo más tarde o usa otro proveedor.'
-                    : 'Gemini ha respondido 429 Too Many Requests. Reintento disponible en '.$retryAfter.' segundos. Intento '.($attempt + 1).' de '.$maxRetries.'.';
+                    ? 'Gemini returned 429 Too Many Requests and retry attempts are exhausted.'
+                    : 'Gemini returned 429 Too Many Requests. Retry available in '.$retryAfter.' seconds. Attempt '.($attempt + 1).' of '.$maxRetries.'.';
                 throw new AiProviderException($msg, 429, true, $retryAfter);
             }
 
-            throw new AiProviderException('AI request failed with status '.$response->status(), $response->status(), $response->status() >= 500);
+            throw new AiProviderException('Gemini request failed with status '.$response->status(), $response->status(), $response->status() >= 500);
         }
 
         throw new AiProviderException('AI request failed.');

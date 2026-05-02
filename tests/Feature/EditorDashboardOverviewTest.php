@@ -8,6 +8,7 @@ use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
 use App\Models\Location;
 use App\Models\NewsCategory;
+use App\Models\Script;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -31,6 +32,22 @@ class EditorDashboardOverviewTest extends TestCase
         $this->actingAs($user)->get(route('editor.dashboard'))->assertOk()->assertInertia(fn ($page) => $page
             ->component('Editor/Dashboard')->has('summary')->has('mapOverview.locations')->has('actionableQueue')->has('scheduledBulletins.on')->has('coverageOverview.groups')->has('aiProviderStatus')->has('latestExecutions')
         );
+    }
+
+
+
+    public function test_dashboard_handles_scripts_without_direct_bulletin_type_relation(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['editor.access', 'editor.dashboard.view']);
+
+        Script::factory()->create([
+            'review_status' => 'pending',
+            'status' => 'draft',
+            'bulletin_prompt_run_id' => null,
+        ]);
+
+        $this->actingAs($user)->get(route('editor.dashboard'))->assertOk();
     }
 
     public function test_actionable_queue_excludes_disabled_without_attention_and_includes_provider_model_and_on_off(): void

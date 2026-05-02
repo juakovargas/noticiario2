@@ -910,3 +910,15 @@ Roadmap (current):
 - Future production stages are visible as placeholders in pipeline UI (production/audio/video/publication), without implementing those features.
 - Gemini Grounded is treated as the primary provider for real/current-news bulletins wherever explicitly assigned.
 
+
+## 5F. EDITOR DASHBOARD (TAILADMIN-INSPIRED REDESIGN)
+
+- Editor dashboard (`/editor`) was redesigned as a professional operational control panel with stronger hierarchy, card layout, compact KPI summary, actionable queue, and improved table/list readability in light/dark mode.
+- Embedded operational world map panel remains near top using existing `WorldBulletinMap` component; includes direct action to full map.
+- Scheduled bulletins now render as a main operational table with ON/OFF state, bulletin/location/category, provider+model, next/last run, pipeline steps, and direct actions (view bulletin, view executions, run now).
+- Actionable queue now focuses on items requiring work: overdue schedules, failed schedules, incomplete config, and prompt runs waiting for AI response.
+- Editorial AI engines section is editor-facing: provider/model, grounded role, availability/rate-limit state, and bulletins using each engine.
+- Coverage by location/topic now includes understandable status counters: active, paused, missing provider, missing schedule, failed, not configured.
+- Latest executions now include provider/model, translated status, source verification summary, script link when available, run link, and pipeline chips.
+- Controller remains thin; `EditorDashboardOverviewService` now provides structured props for dashboard sections with null-safe relationship handling and eager loading.
+- No audio/video/publishing generation was implemented; those pipeline steps are displayed as future placeholders only.

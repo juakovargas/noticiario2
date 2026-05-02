@@ -19,11 +19,16 @@ class EditorDashboardOverviewService
     public function build(): array
     {
         $today = now();
-        $schedules = EditorialSchedule::query()->with(['bulletinType.aiProvider:id,name,default_model,supports_grounding,is_active,provider_category,rate_limited_until','location:id,name','newsCategory:id,name','runs' => fn ($q) => $q->latest('scheduled_for')->limit(1)])->get();
+        $schedules = EditorialSchedule::query()->with(['bulletinType.aiProvider:id,name,default_model,supports_grounding,is_active,rate_limited_until', 'location:id,name', 'newsCategory:id,name', 'runs' => fn ($q) => $q->latest('scheduled_for')->limit(1)])->get();
+
         return [
-            'headerActions' => [['key'=>'automation','label'=>'Ver automatización','href'=>route('editor.automation.index')],['key'=>'createBulletin','label'=>'Crear informativo','href'=>route('editor.bulletin-types.create')],['key'=>'fullMap','label'=>'Ver mapa completo','href'=>route('editor.world-map.index')]],
+            'headerActions' => [
+                ['key' => 'automation', 'label' => 'Ver automatización', 'href' => route('editor.automation.index')],
+                ['key' => 'createBulletin', 'label' => 'Crear informativo', 'href' => route('editor.bulletin-types.create')],
+                ['key' => 'fullMap', 'label' => 'Ver mapa completo', 'href' => route('editor.world-map.index')],
+            ],
             'summaryCards' => $this->summaryCards($schedules, $today),
-            'mapOverview' => ['markers'=>$this->mapService->getEditorMapData(),'mapRoute'=>route('editor.world-map.index')],
+            'mapOverview' => ['markers' => $this->mapService->getEditorMapData(), 'mapRoute' => route('editor.world-map.index')],
             'scheduledBulletins' => $this->scheduledBulletins($schedules),
             'actionableQueue' => $this->buildActionableQueue($schedules),
             'aiEngines' => $this->buildAiEngines($today),

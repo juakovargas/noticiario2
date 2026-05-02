@@ -8,30 +8,62 @@ import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link } from '@inertiajs/react';
 
+const pipelineClasses = 'rounded-full border px-2 py-0.5 text-xs';
+
 export default function Dashboard({ headerActions, summaryCards, mapOverview, scheduledBulletins, actionableQueue, aiEngines, coverageByLocationTopic, latestExecutions }: any) {
-  const { t } = useTranslations();
-  const { formatDateTime } = useDateFormatter();
+    const { t } = useTranslations();
+    const { formatDateTime } = useDateFormatter();
 
-  return <EditorLayout><Head title={t('Mesa de operaciones editoriales')} />
-    <AdminPageHeader helpKey="editor.dashboard" title={t('Mesa de operaciones editoriales')} description={t('Supervisa programación, ejecución IA y estado de producción de cada informativo.')} />
-    <div className='mb-4 flex flex-wrap gap-2'>
-      {headerActions?.map((action: any) => <Button key={action.key} asChild variant='outline' size='sm'><Link href={action.href}>{t(action.label)}</Link></Button>)}
-    </div>
+    return <EditorLayout><Head title={t('Mesa de operaciones editoriales')} />
+        <AdminPageHeader helpKey="editor.dashboard" title={t('Mesa de operaciones editoriales')} description={t('Centro de control diario para programación, ejecución IA y estado de producción por informativo.')} />
 
-    <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
-      {summaryCards.map((card: any) => <Card key={card.key}><CardHeader className='pb-2'><CardTitle className='text-sm'>{t(card.label)}</CardTitle></CardHeader><CardContent><div className='text-2xl font-semibold'>{card.value ?? 0}</div></CardContent></Card>)}
-    </div>
+        <div className='mb-5 flex flex-wrap gap-2'>
+            {headerActions?.map((action: any) => <Button key={action.key} asChild variant={action.key === 'createBulletin' ? 'default' : 'outline'} size='sm'><Link href={action.href}>{t(action.label)}</Link></Button>)}
+        </div>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Mapa editorial operativo')}</CardTitle></CardHeader><CardContent><WorldBulletinMap panel='editor' markers={mapOverview.markers || []} /><div className='mt-3'><Link className='text-sm underline' href={mapOverview.mapRoute}>{t('Ver mapa completo')}</Link></div></CardContent></Card>
+        <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+            {summaryCards.map((card: any) => <Card key={card.key} className='border-slate-200 shadow-sm dark:border-slate-800'><CardHeader className='pb-2'><CardTitle className='text-xs uppercase tracking-wide text-muted-foreground'>{t(card.label)}</CardTitle></CardHeader><CardContent><p className='text-3xl font-bold'>{card.value ?? 0}</p></CardContent></Card>)}
+        </div>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Cobertura por zona y temática')}</CardTitle></CardHeader><CardContent className='grid gap-2 md:grid-cols-2'>{coverageByLocationTopic.groups.map((g:any, i:number)=><div key={i} className='rounded border p-3 text-sm'><div className='font-semibold'>{g.location} · {g.category}</div><div>{t('Activos')}: {g.active}</div><div>{t('Pausados')}: {g.paused}</div><div>{t('Falta proveedor IA')}: {g.missing_provider}</div><div>{t('Sin horario')}: {g.missing_schedule}</div></div>)}</CardContent></Card>
+        <div className='mt-5 grid gap-4 xl:grid-cols-3'>
+            <Card className='xl:col-span-2 border-slate-200 shadow-sm dark:border-slate-800'>
+                <CardHeader className='flex flex-row items-center justify-between'>
+                    <CardTitle>{t('Mapa editorial operativo')}</CardTitle>
+                    <Button asChild variant='outline' size='sm'><Link href={mapOverview.mapRoute}>{t('Ver mapa completo')}</Link></Button>
+                </CardHeader>
+                <CardContent>
+                    <WorldBulletinMap panel='editor' markers={mapOverview.markers || []} />
+                </CardContent>
+            </Card>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Informativos programados')}</CardTitle></CardHeader><CardContent className='overflow-x-auto'><table className='w-full text-sm'><thead><tr className='border-b text-left'><th>{t('ON/OFF')}</th><th>{t('Informativo')}</th><th>{t('Ubicación')}</th><th>{t('Categoría')}</th><th>{t('Proveedor IA')}</th><th>{t('Próxima ejecución')}</th><th>{t('Última ejecución')}</th><th>{t('Pipeline')}</th><th>{t('Acciones')}</th></tr></thead><tbody>{scheduledBulletins.map((b:any)=><tr key={b.id} className='border-b align-top'><td className='py-2'><Badge variant={b.is_on ? 'success':'outline'}>{b.is_on ? 'ON':'OFF'}</Badge></td><td className='py-2'><Link className='underline' href={b.bulletin_url}>{b.bulletin}</Link></td><td>{b.location || '—'}</td><td>{b.category || '—'}</td><td>{b.provider ? `${b.provider} · ${b.model || '—'}` : t('Falta proveedor IA')}</td><td>{formatDateTime(b.next_run)}</td><td>{formatDateTime(b.last_run)} · {b.last_result ? t(b.last_result) : '—'}</td><td>{b.pipeline.join(' → ')}</td><td className='space-x-2'><Link className='underline' href={b.view_url}>{t('Ver informativo')}</Link><Link className='underline' href={b.runs_url}>{t('Ver ejecuciones')}</Link></td></tr>)}</tbody></table></CardContent></Card>
+            <Card className='border-slate-200 shadow-sm dark:border-slate-800'>
+                <CardHeader><CardTitle>{t('Tareas que requieren acción')}</CardTitle></CardHeader>
+                <CardContent className='space-y-2'>
+                    {actionableQueue.length === 0 && <p className='text-sm text-muted-foreground'>{t('Sin alertas')}</p>}
+                    {actionableQueue.map((item: any) => <div key={item.id} className='rounded-xl border p-3 text-sm'>
+                        <div className='mb-1 flex items-center justify-between gap-2'>
+                            <p className='font-semibold'>{t(item.type_label)}</p>
+                            <Badge variant='outline'>{t(item.status)}</Badge>
+                        </div>
+                        <p className='font-medium'>{item.bulletin || '—'}</p>
+                        <p className='text-muted-foreground'>{[item.provider, item.model].filter(Boolean).join(' · ') || t('Falta proveedor IA')}</p>
+                        <div className='mt-2 flex gap-2'>
+                            {item.view_url && <Button asChild size='sm' variant='outline'><Link href={item.view_url}>{t('Ver')}</Link></Button>}
+                            {item.action_url && <Button asChild size='sm'><Link href={item.action_url} method='post' as='button'>{t(item.next_action)}</Link></Button>}
+                        </div>
+                    </div>)}
+                </CardContent>
+            </Card>
+        </div>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Tareas por ejecutar')}</CardTitle></CardHeader><CardContent className='space-y-2'>{actionableQueue.map((item:any)=><div key={item.id} className='rounded border p-3 text-sm'><div className='font-semibold'>{t(item.type_label)} · {item.bulletin || '—'}</div><div>{[item.provider, item.model].filter(Boolean).join(' · ') || t('Falta proveedor IA')}</div><div>{t('Estado')}: {t(item.status)} · {t('Siguiente acción')}: {t(item.next_action)}</div></div>)}</CardContent></Card>
+        <Card className='mt-5 border-slate-200 shadow-sm dark:border-slate-800'><CardHeader><CardTitle>{t('Cobertura por zona y temática')}</CardTitle><p className='text-sm text-muted-foreground'>{t('Resumen operativo por ubicación y categoría para detectar huecos de cobertura y configuración.')}</p></CardHeader><CardContent className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>{coverageByLocationTopic.groups.map((g: any, i: number) => <div key={i} className='rounded-xl border p-3 text-sm'><div className='mb-2 font-semibold'>{g.location} · {g.category}</div><div className='flex flex-wrap gap-1'><Badge variant='success'>{t('Activos')}: {g.active}</Badge><Badge variant='outline'>{t('Pausados')}: {g.paused}</Badge><Badge variant='danger'>{t('Sin proveedor IA')}: {g.missing_provider}</Badge><Badge variant='outline'>{t('Sin horario')}: {g.missing_schedule}</Badge><Badge variant='danger'>{t('Fallido')}: {g.failed}</Badge><Badge variant='outline'>{t('No configurado')}: {g.not_configured}</Badge></div></div>)}</CardContent></Card>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Motores IA editoriales')}</CardTitle></CardHeader><CardContent className='grid gap-2 md:grid-cols-2'>{aiEngines.map((p:any)=><div key={p.id} className='rounded border p-3 text-sm'><div className='font-semibold'>{p.name} · {p.model || '—'}</div><div>{t('Grounding')}: {t(p.grounded ? 'Sí':'No')} · {t('Estado')}: {t(p.status)}</div><div>{t('Informativos usando este motor')}: {p.bulletins.join(', ') || '—'}</div></div>)}</CardContent></Card>
+        <Card className='mt-5 border-slate-200 shadow-sm dark:border-slate-800'><CardHeader><CardTitle>{t('Informativos programados')}</CardTitle></CardHeader><CardContent className='overflow-x-auto'><table className='w-full text-sm'><thead><tr className='border-b text-left text-xs uppercase tracking-wide text-muted-foreground'><th className='py-2'>{t('ON/OFF')}</th><th>{t('Informativo')}</th><th>{t('Ubicación')}</th><th>{t('Categoría')}</th><th>{t('Proveedor IA')}</th><th>{t('Próxima ejecución')}</th><th>{t('Última ejecución')}</th><th>{t('Pipeline')}</th><th>{t('Acciones')}</th></tr></thead><tbody>{scheduledBulletins.map((b: any) => <tr key={b.id} className='border-b align-top'><td className='py-3'><Badge variant={b.is_on ? 'success' : 'outline'}>{b.is_on ? 'ON' : 'OFF'}</Badge></td><td className='py-3 font-medium'><Link className='hover:underline' href={b.bulletin_url}>{b.bulletin}</Link></td><td className='py-3'>{b.location || '—'}</td><td className='py-3'>{b.category || '—'}</td><td className='py-3'>{b.provider ? `${b.provider} · ${b.model || '—'}` : t('Falta proveedor IA')}</td><td className='py-3'>{formatDateTime(b.next_run)}</td><td className='py-3'>{formatDateTime(b.last_run)} · {b.last_result ? t(b.last_result) : '—'}</td><td className='py-3'><div className='flex flex-wrap gap-1'>{b.pipeline.map((step: string) => <span key={step} className={pipelineClasses}>{t(step)}</span>)}</div></td><td className='py-3'><div className='flex flex-wrap gap-2'><Button asChild size='sm' variant='outline'><Link href={b.view_url}>{t('Ver informativo')}</Link></Button><Button asChild size='sm' variant='outline'><Link href={b.runs_url}>{t('Ver ejecuciones')}</Link></Button><Button asChild size='sm'><Link href={b.run_now_url} method='post' as='button'>{t('Ejecutar ahora')}</Link></Button></div></td></tr>)}</tbody></table></CardContent></Card>
 
-    <Card className='mt-4'><CardHeader><CardTitle>{t('Últimas ejecuciones')}</CardTitle></CardHeader><CardContent className='space-y-2'>{latestExecutions.map((r:any)=><div key={r.id} className='rounded border p-3 text-sm'><div className='font-semibold'>{r.bulletin}</div><div>{formatDateTime(r.scheduled_for)} · {t(r.status)} · {[r.provider,r.model].filter(Boolean).join(' · ') || t('Falta proveedor IA')}</div><div>{t('Pipeline')}: {r.pipeline.join(' → ')}</div></div>)}</CardContent></Card>
-  </EditorLayout>;
+        <div className='mt-5 grid gap-4 xl:grid-cols-2'>
+            <Card className='border-slate-200 shadow-sm dark:border-slate-800'><CardHeader><CardTitle>{t('Motores IA editoriales')}</CardTitle></CardHeader><CardContent className='space-y-2'>{aiEngines.map((p: any) => <div key={p.id} className='rounded-xl border p-3 text-sm'><div className='flex flex-wrap items-center justify-between gap-2'><p className='font-semibold'>{p.name} · {p.model || '—'}</p><Badge variant={p.availability === 'available' ? 'success' : 'danger'}>{t(p.availability_label)}</Badge></div><p className='text-muted-foreground'>{t(p.purpose)}</p><p>{t('Con grounding')}: {t(p.grounded ? 'Sí' : 'No')}</p><p>{t('Informativos usando este motor')}: {p.bulletins.join(', ') || '—'}</p></div>)}</CardContent></Card>
+
+            <Card className='border-slate-200 shadow-sm dark:border-slate-800'><CardHeader><CardTitle>{t('Últimas ejecuciones')}</CardTitle></CardHeader><CardContent className='space-y-2'>{latestExecutions.map((r: any) => <div key={r.id} className='rounded-xl border p-3 text-sm'><div className='flex items-center justify-between gap-2'><p className='font-semibold'>{r.bulletin || '—'}</p><Badge variant='outline'>{t(r.status)}</Badge></div><p>{formatDateTime(r.scheduled_for)} · {[r.provider, r.model].filter(Boolean).join(' · ') || t('Falta proveedor IA')}</p><p>{t('Fuentes')}: {r.sources_label}</p><div className='mt-1 flex flex-wrap gap-1'>{r.pipeline.map((step: string) => <span key={step} className={pipelineClasses}>{t(step)}</span>)}</div><div className='mt-2 flex flex-wrap gap-2'><Button asChild size='sm' variant='outline'><Link href={r.run_url}>{t('Ver ejecución')}</Link></Button>{r.script_url && <Button asChild size='sm' variant='outline'><Link href={r.script_url}>{t('Ver guion')}</Link></Button>}</div></div>)}</CardContent></Card>
+        </div>
+    </EditorLayout>;
 }

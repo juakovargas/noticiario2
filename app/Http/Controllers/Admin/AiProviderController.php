@@ -137,6 +137,11 @@ class AiProviderController extends Controller
         return $this->test(request()->merge(['test_type' => 'grounded_search']), $aiProvider);
     }
 
+    public function testOfficialMinimalGemini(AiProvider $aiProvider): JsonResponse
+    {
+        return $this->test(request()->merge(['test_type' => 'official_minimal_gemini']), $aiProvider);
+    }
+
 public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
     {
         $this->rateLimiter->clearRateLimitLock($aiProvider);

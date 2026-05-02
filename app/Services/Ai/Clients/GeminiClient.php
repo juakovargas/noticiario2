@@ -35,12 +35,20 @@ class GeminiClient implements AiClient
 
         $url = rtrim((string)($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/')."/models/{$model}:generateContent";
         $payload = ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]], 'generationConfig' => ['maxOutputTokens' => (int) ($provider->max_tokens ?: 60)]];
+
+        if (($options['payload_style'] ?? null) === 'gemini_official_minimal') {
+            $model = 'gemini-3-flash-preview';
+            $url = rtrim((string)($provider->base_url ?: 'https://generativelanguage.googleapis.com/v1beta'), '/')."/models/{$model}:generateContent";
+            $payload = ['contents' => [[ 'parts' => [['text' => $prompt]] ]]];
+        }
         if (($options['grounding_enabled'] ?? false) && ($provider->supports_grounding || $provider->supportsCapability('google_search_grounding'))) $payload['tools'] = [['google_search' => (object)[]]];
 
         $maxRetries = $provider->retry_on_rate_limit ? (int) ($provider->max_retries ?? 2) : 0;
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
             $this->rateLimiter->markRequestStarted($provider);
-            $response = Http::timeout($provider->timeoutSecondsForRequest())->withQueryParameters(['key'=>$key])->post($url, $payload);
+            $response = Http::timeout($provider->timeoutSecondsForRequest())
+                ->withHeaders(['x-goog-api-key' => $key, 'Content-Type' => 'application/json'])
+                ->post($url, $payload);
             if ($response->successful()) {
                 $this->rateLimiter->markRequestFinished($provider);
                 $json = $response->json();

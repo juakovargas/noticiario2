@@ -887,3 +887,12 @@ Roadmap (current):
 - Verified environment-level root cause in this workspace: missing `public/storage` symlink can prevent `/storage/...` URLs from resolving even with correct DB paths.
 - Editor dashboard remains in active hardening: translation cleanup, embedded world map visibility, provider/model traceability per queue row, provider usage linkage by bulletin, exclusive bulletin grouping, and clearer coverage guidance are the current priorities.
 - Keep source-verification and production-readiness visibility in dashboard latest executions.
+
+## 17. EDITOR DASHBOARD PROFESSIONAL CONTROL PANEL (May 2026)
+- `/editor` now provides a professional editorial control panel with operational summary, map overview, actionable work queue, exclusive bulletin groups, coverage matrix, AI provider status, latest executions, and editorial alerts.
+- Bulletin types already support assigned AI provider via `bulletin_types.ai_provider_id` and dashboard now reports missing provider explicitly (no hidden default in UI health state).
+- Work queue now shows provider/model/grounding/automation per task and highlights missing provider configuration.
+- AI provider status is linked to bulletins using each provider.
+- Coverage section is actionable by location/category with explicit states (covered, missing provider, missing schedule, failed, disabled, not configured).
+- Latest executions include provider/model and source verification counters.
+- Contextual dashboard help and translations were updated in en/es/fr.

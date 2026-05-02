@@ -896,3 +896,16 @@ Roadmap (current):
 - Coverage section is actionable by location/category with explicit states (covered, missing provider, missing schedule, failed, disabled, not configured).
 - Latest executions include provider/model and source verification counters.
 - Contextual dashboard help and translations were updated in en/es/fr.
+
+## 5F. EDITOR DASHBOARD SCHEDULED BULLETINS PANEL
+
+- The Editor Dashboard now centers on scheduled bulletins (informativos programados) and actionable editorial work.
+- ON/OFF meaning is explicit:
+  - ON = schedule active and eligible for automatic due processing.
+  - OFF = inactive schedule and ignored by the automatic runner.
+- Scheduled bulletins are grouped by operational state: ON, OFF, Incomplete, and Needs attention.
+- Each scheduled bulletin now surfaces provider/model assignment, frequency/time, next run, last run, and last result.
+- The actionable queue is focused on real work: due/overdue/failed active schedules plus pending prompt/script/source/production follow-up items.
+- Coverage and map overview are shown as location/category operational summaries with missing-configuration visibility.
+- Future production stages are visible as placeholders in pipeline UI (production/audio/video/publication), without implementing those features.
+- Gemini Grounded is treated as the primary provider for real/current-news bulletins wherever explicitly assigned.

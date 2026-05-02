@@ -809,3 +809,25 @@ Roadmap (current):
 - Gemini traces preserve sanitized Google error bodies.
 - Configured provider request and official-minimal request can be compared.
 - API keys are never exposed.
+
+## EDITOR DASHBOARD OPERATIONAL WORK QUEUE
+
+- Editor Dashboard now acts as a daily editorial control panel.
+- Added daily summary cards (active bulletins, pending tasks, overdue schedules, failed runs today, scripts pending review, sources pending verification, ready for production).
+- Added "Tareas por ejecutar / Work queue / File de travail" style operational queue derived from existing schedules and bulletin configuration.
+- Added active vs disabled/incomplete bulletin panels.
+- Added editorial coverage matrix by location/category with compact state labels.
+- Added editorial alerts based on actionable conditions (overdue schedule, missing provider, failures today, Gemini availability).
+- Added latest executions list from existing schedule runs.
+- No new task table/system was created; work items are derived from schedules, runs, scripts, source references, and automation state.
+- No external AI calls are triggered from the dashboard.
+
+## CURRENT ROADMAP
+
+1. Finalize Gemini Grounded production flow for bulletin runs.
+2. Extract and persist Gemini grounding/citation metadata as source references.
+3. Improve script review/source confidence workflow.
+4. Stabilize automated schedule -> prompt -> AI -> script pipeline with rate/cost controls.
+5. Start audio production foundation with Edge TTS.
+6. Start video production foundation with Remotion/FFmpeg.
+7. Publishing foundation.

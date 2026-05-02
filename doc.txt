@@ -858,3 +858,16 @@ Roadmap (current):
 4. Add Edge TTS audio foundation.
 5. Add Remotion/FFmpeg video foundation.
 6. Add publishing foundation.
+
+## 5F. EDITOR DASHBOARD CONTROL PANEL REFINEMENT
+
+- `/editor` dashboard refined into a clearer editorial control panel with translated UI labels and section titles.
+- Work queue now includes AI provider/model visibility, pipeline/automation context, and direct next-action links.
+- Bulletins are now grouped into exclusive operational states: active, paused, incomplete, and needs attention.
+- Each non-operational bulletin includes explicit reason labels (missing schedule/provider/location-category/next run, inactive schedule, failed execution).
+- AI provider panel added for editorial flow awareness with grounded status, activity state, availability/rate-limit hint, and usage today when available.
+- Coverage section improved with clearer status matrix + legend for location/category combinations.
+- Latest executions now include provider/model, script links, and source verification counters.
+- Dashboard adds production readiness signals (ready/pending and audio/video pending placeholders) without implementing audio/video generation.
+- Editor map is surfaced near top through a prominent safe link to existing map route.
+- Contextual help for editor dashboard updated to explain daily usage flow and key control sections.

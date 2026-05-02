@@ -179,7 +179,7 @@ class BulletinPromptRunController extends Controller
             'aiRequestLogs.provider:id,name',
         ]);
 
-        $activeProvider = AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->orderBy('name')->first();
+        $activeProvider = $this->resolveProviderForRun($bulletinPromptRun, null);
 
         $sourceCounts = $bulletinPromptRun->sourceReferences
             ->whereNull('archived_at')
@@ -211,6 +211,8 @@ class BulletinPromptRunController extends Controller
                     'is_active' => $provider->is_active,
                     'api_key_env_name' => $provider->api_key_env_name,
                     'env_key_configured' => $provider->hasConfiguredApiKey(),
+                    'supports_grounding' => (bool) $provider->supports_grounding,
+                    'capabilities' => $provider->capabilities ?? [],
                 ]),
             'defaultAiProviderId' => $activeProvider?->id,
             'latestAiLog' => $bulletinPromptRun->aiRequestLogs->sortByDesc('id')->first(),
@@ -301,11 +303,12 @@ class BulletinPromptRunController extends Controller
             $provider = AiProvider::query()->find($data['ai_provider_id']);
         }
 
-        $provider ??= AiProvider::query()->where('is_active', true)->where('slug', 'groq')->first();
-        $provider ??= AiProvider::query()->where('is_active', true)->where('is_default', true)->first();
-        $provider ??= AiProvider::query()->where('is_active', true)->orderByRaw("CASE WHEN slug = 'groq' THEN 0 ELSE 1 END")->orderByDesc('is_default')->first();
+        $provider = $this->resolveProviderForRun($bulletinPromptRun, $provider?->id);
 
         if (! $provider || ! $provider->is_active) {
+            if ($this->requiresGroundedProvider($bulletinPromptRun)) {
+                return back()->with('error', 'No grounded news provider is configured for this informativo.');
+            }
             return back()->with('error', 'No active AI provider configured.');
         }
 
@@ -349,9 +352,18 @@ class BulletinPromptRunController extends Controller
         try {
             $aiResponse = $this->aiClientManager->generateText($provider, (string) $bulletinPromptRun->generated_prompt, [
                 'model' => $data['model'] ?? null,
+                'grounding_enabled' => $this->requiresGroundedProvider($bulletinPromptRun),
             ]);
 
             $this->service->saveResponse($bulletinPromptRun, $aiResponse->text);
+            $metadata = (array) ($bulletinPromptRun->fresh()->metadata ?? []);
+            $metadata['grounded'] = (bool) $provider->supports_grounding;
+            $metadata['selected_provider_name'] = $provider->name;
+            $metadata['selected_provider_type'] = $provider->provider_type;
+            $metadata['selected_provider_grounded'] = (bool) $provider->supports_grounding;
+            $metadata['selected_model'] = $aiResponse->model ?: ($data['model'] ?? $provider->default_model);
+            $metadata['ai_response_metadata'] = $aiResponse->metadata;
+            $bulletinPromptRun->update(['metadata' => $metadata]);
 
             $log->update([
                 'status' => 'success',
@@ -378,6 +390,62 @@ class BulletinPromptRunController extends Controller
 
             return back()->with('error', 'AI request failed.');
         }
+    }
+
+    private function resolveProviderForRun(BulletinPromptRun $run, ?int $providerId): ?AiProvider
+    {
+        $requiresGrounded = $this->requiresGroundedProvider($run);
+
+        if ($providerId) {
+            $explicit = AiProvider::query()->where('is_active', true)->find($providerId);
+            if ($requiresGrounded && $explicit && ! $this->isGroundedProvider($explicit)) {
+                return null;
+            }
+
+            return $explicit;
+        }
+
+        $preferredId = $run->bulletinType?->ai_provider_id;
+        if ($preferredId) {
+            $preferred = AiProvider::query()->active()->find($preferredId);
+            if ($preferred && (! $requiresGrounded || $this->isGroundedProvider($preferred))) {
+                return $preferred;
+            }
+        }
+
+        if ($requiresGrounded) {
+            return AiProvider::query()->active()
+                ->where(function ($q): void {
+                    $q->where('supports_grounding', true)
+                        ->orWhere('provider_category', 'grounded_text');
+                })
+                ->where(function ($q): void {
+                    $q->whereJsonContains('capabilities', 'news_grounding')
+                        ->orWhereJsonContains('capabilities', 'google_search_grounding');
+                })
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->first();
+        }
+
+        return AiProvider::query()->active()->where('is_default', true)->where('is_testing', false)->first()
+            ?? AiProvider::query()->active()->where('slug', 'groq')->first()
+            ?? AiProvider::query()->active()->where('provider_type', '!=', 'mock')->first()
+            ?? AiProvider::query()->active()->first();
+    }
+
+    private function requiresGroundedProvider(BulletinPromptRun $run): bool
+    {
+        $meta = (array) ($run->bulletinType?->metadata ?? []);
+        return (bool) (data_get($meta, 'requires_current_news') || data_get($meta, 'requires_grounded_news') || data_get($meta, 'grounded_news_required'));
+    }
+
+    private function isGroundedProvider(AiProvider $provider): bool
+    {
+        return (bool) ($provider->supports_grounding
+            || $provider->provider_category === 'grounded_text'
+            || $provider->supportsCapability('news_grounding')
+            || $provider->supportsCapability('google_search_grounding'));
     }
 
 

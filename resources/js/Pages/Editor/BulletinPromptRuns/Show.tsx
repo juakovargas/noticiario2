@@ -57,6 +57,10 @@ export default function Show({ run, promptContext, sourceReferences = [], source
     const promptLength = (run.generated_prompt ?? '').length;
     const approxTokens = Math.ceil(promptLength / 4);
     const outputModeLabel = run.bulletin_type?.output_mode === 'structured_script' ? t('Structured script advanced/debug') : t('Simple final script');
+    const runMetadata = (run.metadata ?? {}) as Record<string, any>;
+    const aiMeta = (runMetadata.ai_response_metadata ?? {}) as Record<string, any>;
+    const groundedRequired = Boolean(run.bulletin_type?.metadata?.requires_current_news || run.bulletin_type?.metadata?.requires_grounded_news || run.bulletin_type?.metadata?.grounded_news_required);
+    const groundingSources = Array.isArray(aiMeta.grounding) ? aiMeta.grounding : [];
     const forbiddenMarkers = ['TITLE:', 'INTRO:', 'NEWS ITEMS:', 'SUMMARY:', 'SCRIPT:', 'SOURCE HINTS:', 'OUTRO:', 'NOTES:', 'structured_script', 'MODO AVANZADO'];
     const hasForbiddenStructuredMarkers = run.bulletin_type?.output_mode !== 'structured_script'
         && forbiddenMarkers.some((marker) => String(run.generated_prompt ?? '').toUpperCase().includes(marker.toUpperCase()));
@@ -117,9 +121,15 @@ export default function Show({ run, promptContext, sourceReferences = [], source
                         <Badge variant="outline">{t('Prompt')}: {run.generated_prompt ? t('Ready') : t('Pending')}</Badge>
                         <Badge variant="outline">{t('Response')}: {run.ai_response_text ? t('Ready') : t('Pending')}</Badge>
                         <Badge variant="outline">{t('Script')}: {run.script_id ? t('Ready') : t('Pending')}</Badge>
+                        <Badge variant="outline">{t('Grounded')}: {groundedRequired ? t('Yes') : t('No')}</Badge>
                         <Badge variant="outline">{t('Review')}: {run.script?.review_status ?? t('Pending')}</Badge>
                         <Badge variant="outline">{t('Production metadata')}: {run.script?.metadata_ready ? t('Ready') : t('Missing metadata')}</Badge>
                     </div>
+                    <p><strong>{t('Selected provider')}:</strong> {runMetadata.selected_provider_name ?? '-'}</p>
+                    <p><strong>{t('Selected model')}:</strong> {runMetadata.selected_model ?? '-'}</p>
+                    <p><strong>{t('AI response status')}:</strong> {run.ai_response_text ? t('Ready') : t('Pending')}</p>
+                    <p><strong>{t('Source references count')}:</strong> {sourceSummary?.total ?? 0}</p>
+                    {groundedRequired && run.ai_response_text && groundingSources.length === 0 ? <p className="text-amber-700">{t('No extractable URLs were returned by grounded response')}</p> : null}
                     {run.script ? (
                         <div className="rounded border border-cyan-200 bg-cyan-50 p-3">
                             <p><strong>{t('Continue with Script')}:</strong> {run.script.title}</p>

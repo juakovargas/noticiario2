@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
 use App\Models\PromptProfile;
+use App\Models\SourceReference;
+use App\Services\EditorialReview\SourceReferenceExtractor;
 use App\Services\Pipelines\BulletinPromptRunPipeline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,5 +34,29 @@ class GroundedProviderPipelineTest extends TestCase
         $this->assertFalse($summary['success']);
         $this->assertSame('ai_provider', $summary['failed_step']);
         $this->assertSame('No grounded news provider is configured for this informativo.', $summary['message']);
+    }
+
+    public function test_grounding_metadata_urls_are_converted_to_pending_source_references(): void
+    {
+        $type = BulletinType::factory()->create();
+        $run = BulletinPromptRun::factory()->create([
+            'bulletin_type_id' => $type->id,
+            'prompt_profile_id' => PromptProfile::factory()->create()->id,
+            'ai_response_text' => 'Texto de respuesta sin URLs en bruto.',
+            'metadata' => [
+                'ai_response_metadata' => [
+                    'grounding' => [
+                        ['title' => 'Reuters', 'url' => 'https://www.reuters.com/world/test-1'],
+                    ],
+                ],
+            ],
+        ]);
+
+        app(SourceReferenceExtractor::class)->extractFromBulletinPromptRun($run);
+
+        $reference = SourceReference::query()->where('bulletin_prompt_run_id', $run->id)->first();
+        $this->assertNotNull($reference);
+        $this->assertSame('pending', $reference->verification_status);
+        $this->assertSame('https://www.reuters.com/world/test-1', $reference->source_url);
     }
 }

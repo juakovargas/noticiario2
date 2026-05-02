@@ -871,3 +871,12 @@ Roadmap (current):
 - Dashboard adds production readiness signals (ready/pending and audio/video pending placeholders) without implementing audio/video generation.
 - Editor map is surfaced near top through a prominent safe link to existing map route.
 - Contextual help for editor dashboard updated to explain daily usage flow and key control sections.
+
+## 13. UPDATE 2026-05-02 (EDITOR DASHBOARD + AVATAR + HELP)
+
+- Avatar rendering was hardened in frontend (`UserAvatar`): relative avatar paths are normalized to absolute URLs (`/path`) and fallback initials are used cleanly when image loading fails.
+- Editor Dashboard refinement:
+  - Queue section renamed to "Cola de trabajo editorial" for clarity.
+  - Existing operational cards and tables remain, but labels were aligned for better translation consistency.
+- Translation updates were applied for newly touched dashboard/help strings in EN/ES/FR.
+- Contextual help for `editor.dashboard` now includes practical tips focused on overdue schedules and coverage configuration before automation.

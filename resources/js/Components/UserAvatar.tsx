@@ -23,13 +23,17 @@ const sizeClass: Record<NonNullable<UserAvatarProps['size']>, string> = {
 };
 
 function getAvatarSrc(user?: AvatarUser | null): string | null {
-    const src = user?.avatar_url || user?.avatarUrl || null;
+    const rawSrc = user?.avatar_url || user?.avatarUrl || null;
 
-    if (!src || src.trim() === '') {
+    if (!rawSrc || rawSrc.trim() === '') {
         return null;
     }
 
-    return src;
+    if (/^https?:\/\//iu.test(rawSrc)) {
+        return rawSrc;
+    }
+
+    return rawSrc.startsWith('/') ? rawSrc : `/${rawSrc}`;
 }
 
 export default function UserAvatar({ user, size = 'sm', className = '' }: UserAvatarProps): JSX.Element {
@@ -61,10 +65,8 @@ export default function UserAvatar({ user, size = 'sm', className = '' }: UserAv
                 key={`${avatarSrc}-${cacheKey}`}
                 src={avatarSrc}
                 alt={`${user?.name ?? 'User'} avatar`}
-                title={avatarSrc}
                 className={`${sizeClass[size]} rounded-full object-cover ${className}`}
                 onError={() => {
-                    console.error('UserAvatar image failed:', avatarSrc, user);
                     setImageFailed(true);
                 }}
             />

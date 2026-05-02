@@ -19,21 +19,26 @@ class AiProviderTestRunner
         $prompt = match ($testType) {
             'short_script' => 'Eres redactor de informativos breves. Escribe un guion periodístico natural de unos 20 segundos sobre una actualización general de actualidad. No inventes datos concretos. Devuelve solo el texto final para locución.',
             'grounded_search' => 'Busca una noticia deportiva reciente de España y responde en una frase con una fuente.',
+            'official_minimal_gemini' => 'Responde solo OK.',
             default => 'Responde solo OK.',
         };
 
         $groundingEnabled = $testType === 'grounded_search';
+        $diagnosticVariant = $testType === 'official_minimal_gemini' ? 'official_minimal_gemini_request' : 'configured_provider_request';
         $groundingSupported = ! ($groundingEnabled && $provider->usesLaravelAiDriver());
         $before = $this->rateLimiter->getAvailabilityContext($provider);
         $started = microtime(true);
 
         try {
-            $response = $this->clientManager->generateText($provider, $prompt, ['grounding_enabled' => $groundingSupported]);
+            $response = $this->clientManager->generateText($provider, $prompt, [
+                'grounding_enabled' => $groundingSupported,
+                'payload_style' => $testType === 'official_minimal_gemini' ? 'gemini_official_minimal' : 'noticiario_normalized',
+            ]);
             $duration = (int) ((microtime(true) - $started) * 1000);
             $after = $this->rateLimiter->getAvailabilityContext($provider->fresh());
             $log = $this->createDiagnosticLog($provider, $testType, $prompt, true, null, $duration, ['status' => 200, 'text' => $response->text]);
 
-            return $this->buildResponse($provider, $testType, $groundingEnabled, $groundingSupported, $prompt, true, null, $duration, $before, $after, $log, [
+            return $this->buildResponse($provider, $testType, $diagnosticVariant, $groundingEnabled, $groundingSupported, $prompt, true, null, $duration, $before, $after, $log, [
                 'status' => 200,
                 'retry_after' => null,
                 'text' => mb_substr((string) $response->text, 0, 500),
@@ -46,7 +51,7 @@ class AiProviderTestRunner
             $internal = $e instanceof AiProviderException && $e->errorCode === 'internal_rate_limit';
             $log = $this->createDiagnosticLog($provider, $testType, $prompt, false, $e, $duration, ['status' => $status]);
 
-            return $this->buildResponse($provider, $testType, $groundingEnabled, $groundingSupported, $prompt, false, $e, $duration, $before, $after, $log, [
+            return $this->buildResponse($provider, $testType, $diagnosticVariant, $groundingEnabled, $groundingSupported, $prompt, false, $e, $duration, $before, $after, $log, [
                 'status' => $internal ? null : $status,
                 'retry_after' => null,
                 'error' => ['message' => $this->sanitizeValue($e->getMessage()), 'code' => $e instanceof AiProviderException ? $e->errorCode : 'provider_error'],
@@ -54,7 +59,7 @@ class AiProviderTestRunner
         }
     }
 
-    private function buildResponse(AiProvider $provider, string $testType, bool $groundingEnabled, bool $groundingSupported, string $prompt, bool $ok, ?Throwable $error, int $duration, array $before, array $after, ?AiRequestLog $log, array $response, bool $internalBlocked = false): array
+    private function buildResponse(AiProvider $provider, string $testType, string $diagnosticVariant, bool $groundingEnabled, bool $groundingSupported, string $prompt, bool $ok, ?Throwable $error, int $duration, array $before, array $after, ?AiRequestLog $log, array $response, bool $internalBlocked = false): array
     {
         $requestWasSent = $ok || ($error instanceof AiProviderException ? $error->requestWasSent : false);
         $providerStatus = $response['status'] ?? null;
@@ -84,6 +89,13 @@ class AiProviderTestRunner
                 'previous_exception_class' => $error?->getPrevious() ? class_basename($error->getPrevious()) : null,
                 'previous_exception_message_safe' => $error?->getPrevious() ? $this->sanitizeValue($error->getPrevious()->getMessage()) : null,
             ],
+            'diagnostic_variant' => $diagnosticVariant,
+            'auth_method' => in_array($provider->provider_type, ['gemini','google_gemini'], true) ? 'x-goog-api-key' : 'authorization_bearer',
+            'configured_model' => $provider->default_model,
+            'effective_model' => $testType === 'official_minimal_gemini' ? 'gemini-3-flash-preview' : $provider->default_model,
+            'payload_style' => $testType === 'official_minimal_gemini' ? 'gemini_official_minimal' : 'noticiario_normalized',
+            'api_key_env_name' => $provider->api_key_env_name ?: 'GEMINI_API_KEY',
+            'api_key_present' => (bool) env((string) ($provider->api_key_env_name ?: 'GEMINI_API_KEY')),
             'request_was_sent' => $requestWasSent,
             'provider_status_code' => $providerStatus,
             'provider_error_status' => $errorStatus,
@@ -93,7 +105,7 @@ class AiProviderTestRunner
             'provider_supports_grounding' => (bool) $provider->supports_grounding,
             'driver_supports_grounding' => $groundingSupported,
             'rate_limit_source' => $internalBlocked ? 'internal_rate_limiter' : (($providerStatus === 429 && $requestWasSent) ? 'provider_rate_limit' : data_get($after, 'source')),
-            'comparison_hint' => $this->comparisonHint($provider, $requestWasSent, $providerStatus, $error),
+            'comparison_hint' => $this->comparisonHint($provider, $diagnosticVariant, $requestWasSent, $providerStatus, $error),
             'next_debug_steps' => [
                 'Check Google AI Studio key project.',
                 'Check whether Gemini API free tier quota is enabled.',
@@ -106,7 +118,7 @@ class AiProviderTestRunner
         if ($error instanceof AiProviderException && ! empty($error->safeContext['response'])) {
             $response = array_merge($response, $error->safeContext['response']);
         }
-        return ['ok' => $ok, 'test_type' => $testType, ...$trace, 'request' => ['normalized_payload' => ['prompt' => $prompt, 'grounding_enabled' => $groundingEnabled]], 'response' => $response, 'ai_request_log' => $log ? ['id' => $log->id] : null, 'trace' => $this->sanitizeArray($trace)];
+        return ['ok' => $ok, 'test_type' => $testType, ...$trace, 'request' => ['normalized_payload' => ['prompt' => $prompt, 'grounding_enabled' => $groundingEnabled], 'headers_sanitized' => ['x-goog-api-key' => '[REDACTED]', 'Content-Type' => 'application/json']], 'response' => $response, 'ai_request_log' => $log ? ['id' => $log->id] : null, 'trace' => $this->sanitizeArray($trace)];
     }
 
     private function resolveFailureStage(?Throwable $error): ?string
@@ -126,8 +138,8 @@ class AiProviderTestRunner
 
     private function resolveProviderErrorReason(?int $statusCode, ?string $providerStatus, ?Throwable $error): string
     { if ($providerStatus === 'RESOURCE_EXHAUSTED') return 'quota_exceeded'; if ($statusCode === 429) return 'unknown_provider_error'; if ($error instanceof AiProviderException && $error->errorCode === 'api_key_missing') return 'key_invalid'; return 'unknown_provider_error'; }
-    private function comparisonHint(AiProvider $provider, bool $requestWasSent, ?int $providerStatus, ?Throwable $error): ?string
-    { if ($provider->usesLaravelAiDriver() && ! $requestWasSent) return 'Custom Noticiario reached Gemini, but Laravel AI SDK failed before receiving an HTTP response. Check SDK installation/configuration/adapter call.'; if ($providerStatus === 429) return 'Gemini returned HTTP 429. Check the Google error details below.'; return null; }
+    private function comparisonHint(AiProvider $provider, string $diagnosticVariant, bool $requestWasSent, ?int $providerStatus, ?Throwable $error): ?string
+    { if ($provider->usesLaravelAiDriver() && ! $requestWasSent) return 'Custom Noticiario reached Gemini, but Laravel AI SDK failed before receiving an HTTP response. Check SDK installation/configuration/adapter call.'; if ($providerStatus === 429 && $diagnosticVariant === 'official_minimal_gemini_request') return 'Both configured and official-minimal Gemini requests reached Google and received 429. Check Google project/API key/quota/model availability.'; if ($providerStatus === 429) return 'Gemini returned HTTP 429. Check the Google error details below.'; if ($error instanceof AiProviderException && $error->errorCode === 'api_key_missing') return 'Official minimal Gemini request failed due to key/auth/project configuration. Check GEMINI_API_KEY and Google AI Studio project.'; return null; }
 
     private function createDiagnosticLog(AiProvider $provider, string $testType, string $prompt, bool $ok, ?Throwable $error, int $duration, array $response): AiRequestLog
     {

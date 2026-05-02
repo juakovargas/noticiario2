@@ -800,3 +800,12 @@ Roadmap (current):
 - Laravel AI SDK diagnostics now expose specific sdk stage metadata (`installed/configured/config_file_exists/api_key_present/failure_stage/exception chain`) instead of a generic failure-only message.
 - Admin AI Providers diagnostics summary now includes provider error status/reason, comparison hints, and actionable next debug steps.
 - Diagnostic tests continue creating `AiRequestLog` entries with diagnostic metadata and without exposing secrets.
+
+## GEMINI OFFICIAL REST DIAGNOSTICS
+
+- Gemini custom REST calls now use `x-goog-api-key` for Google AI Studio API keys.
+- Diagnostics can run an official-minimal Gemini request.
+- Official minimal test uses `gemini-3-flash-preview` and the minimal `contents` payload.
+- Gemini traces preserve sanitized Google error bodies.
+- Configured provider request and official-minimal request can be compared.
+- API keys are never exposed.

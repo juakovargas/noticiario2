@@ -165,6 +165,7 @@ Route::middleware(['auth', 'verified', 'permission:admin.access'])
         Route::post('/ai-providers/{aiProvider}/tests/minimal', [AiProviderController::class, 'testMinimal'])->name('ai-providers.tests.minimal');
         Route::post('/ai-providers/{aiProvider}/tests/short-script', [AiProviderController::class, 'testShortScript'])->name('ai-providers.tests.short-script');
         Route::post('/ai-providers/{aiProvider}/tests/grounded', [AiProviderController::class, 'testGrounded'])->name('ai-providers.tests.grounded');
+        Route::post('/ai-providers/{aiProvider}/tests/official-minimal-gemini', [AiProviderController::class, 'testOfficialMinimalGemini'])->name('ai-providers.tests.official-minimal-gemini');
         Route::get('/ai-providers/{aiProvider}/traces/latest', [AiProviderController::class, 'latestTrace'])->name('ai-providers.traces.latest');
         Route::post('/ai-providers/{aiProvider}/clear-rate-limit-lock', [AiProviderController::class, 'clearRateLimitLock'])->name('ai-providers.clear-rate-limit-lock');
         Route::post('/ai-providers/{aiProvider}/clear-rate-limit', [AiProviderController::class, 'clearRateLimitLock'])->name('ai-providers.clear-rate-limit');

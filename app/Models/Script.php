@@ -110,4 +110,9 @@ class Script extends Model
     {
         return $this->hasMany(SourceReference::class);
     }
+
+    public function bulletinType(): BelongsTo
+    {
+        return $this->belongsTo(BulletinType::class);
+    }
 }

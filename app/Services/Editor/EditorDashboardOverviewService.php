@@ -37,133 +37,136 @@ class EditorDashboardOverviewService
         ];
     }
 
-    private function summaryCards(Collection $s, $today): array
+    private function buildSummary(Collection $schedules, \Carbon\Carbon $today): array
     {
+        $queue = $this->buildActionableQueue($schedules, $today);
         return [
-            ['key' => 'active', 'label' => 'Informativos activos', 'value' => $s->where('is_active', true)->count()],
-            ['key' => 'today', 'label' => 'Programados hoy', 'value' => $s->filter(fn ($x) => $x->next_run_at?->isToday())->count()],
-            ['key' => 'overdue', 'label' => 'Vencidos', 'value' => $s->filter(fn ($x) => $x->is_active && $x->next_run_at?->isPast())->count()],
-            ['key' => 'failed', 'label' => 'Fallidos hoy', 'value' => EditorialScheduleRun::whereDate('scheduled_for', $today->toDateString())->where('status', 'failed')->count()],
-            ['key' => 'scriptsPending', 'label' => 'Guiones pendientes de revisión', 'value' => Script::where('review_status', 'pending')->where('status', '!=', 'archived')->count()],
-            ['key' => 'sourcesPending', 'label' => 'Fuentes pendientes de verificación', 'value' => SourceReference::withoutArchived()->where('verification_status', 'pending')->count()],
-            ['key' => 'ready', 'label' => 'Listo para producción', 'value' => Script::where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->count()],
+            'activeBulletins' => $schedules->filter(fn ($s) => $s->is_active && $s->bulletinType?->is_active)->count(),
+            'pendingTasks' => $queue->count(),
+            'overdueSchedules' => $schedules->filter(fn ($s) => $s->is_active && $s->next_run_at && $s->next_run_at->isPast())->count(),
+            'failedRunsToday' => EditorialScheduleRun::query()->whereDate('scheduled_for', $today->toDateString())->where('status', 'failed')->count(),
+            'scriptsPendingReview' => Script::query()->where('review_status', 'pending')->where('status', '!=', 'archived')->count(),
+            'sourcesPendingVerification' => SourceReference::query()->withoutArchived()->where('verification_status', 'pending')->count(),
+            'readyForProduction' => Script::query()->where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->count(),
         ];
     }
 
-    private function scheduledBulletins(Collection $schedules): array
+    private function buildActionableQueue(Collection $schedules, \Carbon\Carbon $today): Collection
     {
-        return $schedules->map(fn ($s) => [
-            'id' => $s->id,
-            'is_on' => (bool) $s->is_active,
-            'bulletin' => $s->bulletinType?->name ?? $s->name,
-            'bulletin_url' => $s->bulletinType?->id ? route('editor.bulletin-types.show', $s->bulletinType->id) : route('editor.editorial-schedules.edit', $s->id),
+        $scheduleItems = $schedules->filter(function ($s) {
+            if (! $s->bulletinType) return false;
+            if (! $s->is_active || ! $s->bulletinType->is_active) return $this->needsAttention($s);
+            return ($s->next_run_at && $s->next_run_at->isPast()) || ($s->next_run_at && $s->next_run_at->isToday()) || $this->hasFailedRunToday((int) $s->bulletin_type_id);
+        })->map(fn ($s) => [
+            'type' => 'schedule',
+            'id' => 'schedule-'.$s->id,
+            'bulletin' => $s->bulletinType?->name,
+            'bulletin_id' => $s->bulletinType?->id,
             'location' => $s->location?->name,
             'category' => $s->newsCategory?->name,
             'provider' => $s->bulletinType?->aiProvider?->name,
             'model' => $s->bulletinType?->aiProvider?->default_model,
-            'next_run' => optional($s->next_run_at)?->toIso8601String(),
-            'last_run' => optional($s->last_run_at ?: $s->runs->first()?->scheduled_for)?->toIso8601String(),
-            'last_result' => $s->runs->first()?->status,
-            'pipeline' => ['Prompt', 'IA', 'Guion', 'Fuentes', 'Revisión', 'Producción', 'Audio', 'Vídeo', 'Publicación'],
-            'view_url' => $s->bulletinType?->id ? route('editor.bulletin-types.show', $s->bulletinType->id) : route('editor.editorial-schedules.edit', $s->id),
-            'runs_url' => route('editor.editorial-schedule-runs.index', ['editorial_schedule_id' => $s->id]),
-            'run_now_url' => route('editor.editorial-schedules.run-now', $s->id),
-        ])->values()->all();
+            'status' => $this->queueStatus($s),
+            'next_action' => $this->queueAction($s),
+            'scheduled_for' => optional($s->next_run_at)?->toIso8601String(),
+        ]);
+
+        $promptWaiting = BulletinPromptRun::query()->with('bulletinType:id,name')->where('status', 'waiting_ai_response')->latest()->limit(8)->get()
+            ->map(fn ($r) => ['type' => 'prompt', 'id' => 'prompt-'.$r->id, 'bulletin' => $r->bulletinType?->name, 'bulletin_id' => $r->bulletin_type_id, 'status' => 'waiting_ai_response', 'next_action' => 'generate_ai_response', 'scheduled_for' => optional($r->updated_at)?->toIso8601String()]);
+
+        $scriptsPending = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('review_status', 'pending')->where('status', '!=', 'archived')->latest()->limit(8)->get()
+            ->map(fn ($s) => ['type' => 'script', 'id' => 'script-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'script_pending_review', 'next_action' => 'review_script', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
+
+        $sourcesPending = SourceReference::query()->with('bulletinType:id,name')->withoutArchived()->where('verification_status', 'pending')->latest()->limit(8)->get()
+            ->map(fn ($s) => ['type' => 'source', 'id' => 'source-'.$s->id, 'bulletin' => $s->bulletinType?->name, 'bulletin_id' => $s->bulletin_type_id, 'status' => 'sources_pending_verification', 'next_action' => 'verify_sources', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
+
+        $readyScripts = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->latest()->limit(6)->get()
+            ->map(fn ($s) => ['type' => 'production', 'id' => 'production-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'ready_for_production', 'next_action' => 'prepare_production', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
+
+        return $scheduleItems->concat($promptWaiting)->concat($scriptsPending)->concat($sourcesPending)->concat($readyScripts)->values();
     }
 
-    private function buildActionableQueue(Collection $schedules): array
+    private function buildScheduledBulletins(Collection $schedules): array
     {
-        $queue = [];
-
+        $groups = ['on' => [], 'off' => [], 'incomplete' => [], 'attention' => []];
         foreach ($schedules as $s) {
-            if (! $s->is_active && ! $this->needsAttention($s)) {
-                continue;
-            }
-
-            if (($s->next_run_at && $s->next_run_at->isPast()) || $this->needsAttention($s) || $s->runs->first()?->status === 'failed') {
-                $queue[] = [
-                    'id' => 'schedule-'.$s->id,
-                    'bulletin_id' => $s->bulletin_type_id,
-                    'type_label' => 'Horario',
-                    'bulletin' => $s->bulletinType?->name,
-                    'provider' => $s->bulletinType?->aiProvider?->name,
-                    'model' => $s->bulletinType?->aiProvider?->default_model,
-                    'status' => $this->needsAttention($s) ? 'incomplete' : ($s->runs->first()?->status === 'failed' ? 'failed' : 'overdue'),
-                    'next_action' => $this->needsAttention($s) ? 'Configurar' : 'Ejecutar ahora',
-                    'view_url' => route('editor.editorial-schedules.edit', $s->id),
-                    'action_url' => route('editor.editorial-schedules.run-now', $s->id),
-                ];
-            }
-        }
-
-        return collect($queue)->concat(BulletinPromptRun::with('bulletinType.aiProvider')->where('status', 'waiting_ai_response')->latest()->limit(5)->get()->map(fn ($r) => [
-            'id' => 'prompt-'.$r->id,
-            'bulletin_id' => $r->bulletin_type_id,
-            'type_label' => 'Prompt IA',
-            'bulletin' => $r->bulletinType?->name,
-            'provider' => $r->bulletinType?->aiProvider?->name,
-            'model' => $r->bulletinType?->aiProvider?->default_model,
-            'status' => 'waiting_ai_response',
-            'next_action' => 'Generar respuesta IA',
-            'view_url' => route('editor.bulletin-prompt-runs.show', $r->id),
-            'action_url' => route('editor.bulletin-prompt-runs.generate-ai-response', $r->id),
-        ]))->values()->all();
-    }
-
-    private function buildAiEngines($today): array
-    {
-        $bulletins = BulletinType::with('aiProvider:id,name,default_model')->get();
-
-        return AiProvider::where('is_testing', false)->get(['id', 'name', 'default_model', 'is_active', 'supports_grounding', 'rate_limited_until'])
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'model' => $p->default_model,
-                'grounded' => (bool) $p->supports_grounding,
-                'availability' => $p->rate_limited_until && $p->rate_limited_until->isFuture() ? 'rate_limited' : 'available',
-                'availability_label' => $p->rate_limited_until && $p->rate_limited_until->isFuture() ? 'Limitado por tasa' : 'Disponible',
-                'purpose' => $p->supports_grounding ? 'Proveedor principal para noticias actuales (Gemini Grounded).' : 'Proveedor auxiliar para reescritura y estilo (Groq).',
-                'bulletins' => $bulletins->where('ai_provider_id', $p->id)->pluck('name')->values()->all(),
-            ])->values()->all();
-    }
-
-    private function buildCoverageOverview(Collection $s): array
-    {
-        return ['groups' => $s->groupBy(fn ($x) => ($x->location?->name ?: 'Sin ubicación').'|'.($x->newsCategory?->name ?: 'Sin categoría'))->map(function ($rows, $key) {
-            [$l, $c] = explode('|', $key);
-
-            return [
-                'location' => $l,
-                'category' => $c,
-                'active' => $rows->where('is_active', true)->count(),
-                'paused' => $rows->where('is_active', false)->count(),
-                'missing_provider' => $rows->filter(fn ($r) => ! $r->bulletinType?->ai_provider_id)->count(),
-                'missing_schedule' => $rows->filter(fn ($r) => ! $r->run_frequency || ! ($r->run_time ?: $r->scheduled_time))->count(),
-                'failed' => $rows->filter(fn ($r) => $r->runs->first()?->status === 'failed')->count(),
-                'not_configured' => $rows->filter(fn ($r) => ! $r->bulletin_type_id || ! $r->location_id || ! $r->news_category_id)->count(),
+            $item = [
+                'id' => $s->id,
+                'bulletin' => $s->bulletinType?->name ?? $s->name,
+                'location' => $s->location?->name,
+                'category' => $s->newsCategory?->name,
+                'provider' => $s->bulletinType?->aiProvider?->name,
+                'model' => $s->bulletinType?->aiProvider?->default_model,
+                'frequency' => $s->run_frequency,
+                'time' => $s->run_time ?: $s->scheduled_time,
+                'next_run' => optional($s->next_run_at)?->toIso8601String(),
+                'last_run' => optional($s->last_run_at ?: $s->runs->first()?->scheduled_for)?->toIso8601String(),
+                'last_result' => $s->runs->first()?->status,
+                'is_on' => (bool) $s->is_active,
             ];
-        })->values()->all()];
+
+            if (! $s->bulletinType || ! $s->location || ! $s->newsCategory || ! $s->run_frequency || ! ($s->run_time ?: $s->scheduled_time)) $groups['incomplete'][] = $item;
+            elseif (! $s->is_active || ! $s->bulletinType->is_active) $groups['off'][] = $item;
+            elseif ($this->needsAttention($s) || $this->hasFailedRunToday((int) $s->bulletin_type_id)) $groups['attention'][] = $item;
+            else $groups['on'][] = $item;
+        }
+        return $groups;
     }
 
-    private function buildLatestExecutions(): array
+    private function buildMapOverview(Collection $schedules): array
     {
-        return EditorialScheduleRun::with(['schedule.bulletinType.aiProvider:id,name,default_model', 'sourceReferences:id,editorial_schedule_run_id,verification_status', 'script:id,editorial_schedule_run_id'])
-            ->latest('scheduled_for')->limit(10)->get()->map(fn ($r) => [
-                'id' => $r->id,
-                'scheduled_for' => optional($r->scheduled_for)->toIso8601String(),
-                'bulletin' => $r->schedule?->bulletinType?->name ?? $r->schedule?->name,
-                'provider' => $r->schedule?->bulletinType?->aiProvider?->name,
-                'model' => $r->schedule?->bulletinType?->aiProvider?->default_model,
-                'status' => $r->status,
-                'sources_label' => $r->sourceReferences->count().' / '.($r->sourceReferences->where('verification_status', 'verified')->count()),
-                'script_url' => $r->script?->id ? route('editor.scripts.show', $r->script->id) : null,
-                'run_url' => route('editor.editorial-schedule-runs.show', $r->id),
-                'pipeline' => ['Prompt', 'IA', 'Guion', 'Fuentes', 'Revisión', 'Producción', 'Audio', 'Vídeo', 'Publicación'],
-            ])->values()->all();
+        return [
+            'locations' => $schedules->groupBy(fn ($s) => $s->location?->name ?: 'Sin ubicación')->map(function ($rows, $location) {
+                return [
+                    'location' => $location,
+                    'active_bulletins' => $rows->filter(fn ($s) => $s->is_active && $s->bulletinType?->is_active)->count(),
+                    'pending_tasks' => $rows->filter(fn ($s) => $s->next_run_at && $s->next_run_at->isPast() && $s->is_active)->count(),
+                    'failed' => $rows->filter(fn ($s) => $this->hasFailedRunToday((int) $s->bulletin_type_id))->count(),
+                    'missing_provider' => $rows->filter(fn ($s) => ! $s->bulletinType?->ai_provider_id)->count(),
+                ];
+            })->values(),
+            'mapRoute' => route('editor.world-map.index'),
+        ];
     }
 
-    private function needsAttention(EditorialSchedule $s): bool
+    private function buildCoverageOverview(Collection $schedules): array
     {
-        return ! $s->bulletinType?->ai_provider_id || ! $s->run_frequency || ! ($s->run_time ?: $s->scheduled_time);
+        return [
+            'explanation' => 'dashboard.coverage.explanation',
+            'groups' => $schedules->groupBy(fn ($s) => ($s->location?->name ?: 'Sin ubicación').'|'.($s->newsCategory?->name ?: 'Sin categoría'))->map(function ($rows, $key) {
+                [$location, $category] = explode('|', $key);
+                return ['location' => $location, 'category' => $category, 'active' => $rows->where('is_active', true)->count(), 'paused' => $rows->where('is_active', false)->count(), 'missing_configuration' => $rows->filter(fn ($s) => ! $s->bulletinType?->ai_provider_id || ! $s->run_frequency)->count()];
+            })->values(),
+        ];
     }
+
+    private function buildAiProviderStatus(\Carbon\Carbon $today, Collection $bulletins): Collection { return AiProvider::query()->where('is_testing', false)->get(['id','name','default_model','is_active','supports_grounding','provider_category','rate_limited_until'])->map(fn (AiProvider $p) => ['id'=>$p->id,'name'=>$p->name,'model'=>$p->default_model,'purpose'=>$p->provider_category,'is_active'=>$p->is_active,'grounded'=>(bool)$p->supports_grounding,'usage_today'=>EditorialScheduleRun::query()->whereDate('scheduled_for',$today->toDateString())->whereHas('schedule.bulletinType', fn($q)=>$q->where('ai_provider_id',$p->id))->count(),'availability'=>$p->rate_limited_until && $p->rate_limited_until->isFuture() ? 'rate_limited' : 'available','bulletins'=>$bulletins->where('ai_provider_id',$p->id)->pluck('name')->values()])->values(); }
+
+    private function buildLatestExecutions(): Collection
+    {
+        return EditorialScheduleRun::query()->with(['schedule.bulletinType.aiProvider:id,name,default_model','script:id,title,production_status','sourceReferences:id,editorial_schedule_run_id,verification_status'])->latest('scheduled_for')->limit(12)->get()->map(fn ($run) => [
+            'id' => $run->id,
+            'scheduled_for' => optional($run->scheduled_for)?->toIso8601String(),
+            'bulletin' => $run->schedule?->bulletinType?->name ?? $run->schedule?->name,
+            'status' => $run->status,
+            'provider' => $run->schedule?->bulletinType?->aiProvider?->name,
+            'model' => $run->schedule?->bulletinType?->aiProvider?->default_model,
+            'script' => $run->script ? ['id' => $run->script->id, 'title' => $run->script->title, 'production_status' => $run->script->production_status] : null,
+            'sources_pending' => $run->sourceReferences->where('verification_status', 'pending')->count(),
+            'sources_status' => $run->sourceReferences->where('verification_status', 'pending')->count() > 0 ? 'sources_pending_verification' : 'sources_verified',
+            'next_action' => $run->status === 'failed' ? 'retry' : ($run->script ? 'review_script' : 'view_run'),
+        ]);
+    }
+
+    private function buildEditorialAlerts(Collection $schedules, \Carbon\Carbon $today): Collection
+    {
+        $alerts = collect();
+        if ($schedules->contains(fn ($s) => $s->is_active && $s->next_run_at && $s->next_run_at->isPast())) $alerts->push(['level' => 'warning', 'message' => 'schedule_overdue']);
+        if ($schedules->contains(fn ($s) => $s->is_active && ! $s->bulletinType?->ai_provider_id)) $alerts->push(['level' => 'warning', 'message' => 'missing_ai_provider']);
+        if (EditorialScheduleRun::query()->whereDate('scheduled_for', $today->toDateString())->where('status', 'failed')->exists()) $alerts->push(['level' => 'danger', 'message' => 'failed_today']);
+        return $alerts;
+    }
+
+    private function hasFailedRunToday(int $bulletinId): bool { return EditorialScheduleRun::query()->whereHas('schedule', fn ($q) => $q->where('bulletin_type_id', $bulletinId))->whereDate('scheduled_for', now()->toDateString())->where('status', 'failed')->exists(); }
+    private function needsAttention(EditorialSchedule $s): bool { return ! $s->bulletinType?->ai_provider_id || ! $s->run_frequency || ! ($s->run_time ?: $s->scheduled_time); }
 }

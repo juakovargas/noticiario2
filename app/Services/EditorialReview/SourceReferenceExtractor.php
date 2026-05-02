@@ -16,7 +16,8 @@ class SourceReferenceExtractor
     {
         $hints = $this->parsedResponseHints(is_array($run->parsed_response) ? $run->parsed_response : [])
             ->merge($this->linesFromValue($run->ai_response_text))
-            ->merge($this->sourceSectionLines((string) $run->ai_response_text));
+            ->merge($this->sourceSectionLines((string) $run->ai_response_text))
+            ->merge($this->groundingMetadataHints((array) ($run->metadata ?? [])));
 
         return $this->storeHints($hints, [
             'bulletin_prompt_run_id' => $run->id,
@@ -234,6 +235,30 @@ class SourceReferenceExtractor
                 ]);
             })
             ->filter(fn ($item) => $item instanceof SourceReference)
+            ->values();
+    }
+
+    private function groundingMetadataHints(array $metadata): Collection
+    {
+        $grounding = data_get($metadata, 'ai_response_metadata.grounding');
+        if (! is_array($grounding)) {
+            return collect();
+        }
+
+        return collect($grounding)
+            ->flatMap(function (mixed $item): array {
+                if (! is_array($item)) {
+                    return [];
+                }
+
+                $url = (string) ($item['url'] ?? '');
+                $title = trim((string) ($item['title'] ?? ''));
+                if ($url === '') {
+                    return [];
+                }
+
+                return [$title !== '' ? "{$title} {$url}" : $url];
+            })
             ->values();
     }
 

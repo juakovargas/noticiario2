@@ -199,6 +199,15 @@ B. Operational workflow:
 - Workbench and Editor Dashboard now surface due/upcoming schedule indicators and scheduler-created work counters.
 - Automatic runner never calls external AI providers by default; `auto_generate_ai_response` remains disabled by default.
 
+## 5E. EDITOR GROUNDED BULLETIN FLOW
+
+- Editor Bulletin Prompt Run flow now reuses grounded-provider selection logic consistent with pipeline behavior.
+- Current-news bulletins (metadata grounded/current-news flags) require a grounded-capable provider and no longer silently fall back to Groq.
+- Non-grounded bulletins keep existing default/provider fallback behavior including Groq availability for normal text tasks.
+- Editor AI response generation now stores provider/model selection and AI response metadata on the prompt run metadata.
+- Grounded AI metadata is now used by source extraction to create/link `SourceReference` records (pending verification) when URLs are provided.
+- When grounded metadata has no extractable URLs, script flow can continue while preserving warnings in workflow metadata/UI.
+
 ## 6. TRANSLATION RULE
 
 Strict translation policy:

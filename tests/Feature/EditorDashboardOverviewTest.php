@@ -30,7 +30,7 @@ class EditorDashboardOverviewTest extends TestCase
         EditorialScheduleRun::factory()->create(['editorial_schedule_id' => $schedule->id, 'status' => 'completed', 'scheduled_for' => now()->subHour()]);
 
         $this->actingAs($user)->get(route('editor.dashboard'))->assertOk()->assertInertia(fn ($page) => $page
-            ->component('Editor/Dashboard')->has('summary')->has('mapOverview.locations')->has('actionableQueue')->has('scheduledBulletins.on')->has('coverageOverview.groups')->has('aiProviderStatus')->has('latestExecutions')
+            ->component('Editor/Dashboard')->has('headerActions')->has('summaryCards')->has('mapOverview.markers')->has('actionableQueue')->has('scheduledBulletins')->has('coverageByLocationTopic.groups')->has('aiEngines')->has('latestExecutions')
         );
     }
 
@@ -71,10 +71,14 @@ class EditorDashboardOverviewTest extends TestCase
         $this->assertContains($activeBulletin->id, $queueBulletinIds);
         $this->assertNotContains($disabledBulletin->id, $queueBulletinIds);
 
-        $scheduledOn = collect($props['scheduledBulletins']['on'])->firstWhere('bulletin', $activeBulletin->name);
+        $scheduledOn = collect($props['scheduledBulletins'])->firstWhere('bulletin', $activeBulletin->name);
         $this->assertNotNull($scheduledOn);
         $this->assertTrue((bool) $scheduledOn['is_on']);
         $this->assertSame('Gemini Grounded', $scheduledOn['provider']);
         $this->assertSame('gemini-2.5-pro', $scheduledOn['model']);
+
+        $engine = collect($props['aiEngines'])->firstWhere('name', 'Gemini Grounded');
+        $this->assertNotNull($engine);
+        $this->assertContains($activeBulletin->name, $engine['bulletins']);
     }
 }

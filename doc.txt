@@ -909,3 +909,4 @@ Roadmap (current):
 - Coverage and map overview are shown as location/category operational summaries with missing-configuration visibility.
 - Future production stages are visible as placeholders in pipeline UI (production/audio/video/publication), without implementing those features.
 - Gemini Grounded is treated as the primary provider for real/current-news bulletins wherever explicitly assigned.
+

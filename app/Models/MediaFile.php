@@ -70,7 +70,7 @@ class MediaFile extends Model
         }
 
         if ($this->disk === 'public') {
-            return asset(Storage::disk('public')->url($this->path));
+            return Storage::disk('public')->url($this->path);
         }
 
         return Storage::disk($this->disk)->url($this->path);

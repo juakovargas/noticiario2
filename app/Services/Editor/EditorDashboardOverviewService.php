@@ -79,9 +79,9 @@ class EditorDashboardOverviewService
                 'value' => $summary['activeBulletins'],
             ],
             [
-                'key' => 'pendingTasks',
-                'label' => 'Tareas pendientes',
-                'value' => $summary['pendingTasks'],
+                'key' => 'scheduledToday',
+                'label' => 'Programados hoy',
+                'value' => $summary['scheduledToday'],
             ],
             [
                 'key' => 'overdueSchedules',
@@ -120,7 +120,9 @@ class EditorDashboardOverviewService
                 ->filter(fn ($schedule) => $schedule->is_active && $schedule->bulletinType?->is_active)
                 ->count(),
 
-            'pendingTasks' => $queue->count(),
+            'scheduledToday' => $schedules
+                ->filter(fn ($schedule) => $schedule->is_active && $schedule->next_run_at && $schedule->next_run_at->isToday())
+                ->count(),
 
             'overdueSchedules' => $schedules
                 ->filter(fn ($schedule) => $schedule->is_active && $schedule->next_run_at && $schedule->next_run_at->isPast())

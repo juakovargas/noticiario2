@@ -793,3 +793,10 @@ Roadmap (current):
 - Gemini custom driver continues to hit generateContent endpoint while Laravel AI SDK failures report explicit stage before HTTP.
 - Diagnostic tests now create AiRequestLog entries with diagnostic_test metadata when executed.
 - Grounding diagnostics now distinguish provider_supports_grounding and driver_supports_grounding.
+
+## GEMINI REAL DIAGNOSTICS HARDENING (May 2026)
+- Gemini custom diagnostics now preserve sanitized Google error response bodies for non-2xx responses, including HTTP 429 details (`error.status`, `error.message`, `error.details`, retry headers, and sanitized raw body preview).
+- Gemini custom request payload now separates normalized prompt intent from real provider payload and sends valid `generateContent` structure with `contents` + `generationConfig`.
+- Laravel AI SDK diagnostics now expose specific sdk stage metadata (`installed/configured/config_file_exists/api_key_present/failure_stage/exception chain`) instead of a generic failure-only message.
+- Admin AI Providers diagnostics summary now includes provider error status/reason, comparison hints, and actionable next debug steps.
+- Diagnostic tests continue creating `AiRequestLog` entries with diagnostic metadata and without exposing secrets.

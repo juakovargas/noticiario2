@@ -58,6 +58,8 @@ class AiProviderTestRunner
     {
         $requestWasSent = $ok || ($error instanceof AiProviderException ? $error->requestWasSent : false);
         $providerStatus = $response['status'] ?? null;
+        $errorStatus = data_get($response, 'error.status') ?? data_get($error?->safeContext, 'response.google_error.status');
+        $errorReason = $this->resolveProviderErrorReason($providerStatus, $errorStatus, $error);
         $trace = ['summary' => [
             'result' => $ok ? 'success' : ($internalBlocked ? 'blocked' : (($providerStatus === 429) ? 'rate_limited' : 'error')),
             'execution_driver' => $provider->executionDriver(),
@@ -68,20 +70,42 @@ class AiProviderTestRunner
             'sdk_installed' => class_exists(\Laravel\Ai\Facades\Ai::class),
             'sdk_configured' => (bool) (($provider->api_key_env_name ?? '') !== ''),
             'sdk_config_key_present' => (($provider->api_key_env_name ?? '') !== '') && (bool) env((string) $provider->api_key_env_name),
-            'sdk_failure_stage' => $this->resolveFailureStage($error),
+            'sdk' => [
+                'installed' => class_exists(\Laravel\Ai\Facades\Ai::class),
+                'configured' => config()->has('ai'),
+                'config_file_exists' => file_exists(config_path('ai.php')),
+                'provider' => $provider->provider_type === 'google_gemini' ? 'gemini' : $provider->provider_type,
+                'model' => $provider->default_model,
+                'api_key_env_name' => $provider->api_key_env_name ?: 'GEMINI_API_KEY',
+                'api_key_present' => (bool) env((string) ($provider->api_key_env_name ?: 'GEMINI_API_KEY')),
+                'failure_stage' => $this->resolveFailureStage($error),
+                'exception_class' => $error ? class_basename($error) : null,
+                'exception_message_safe' => $error ? $this->sanitizeValue($error->getMessage()) : null,
+                'previous_exception_class' => $error?->getPrevious() ? class_basename($error->getPrevious()) : null,
+                'previous_exception_message_safe' => $error?->getPrevious() ? $this->sanitizeValue($error->getPrevious()->getMessage()) : null,
+            ],
             'request_was_sent' => $requestWasSent,
             'provider_status_code' => $providerStatus,
+            'provider_error_status' => $errorStatus,
+            'provider_error_reason' => $errorReason,
             'request_failed_before_http_response' => ! $ok && ! $requestWasSent,
             'duration_ms' => $duration,
             'provider_supports_grounding' => (bool) $provider->supports_grounding,
             'driver_supports_grounding' => $groundingSupported,
             'rate_limit_source' => $internalBlocked ? 'internal_rate_limiter' : (($providerStatus === 429 && $requestWasSent) ? 'provider_rate_limit' : data_get($after, 'source')),
-            'sdk_exception_class' => $error ? class_basename($error) : null,
-            'sdk_exception_message_safe' => $error ? $this->sanitizeValue($error->getMessage()) : null,
-            'sdk_exception_previous_class' => $error?->getPrevious() ? class_basename($error->getPrevious()) : null,
-            'sdk_exception_previous_message_safe' => $error?->getPrevious() ? $this->sanitizeValue($error->getPrevious()->getMessage()) : null,
+            'comparison_hint' => $this->comparisonHint($provider, $requestWasSent, $providerStatus, $error),
+            'next_debug_steps' => [
+                'Check Google AI Studio key project.',
+                'Check whether Gemini API free tier quota is enabled.',
+                'Check billing/quota settings.',
+                'Check selected model availability.',
+                'Try a new API key from the same project.',
+            ],
         ]];
 
+        if ($error instanceof AiProviderException && ! empty($error->safeContext['response'])) {
+            $response = array_merge($response, $error->safeContext['response']);
+        }
         return ['ok' => $ok, 'test_type' => $testType, ...$trace, 'request' => ['normalized_payload' => ['prompt' => $prompt, 'grounding_enabled' => $groundingEnabled]], 'response' => $response, 'ai_request_log' => $log ? ['id' => $log->id] : null, 'trace' => $this->sanitizeArray($trace)];
     }
 
@@ -91,12 +115,19 @@ class AiProviderTestRunner
         return match ($error->errorCode) {
             'sdk_package_missing' => 'package_missing',
             'sdk_config_missing' => 'config_missing',
-            'sdk_key_missing' => 'key_missing',
+            'sdk_key_missing', 'api_key_missing' => 'api_key_missing',
+            'model_missing' => 'model_missing',
             'sdk_adapter_build_failed' => 'adapter_build_failed',
             'sdk_response_parse_failed' => 'response_parse_failed',
+            'unsupported_feature' => 'unsupported_feature',
             default => 'sdk_call_failed',
         };
     }
+
+    private function resolveProviderErrorReason(?int $statusCode, ?string $providerStatus, ?Throwable $error): string
+    { if ($providerStatus === 'RESOURCE_EXHAUSTED') return 'quota_exceeded'; if ($statusCode === 429) return 'unknown_provider_error'; if ($error instanceof AiProviderException && $error->errorCode === 'api_key_missing') return 'key_invalid'; return 'unknown_provider_error'; }
+    private function comparisonHint(AiProvider $provider, bool $requestWasSent, ?int $providerStatus, ?Throwable $error): ?string
+    { if ($provider->usesLaravelAiDriver() && ! $requestWasSent) return 'Custom Noticiario reached Gemini, but Laravel AI SDK failed before receiving an HTTP response. Check SDK installation/configuration/adapter call.'; if ($providerStatus === 429) return 'Gemini returned HTTP 429. Check the Google error details below.'; return null; }
 
     private function createDiagnosticLog(AiProvider $provider, string $testType, string $prompt, bool $ok, ?Throwable $error, int $duration, array $response): AiRequestLog
     {

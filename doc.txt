@@ -880,3 +880,10 @@ Roadmap (current):
   - Existing operational cards and tables remain, but labels were aligned for better translation consistency.
 - Translation updates were applied for newly touched dashboard/help strings in EN/ES/FR.
 - Contextual help for `editor.dashboard` now includes practical tips focused on overdue schedules and coverage configuration before automation.
+
+## 10. CURRENT ROADMAP (UPDATED MAY 2, 2026)
+
+- Fixed avatar/profile image URL regression by using disk-generated public URLs directly from Laravel storage disk API for both `MediaFile::public_url` and `User::avatar_url` fallback path.
+- Verified environment-level root cause in this workspace: missing `public/storage` symlink can prevent `/storage/...` URLs from resolving even with correct DB paths.
+- Editor dashboard remains in active hardening: translation cleanup, embedded world map visibility, provider/model traceability per queue row, provider usage linkage by bulletin, exclusive bulletin grouping, and clearer coverage guidance are the current priorities.
+- Keep source-verification and production-readiness visibility in dashboard latest executions.

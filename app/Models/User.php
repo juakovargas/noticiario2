@@ -95,7 +95,7 @@ class User extends Authenticatable
         }
 
         if (filled($this->avatar_path)) {
-            return asset(Storage::disk('public')->url($this->avatar_path));
+            return Storage::disk('public')->url($this->avatar_path);
         }
 
         return null;

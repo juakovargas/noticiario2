@@ -9,35 +9,26 @@ use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
 use App\Models\Script;
 use App\Models\SourceReference;
+use App\Services\Maps\BulletinMapService;
 use Illuminate\Support\Collection;
 
 class EditorDashboardOverviewService
 {
+    public function __construct(private readonly BulletinMapService $mapService) {}
+
     public function build(): array
     {
         $today = now();
-
-        $schedules = EditorialSchedule::query()
-            ->with([
-                'bulletinType:id,name,is_active,location_id,news_category_id,ai_provider_id',
-                'bulletinType.aiProvider:id,name,is_active,default_model,supports_grounding,provider_category,rate_limited_until',
-                'location:id,name',
-                'newsCategory:id,name',
-                'runs' => fn ($q) => $q->latest('scheduled_for')->limit(1),
-            ])
-            ->get();
-
-        $bulletins = BulletinType::query()->with(['location:id,name', 'newsCategory:id,name', 'aiProvider:id,name,default_model'])->get();
-
+        $schedules = EditorialSchedule::query()->with(['bulletinType.aiProvider:id,name,default_model,supports_grounding,is_active,provider_category,rate_limited_until','location:id,name','newsCategory:id,name','runs' => fn ($q) => $q->latest('scheduled_for')->limit(1)])->get();
         return [
-            'summary' => $this->buildSummary($schedules, $today),
-            'mapOverview' => $this->buildMapOverview($schedules),
-            'aiProviderStatus' => $this->buildAiProviderStatus($today, $bulletins),
-            'actionableQueue' => $this->buildActionableQueue($schedules, $today),
-            'scheduledBulletins' => $this->buildScheduledBulletins($schedules),
-            'coverageOverview' => $this->buildCoverageOverview($schedules),
+            'headerActions' => [['key'=>'automation','label'=>'Ver automatización','href'=>route('editor.automation.index')],['key'=>'createBulletin','label'=>'Crear informativo','href'=>route('editor.bulletin-types.create')],['key'=>'fullMap','label'=>'Ver mapa completo','href'=>route('editor.world-map.index')]],
+            'summaryCards' => $this->summaryCards($schedules, $today),
+            'mapOverview' => ['markers'=>$this->mapService->getEditorMapData(),'mapRoute'=>route('editor.world-map.index')],
+            'scheduledBulletins' => $this->scheduledBulletins($schedules),
+            'actionableQueue' => $this->buildActionableQueue($schedules),
+            'aiEngines' => $this->buildAiEngines($today),
+            'coverageByLocationTopic' => $this->buildCoverageOverview($schedules),
             'latestExecutions' => $this->buildLatestExecutions(),
-            'editorialAlerts' => $this->buildEditorialAlerts($schedules, $today),
         ];
     }
 
@@ -81,33 +72,9 @@ class EditorDashboardOverviewService
         $scriptsPending = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('review_status', 'pending')->where('status', '!=', 'archived')->latest()->limit(8)->get()
             ->map(fn ($s) => ['type' => 'script', 'id' => 'script-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'script_pending_review', 'next_action' => 'review_script', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
 
-        $sourcesPending = SourceReference::query()
-            ->with([
-                'script:id,title,bulletin_prompt_run_id',
-                'script.bulletinPromptRun:id,bulletin_type_id',
-                'script.bulletinPromptRun.bulletinType:id,name',
-                'bulletinPromptRun:id,bulletin_type_id',
-                'bulletinPromptRun.bulletinType:id,name',
-            ])
-            ->withoutArchived()
-            ->where('verification_status', 'pending')
-            ->latest()
-            ->limit(8)
-            ->get()
-            ->map(function (SourceReference $sourceReference) {
-                $bulletinType = $sourceReference->bulletinPromptRun?->bulletinType
-                    ?? $sourceReference->script?->bulletinPromptRun?->bulletinType;
+        $sourcesPending = SourceReference::query()->with('bulletinType:id,name')->withoutArchived()->where('verification_status', 'pending')->latest()->limit(8)->get()
+            ->map(fn ($s) => ['type' => 'source', 'id' => 'source-'.$s->id, 'bulletin' => $s->bulletinType?->name, 'bulletin_id' => $s->bulletin_type_id, 'status' => 'sources_pending_verification', 'next_action' => 'verify_sources', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
 
-                return [
-                    'type' => 'source',
-                    'id' => 'source-'.$sourceReference->id,
-                    'bulletin' => $bulletinType?->name,
-                    'bulletin_id' => $bulletinType?->id,
-                    'status' => 'sources_pending_verification',
-                    'next_action' => 'verify_sources',
-                    'scheduled_for' => optional($sourceReference->updated_at)?->toIso8601String(),
-                ];
-            });
         $readyScripts = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->latest()->limit(6)->get()
             ->map(fn ($s) => ['type' => 'production', 'id' => 'production-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'ready_for_production', 'next_action' => 'prepare_production', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
 
@@ -197,6 +164,4 @@ class EditorDashboardOverviewService
 
     private function hasFailedRunToday(int $bulletinId): bool { return EditorialScheduleRun::query()->whereHas('schedule', fn ($q) => $q->where('bulletin_type_id', $bulletinId))->whereDate('scheduled_for', now()->toDateString())->where('status', 'failed')->exists(); }
     private function needsAttention(EditorialSchedule $s): bool { return ! $s->bulletinType?->ai_provider_id || ! $s->run_frequency || ! ($s->run_time ?: $s->scheduled_time); }
-    private function queueStatus(EditorialSchedule $s): string { if ($this->hasFailedRunToday((int) $s->bulletin_type_id)) return 'failed'; if ($this->needsAttention($s)) return 'incomplete'; if (! $s->is_active || ! $s->bulletinType?->is_active) return 'off'; if ($s->next_run_at && $s->next_run_at->isPast()) return 'overdue'; return 'due_today'; }
-    private function queueAction(EditorialSchedule $s): string { return match ($this->queueStatus($s)) { 'failed' => 'retry', 'overdue' => 'run_now', 'incomplete' => 'configure', 'off' => 'configure', default => 'monitor' }; }
 }

@@ -19,7 +19,7 @@ class GeminiClient implements AiClient
         $key = trim((string) env($provider->api_key_env_name ?? 'GEMINI_API_KEY'));
         if ($key === '') throw new AiProviderException('Environment key is not configured.', null, false, null, false, 'api_key_missing');
 
-        $model = trim((string) ($provider->default_model ?: 'gemini-2.0-flash'));
+        $model = trim((string) ($provider->default_model ?: 'gemini-3-flash-preview'));
         if ($model === '') {
             throw new AiProviderException('Model is required for Gemini requests.', null, false, null, false, 'model_missing');
         }

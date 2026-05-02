@@ -922,3 +922,24 @@ Roadmap (current):
 - Latest executions now include provider/model, translated status, source verification summary, script link when available, run link, and pipeline chips.
 - Controller remains thin; `EditorDashboardOverviewService` now provides structured props for dashboard sections with null-safe relationship handling and eager loading.
 - No audio/video/publishing generation was implemented; those pipeline steps are displayed as future placeholders only.
+
+## 18. EDITOR DASHBOARD TAILADMIN FREE VISUAL ADAPTATION (May 2026)
+
+- `/editor` dashboard was upgraded with TailAdmin free MIT-inspired patterns (stat cards, rounded panel cards, compact badges/chips, action buttons, dashboard grid rhythm, and dark-mode card contrast).
+- This was a focused visual/component adaptation only; no TailAdmin full template install, no TailAdmin router/shell/sidebar replacement, and no Pro/paid assets.
+- Dashboard sections now emphasize:
+  - map/location overview near top (embedded existing world map component + full map action),
+  - scheduled bulletins table with ON/OFF, provider/model, runs, pipeline and actions,
+  - actionable work queue cards,
+  - editorial AI engines cards,
+  - coverage by location/topic matrix,
+  - latest executions with sources + actions,
+  - compact pipeline progress visibility including future placeholders (audio/video/publishing).
+- Summary KPI cards now include scheduled today (instead of generic pending-only metric) plus overdue/failures/review/source/production signals.
+
+## CURRENT ROADMAP
+1. Complete Gemini Grounded source confidence/citation refinement.
+2. Stabilize automated schedule -> prompt -> Gemini -> script -> source verification pipeline.
+3. Add Edge TTS audio foundation.
+4. Add Remotion/FFmpeg video foundation.
+5. Add publishing foundation.

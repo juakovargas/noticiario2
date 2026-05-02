@@ -81,9 +81,33 @@ class EditorDashboardOverviewService
         $scriptsPending = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('review_status', 'pending')->where('status', '!=', 'archived')->latest()->limit(8)->get()
             ->map(fn ($s) => ['type' => 'script', 'id' => 'script-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'script_pending_review', 'next_action' => 'review_script', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
 
-        $sourcesPending = SourceReference::query()->with('bulletinType:id,name')->withoutArchived()->where('verification_status', 'pending')->latest()->limit(8)->get()
-            ->map(fn ($s) => ['type' => 'source', 'id' => 'source-'.$s->id, 'bulletin' => $s->bulletinType?->name, 'bulletin_id' => $s->bulletin_type_id, 'status' => 'sources_pending_verification', 'next_action' => 'verify_sources', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
+        $sourcesPending = SourceReference::query()
+            ->with([
+                'script:id,title,bulletin_prompt_run_id',
+                'script.bulletinPromptRun:id,bulletin_type_id',
+                'script.bulletinPromptRun.bulletinType:id,name',
+                'bulletinPromptRun:id,bulletin_type_id',
+                'bulletinPromptRun.bulletinType:id,name',
+            ])
+            ->withoutArchived()
+            ->where('verification_status', 'pending')
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(function (SourceReference $sourceReference) {
+                $bulletinType = $sourceReference->bulletinPromptRun?->bulletinType
+                    ?? $sourceReference->script?->bulletinPromptRun?->bulletinType;
 
+                return [
+                    'type' => 'source',
+                    'id' => 'source-'.$sourceReference->id,
+                    'bulletin' => $bulletinType?->name,
+                    'bulletin_id' => $bulletinType?->id,
+                    'status' => 'sources_pending_verification',
+                    'next_action' => 'verify_sources',
+                    'scheduled_for' => optional($sourceReference->updated_at)?->toIso8601String(),
+                ];
+            });
         $readyScripts = Script::query()->with('bulletinPromptRun.bulletinType:id,name')->where('status', '!=', 'archived')->where('production_status', 'ready_for_production')->latest()->limit(6)->get()
             ->map(fn ($s) => ['type' => 'production', 'id' => 'production-'.$s->id, 'bulletin' => $s->bulletinPromptRun?->bulletinType?->name, 'bulletin_id' => $s->bulletinPromptRun?->bulletin_type_id, 'status' => 'ready_for_production', 'next_action' => 'prepare_production', 'scheduled_for' => optional($s->updated_at)?->toIso8601String()]);
 

@@ -20,6 +20,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.dashboard.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.dashboard.actions' },
         ],
+        tipsKeys: ['help.editor.dashboard.tip1', 'help.editor.dashboard.tip2'],
         nextStepsKeys: ['help.editor.dashboard.next'],
     },
     'editor.workbench.index': {

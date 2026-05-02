@@ -831,3 +831,21 @@ Roadmap (current):
 5. Start audio production foundation with Edge TTS.
 6. Start video production foundation with Remotion/FFmpeg.
 7. Publishing foundation.
+
+## GEMINI GROUNDED EDITOR FLOW
+
+- Gemini Grounded (`gemini-3-flash-preview`) is the main provider for current-news bulletin generation in the normal Editor workflow.
+- Groq remains available for non-grounded text tasks (rewrites, tone, prompt prep, low-cost text/debug).
+- Full Editor pipeline (`BulletinPromptRunPipeline`) now preserves selected provider metadata and grounded flags on runs.
+- For bulletin types that require grounded/current news, the pipeline must resolve a grounded provider and must fail clearly if none is configured.
+- Grounding/citation metadata from Gemini responses is preserved in run metadata.
+- Source references continue in manual verification flow and remain pending by default.
+- No custom scraping or feed scraping is introduced.
+
+## CURRENT ROADMAP
+1. Complete Gemini Grounded source confidence/citation refinement.
+2. Stabilize Editor Dashboard operational work queue.
+3. Stabilize automated schedule -> prompt -> Gemini -> script -> source verification pipeline.
+4. Add Edge TTS audio foundation.
+5. Add Remotion/FFmpeg video foundation.
+6. Add publishing foundation.

@@ -775,7 +775,7 @@ Historical follow-up from that navigation branch:
 
 - Editor Dashboard now acts as a daily editorial control panel.
 - Added daily summary cards (active bulletins, pending tasks, overdue schedules, failed runs today, scripts pending review, sources pending verification, ready for production).
-- Added "Tareas por ejecutar / Work queue / File de travail" style operational queue derived from existing schedules and bulletin configuration.
+- Added a historical "Tareas por ejecutar / Work queue / File de travail" operational queue derived from existing schedules and bulletin configuration; the current dashboard cleanup demotes this into incidents, review/source cards and latest-execution next actions.
 - Added active vs disabled/incomplete bulletin panels.
 - Added editorial coverage matrix by location/category with compact state labels.
 - Added editorial alerts based on actionable conditions (overdue schedule, missing provider, failures today, Gemini availability).
@@ -796,7 +796,7 @@ Historical follow-up from that navigation branch:
 ## 5F. EDITOR DASHBOARD CONTROL PANEL REFINEMENT
 
 - `/editor` dashboard refined into a clearer editorial control panel with translated UI labels and section titles.
-- Work queue now includes AI provider/model visibility, pipeline/automation context, and direct next-action links.
+- Historical work-queue rows included AI provider/model visibility, pipeline/automation context, and direct next-action links; the current dashboard keeps those signals inside timeline, scheduled informativos, incidents and latest executions.
 - Bulletins are now grouped into exclusive operational states: active, paused, incomplete, and needs attention.
 - Each non-operational bulletin includes explicit reason labels (missing schedule/provider/location-category/next run, inactive schedule, failed execution).
 - AI provider panel added for editorial flow awareness with grounded status, activity state, availability/rate-limit hint, and usage today when available.
@@ -827,7 +827,7 @@ Historical follow-up from that navigation branch:
 ## 17. EDITOR DASHBOARD PROFESSIONAL CONTROL PANEL (May 2026)
 - `/editor` now provides a professional editorial control panel with operational summary, map overview, actionable work queue, exclusive bulletin groups, coverage matrix, AI provider status, latest executions, and editorial alerts.
 - Bulletin types support assigned AI provider via `bulletin_types.preferred_ai_provider_id` and `BulletinType::preferredAiProvider()`; dashboard reports missing provider explicitly.
-- Work queue now shows provider/model/grounding/automation per task and highlights missing provider configuration.
+- Historical work-queue rows showed provider/model/grounding/automation per task and highlighted missing provider configuration; the current dashboard keeps missing provider/schedule/failure states in incidents and scheduled-informativo pills.
 - AI provider status is linked to bulletins using each provider.
 - Coverage section is actionable by location/category with explicit states (covered, missing provider, missing schedule, failed, disabled, not configured).
 - Latest executions include provider/model and source verification counters.
@@ -925,7 +925,7 @@ Bulletin Type UI:
 
 Editor Dashboard production-readiness redesign:
 - Main dashboard focus is next active work, not old accumulated history.
-- Sections: header, embedded editorial map/location overview, summary cards, next scheduled runs, scheduled bulletins, tasks to execute, editorial AI engines, coverage by location/topic, and latest executions.
+- Earlier sections included header, embedded editorial map/location overview, summary cards, next scheduled runs, scheduled bulletins, tasks to execute, editorial AI engines, coverage by location/topic, and latest executions. The current cleanup narrows the main dashboard to the operational flow: today timeline, scheduled informativos, incidents/attention, review/source work and latest useful executions.
 - Scheduled bulletins show ON/OFF state, provider/model, grounding, run timing, manual-AI approval state, pipeline chips and direct actions.
 - Tasks to execute should only include actionable work: overdue/failed active schedules, incomplete operational configuration, prompt runs waiting for AI, scripts pending review, and sources pending verification.
 - Latest executions show date/time, bulletin, provider/model, translated status, script/prompt links when available, source counters and the next useful action.
@@ -988,6 +988,14 @@ tests.txt:
 - Root `tests.txt` is now the project test/build history log.
 - Every executed test/build command in this branch should append date/time, branch name, command, pass/fail, short summary and next focus.
 - Current known environment limitation: the configured MySQL testing database `noticiario2_testing` is partially migrated in this workspace. The exact `php artisan test --env=testing` command times out/fails there, while focused tests pass with an isolated SQLite in-memory testing database.
+
+Dashboard/table cleanup:
+- The Editor Dashboard is intentionally narrower in scope: today timeline, scheduled informativos, incidents/attention, review/source work and latest useful executions.
+- `Informativos programados` is no longer squeezed beside the task queue and should not require desktop horizontal scrolling. Tasks that remain useful are shown as compact incidents or review/source cards below the main schedule list.
+- The timeline is a local Tailwind view built from real schedule/execution data. It shows current time, past/upcoming items, provider/model, manual-AI state, source state and quick actions without fake chart data.
+- Pipeline state is now shown as visible text pills instead of hover-only green bars. This applies to dashboard, Informativos and execution views that use the shared pipeline component.
+- Editor row actions should follow the shared action pattern: one visible primary action plus a compact secondary-actions menu. Automation, Informativos and Ejecuciones should avoid mixing raw text links, check-style buttons and unrelated button styles in the same action cell.
+- Source verification visibility is surfaced as pills: no sources, pending, verified, rejected or mixed. This is visibility only; no scraping, live URL checking or external fact-checking was added.
 
 ## CURRENT ROADMAP
 1. Run `SpainProductionBulletinsSeeder` in the target environment and verify Gemini Grounded is active with `GEMINI_API_KEY` configured.

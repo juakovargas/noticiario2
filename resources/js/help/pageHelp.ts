@@ -18,6 +18,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         summaryKey: 'help.editor.dashboard.summary',
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.dashboard.what' },
+            { titleKey: 'dashboard.timeline.title', contentKey: 'help.editor.dashboard.timeline' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.dashboard.actions' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.dashboard.pipeline' },
         ],
@@ -65,6 +66,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.actions' },
             { titleKey: 'bulletinTypes.table.provider', contentKey: 'help.editor.bulletinTypes.provider' },
+            { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.bulletinTypes.pipeline' },
         ],
     },
     'editor.bulletintypes.create': {
@@ -120,6 +122,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scheduleRuns.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scheduleRuns.actions' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.scheduleRuns.pipeline' },
+            { titleKey: 'sourceStatus.sources', contentKey: 'help.editor.scheduleRuns.sources' },
         ],
     },
     'editor.editorialscheduleruns.show': {
@@ -129,6 +132,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scheduleRunShow.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scheduleRunShow.actions' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.scheduleRunShow.pipeline' },
+            { titleKey: 'sourceStatus.sources', contentKey: 'help.editor.scheduleRunShow.sources' },
         ],
         tipsKeys: ['help.editor.scheduleRunShow.tip1', 'help.editor.scheduleRunShow.tip2'],
     },

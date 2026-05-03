@@ -28,10 +28,6 @@ export default function Index({ runs, filters, statuses, schedules }: any): JSX.
         router.get(route('editor.editorial-schedule-runs.index'), form, { preserveState: true, preserveScroll: true });
     };
 
-    const postArchiveAction = (action: 'archive' | 'restore', id: number): void => {
-        router.post(route(`editor.editorial-schedule-runs.${action}`, id));
-    };
-
     return (
         <EditorLayout>
             <Head title={t('editorialRuns.index.title')} />
@@ -79,7 +75,7 @@ export default function Index({ runs, filters, statuses, schedules }: any): JSX.
             </DashboardPanel>
 
             <DashboardPanel>
-                <OperationalTable minWidth="1240px">
+                <OperationalTable minWidth="0">
                     <thead>
                         <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800">
                             <th className="px-5 py-4">{t('editorialRuns.table.execution')}</th>
@@ -117,22 +113,17 @@ export default function Index({ runs, filters, statuses, schedules }: any): JSX.
                                         { key: 'prompt', label: t('editorialRuns.promptGenerated'), complete: item.prompt_generated },
                                         { key: 'ai', label: t('editorialRuns.aiResponseReceived'), complete: item.ai_response_received },
                                         { key: 'script', label: t('editorialRuns.scriptCreated'), complete: item.script_created },
+                                        { key: 'sources', label: sourceStatus(item.sources, t).label, complete: item.sources?.status === 'verified', tone: sourceStatus(item.sources, t).tone },
                                     ]} />
                                     <div className="mt-2 flex flex-wrap gap-1.5">
                                         <StatusBadge tone={item.prompt_generated ? 'success' : 'warning'}>{t('editorialRuns.promptGenerated')}</StatusBadge>
                                         <StatusBadge tone={item.ai_response_received ? 'success' : 'warning'}>{t('editorialRuns.aiResponseReceived')}</StatusBadge>
                                         <StatusBadge tone={item.script_created ? 'success' : 'warning'}>{t('editorialRuns.scriptCreated')}</StatusBadge>
+                                        <StatusBadge tone={sourceStatus(item.sources, t).tone}>{sourceStatus(item.sources, t).label}</StatusBadge>
                                     </div>
                                 </td>
                                 <td className="px-5 py-4">
-                                    <div className="flex flex-col items-end gap-2">
-                                        <ActionButtonGroup actions={nextActions(item, t)} />
-                                        {item.status !== 'archived' ? (
-                                            <Button size="sm" variant="ghost" onClick={() => postArchiveAction('archive', item.id)}>{t('common.archive')}</Button>
-                                        ) : (
-                                            <Button size="sm" variant="ghost" onClick={() => postArchiveAction('restore', item.id)}>{t('common.restore')}</Button>
-                                        )}
-                                    </div>
+                                    <ActionButtonGroup actions={[...nextActions(item, t), archiveAction(item, t)]} />
                                 </td>
                             </tr>
                         )) : (
@@ -166,10 +157,13 @@ function Select({ value, onChange, children }: { value: string; onChange: (value
 }
 
 function nextActions(item: any, t: (key: string) => string): any[] {
+    const sourceAction = item.sources?.total ? [{ key: 'sources', label: t('dashboard.action.reviewSources'), href: item.urls?.sources, variant: 'outline' }] : [];
+
     if (!item.prompt_generated) {
         return [
             { key: 'generate-prompt', label: t('editorialRuns.action.generatePrompt'), href: item.urls?.generate_prompt, method: 'post', variant: 'default' },
             { key: 'open', label: t('dashboard.action.viewRun'), href: item.urls?.show, variant: 'outline' },
+            ...sourceAction,
         ];
     }
 
@@ -178,6 +172,7 @@ function nextActions(item: any, t: (key: string) => string): any[] {
             { key: 'run-ai', label: t('editorialRuns.action.runAiCreateScript'), href: item.urls?.run_pipeline, method: 'post', variant: 'default' },
             { key: 'open', label: t('dashboard.action.viewRun'), href: item.urls?.show, variant: 'outline' },
             { key: 'prompt-run', label: t('editorialRuns.action.openPromptRun'), href: item.urls?.prompt_run, variant: 'outline' },
+            ...sourceAction,
         ];
     }
 
@@ -185,13 +180,41 @@ function nextActions(item: any, t: (key: string) => string): any[] {
         return [
             { key: 'create-script', label: t('editorialRuns.action.createScript'), href: item.urls?.create_script_from_prompt_run ?? item.urls?.create_script, method: 'post', variant: 'default' },
             { key: 'open', label: t('dashboard.action.viewRun'), href: item.urls?.show, variant: 'outline' },
+            ...sourceAction,
         ];
     }
 
     return [
         { key: 'script', label: t('dashboard.action.viewScript'), href: item.urls?.script, variant: 'default' },
         { key: 'open', label: t('dashboard.action.viewRun'), href: item.urls?.show, variant: 'outline' },
+        ...sourceAction,
     ];
+}
+
+function archiveAction(item: any, t: (key: string) => string): any {
+    const action = item.status === 'archived' ? 'restore' : 'archive';
+
+    return {
+        key: action,
+        label: item.status === 'archived' ? t('common.restore') : t('common.archive'),
+        href: route(`editor.editorial-schedule-runs.${action}`, item.id),
+        method: 'post',
+        variant: 'outline',
+    };
+}
+
+function sourceStatus(sources: any, t: (key: string) => string): { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'violet' } {
+    const status = sources?.status ?? 'none';
+    const map: Record<string, { key: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'violet' }> = {
+        none: { key: 'sourceStatus.none', tone: 'neutral' },
+        pending: { key: 'sourceStatus.pending', tone: 'warning' },
+        verified: { key: 'sourceStatus.verified', tone: 'success' },
+        rejected: { key: 'sourceStatus.rejected', tone: 'danger' },
+        mixed: { key: 'sourceStatus.mixed', tone: 'violet' },
+    };
+    const item = map[status] ?? map.none;
+
+    return { label: t(item.key), tone: item.tone };
 }
 
 function scheduleLabel(schedule: any, t: (key: string) => string): string {

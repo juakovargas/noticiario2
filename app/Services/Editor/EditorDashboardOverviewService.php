@@ -440,6 +440,9 @@ class EditorDashboardOverviewService
                 $sourcesTotal = $run->sourceReferences->count();
                 $sourcesPending = $run->sourceReferences->where('verification_status', 'pending')->count();
                 $sourcesVerified = $run->sourceReferences->where('verification_status', 'verified')->count();
+                $sourcesRejected = $run->sourceReferences
+                    ->whereIn('verification_status', ['rejected', 'broken', 'missing'])
+                    ->count();
 
                 return [
                     'id' => $run->id,
@@ -456,7 +459,14 @@ class EditorDashboardOverviewService
                     'sources_total' => $sourcesTotal,
                     'sources_pending' => $sourcesPending,
                     'sources_verified' => $sourcesVerified,
-                    'sources_status' => $sourcesPending > 0 ? 'sources_pending_verification' : 'sources_verified',
+                    'sources_rejected' => $sourcesRejected,
+                    'sources_status' => $sourcesTotal === 0
+                        ? 'no_sources'
+                        : ($sourcesRejected > 0
+                            ? 'sources_rejected'
+                            : ($sourcesPending > 0
+                                ? 'sources_pending_verification'
+                                : 'sources_verified')),
                     'next_action' => $this->latestExecutionAction($run, $sourcesPending),
                     'pipeline' => $this->runPipeline($run, $sourcesPending),
                     'run_url' => $this->safeRoute('editor.editorial-schedule-runs.show', $run),

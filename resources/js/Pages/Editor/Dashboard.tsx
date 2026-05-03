@@ -1,36 +1,30 @@
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import {
     ActionButtonGroup,
-    CoverageMatrix,
     DashboardMetricCard,
     DashboardPanel,
     DashboardSectionHeader,
     EmptyStateCard,
-    OperationalTable,
     PipelineStepBar,
     ProviderBadge,
-    ScheduleTimeline,
     StatusBadge,
+    TodayTimeline,
 } from '@/Components/EditorDashboard';
-import WorldBulletinMap from '@/Components/Maps/WorldBulletinMap';
-import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link } from '@inertiajs/react';
 import {
     AlertTriangle,
-    Bot,
     CalendarClock,
     CheckCircle2,
     Clock3,
+    FileText,
     Gauge,
-    Layers3,
-    MapPinned,
     RadioTower,
     ShieldCheck,
-    Table2,
 } from 'lucide-react';
+import { useMemo } from 'react';
 
 const pipelineSteps = [
     'dashboard.pipeline.prompt',
@@ -44,16 +38,20 @@ const pipelineSteps = [
 export default function Dashboard({
     headerActions = [],
     summaryCards = [],
-    mapOverview = {},
     nextScheduledRuns = [],
     scheduledBulletins = [],
     actionableQueue = [],
-    aiEngines = [],
-    coverageByLocationTopic = { groups: [] },
     latestExecutions = [],
+    scriptsNeedingReview = [],
 }: any): JSX.Element {
     const { t } = useTranslations();
-    const { formatDateTime } = useDateFormatter();
+    const { formatDateTime, formatTime } = useDateFormatter();
+    const incidents = actionableQueue.filter((item: any) => item.type !== 'source');
+    const sourceTasks = actionableQueue.filter((item: any) => item.type === 'source');
+    const timelineItems = useMemo(
+        () => buildTimelineItems(nextScheduledRuns, latestExecutions, t),
+        [latestExecutions, nextScheduledRuns, t],
+    );
 
     return (
         <EditorLayout>
@@ -65,22 +63,20 @@ export default function Dashboard({
             />
 
             <DashboardPanel accent="cyan" className="mb-6 bg-gradient-to-br from-white via-white to-cyan-50 dark:from-slate-950 dark:via-slate-950 dark:to-cyan-950/40">
-                <div className="grid gap-5 p-6 lg:grid-cols-[1.6fr_1fr]">
+                <div className="flex flex-col gap-5 p-6 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">{t('dashboard.hero.eyebrow')}</p>
                         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{t('dashboard.hero.title')}</h1>
                         <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{t('dashboard.hero.subtitle')}</p>
                     </div>
-                    <div className="flex flex-wrap items-start justify-start gap-2 lg:justify-end">
-                        <ActionButtonGroup
-                            actions={headerActions.map((action: any) => ({
-                                key: action.key,
-                                label: t(action.label),
-                                href: action.href,
-                                variant: action.key === 'createBulletin' ? 'default' : 'outline',
-                            }))}
-                        />
-                    </div>
+                    <ActionButtonGroup
+                        actions={headerActions.map((action: any) => ({
+                            key: action.key,
+                            label: t(action.label),
+                            href: action.href,
+                            variant: action.key === 'createBulletin' ? 'default' : 'outline',
+                        }))}
+                    />
                 </div>
             </DashboardPanel>
 
@@ -96,186 +92,193 @@ export default function Dashboard({
                 ))}
             </section>
 
-            <section className="mt-6 grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
-                <DashboardPanel accent="violet">
-                    <DashboardSectionHeader
-                        icon={<MapPinned className="h-4 w-4" />}
-                        title={t('dashboard.map.title')}
-                        description={t('dashboard.map.description')}
-                        action={mapOverview.mapRoute ? <Button asChild size="sm" variant="outline"><Link href={mapOverview.mapRoute}>{t('dashboard.action.viewFullMap')}</Link></Button> : null}
+            <DashboardPanel accent="violet" className="mt-6">
+                <DashboardSectionHeader
+                    icon={<Clock3 className="h-4 w-4" />}
+                    title={t('dashboard.timeline.title')}
+                    description={t('dashboard.timeline.description')}
+                />
+                <div className="p-5">
+                    <TodayTimeline
+                        items={timelineItems}
+                        emptyLabel={t('dashboard.timeline.empty')}
+                        currentTimeLabel={t('dashboard.timeline.now')}
+                        pastLabel={t('dashboard.timeline.past')}
+                        upcomingLabel={t('dashboard.timeline.upcoming')}
+                        manualApprovalLabel={t('dashboard.ai.manualApproval')}
+                        viewLabel={t('dashboard.action.viewRun')}
+                        runNowLabel={t('dashboard.action.runNow')}
+                        formatTime={formatTime}
                     />
-                    <div className="space-y-4 p-5">
-                        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                            <WorldBulletinMap panel="editor" markers={mapOverview.markers || []} />
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-3">
-                            {(mapOverview.locations || []).slice(0, 6).map((location: any) => (
-                                <div key={location.location} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-900/60">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="font-semibold text-slate-950 dark:text-white">{t(location.location)}</p>
-                                        <StatusBadge tone={location.issues ? 'warning' : 'success'}>{location.issues}</StatusBadge>
-                                    </div>
-                                    <p className="mt-2 text-slate-500 dark:text-slate-400">{t('dashboard.map.activeBulletins')}: {location.active_bulletins}</p>
-                                    <p className="text-slate-500 dark:text-slate-400">{t('dashboard.map.nextRun')}: {formatDateTime(location.next_run)}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </DashboardPanel>
+                </div>
+            </DashboardPanel>
 
-                <DashboardPanel accent="emerald">
-                    <DashboardSectionHeader icon={<CalendarClock className="h-4 w-4" />} title={t('dashboard.nextRuns.title')} description={t('dashboard.nextRuns.description')} />
-                    <div className="p-5">
-                        <ScheduleTimeline
-                            items={nextScheduledRuns}
-                            emptyLabel={t('dashboard.nextRuns.empty')}
-                            runNowLabel={t('dashboard.action.runNow')}
-                            configureLabel={t('dashboard.action.configure')}
-                            manualApprovalLabel={t('dashboard.ai.manualApproval')}
-                            formatDateTime={formatDateTime}
-                        />
-                    </div>
-                </DashboardPanel>
-            </section>
-
-            <section className="mt-6 grid gap-5 xl:grid-cols-[1.6fr_0.8fr]">
-                <DashboardPanel accent="cyan">
-                    <DashboardSectionHeader icon={<Table2 className="h-4 w-4" />} title={t('dashboard.scheduledBulletins.title')} description={t('dashboard.scheduledBulletins.description')} />
-                    <OperationalTable minWidth="1180px">
-                        <thead>
-                            <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                                <th className="px-5 py-3">{t('dashboard.table.onOff')}</th>
-                                <th className="px-5 py-3">{t('dashboard.table.bulletin')}</th>
-                                <th className="px-5 py-3">{t('dashboard.table.location')}</th>
-                                <th className="px-5 py-3">{t('dashboard.table.provider')}</th>
-                                <th className="px-5 py-3">{t('dashboard.table.nextRun')}</th>
-                                <th className="px-5 py-3">{t('dashboard.table.pipeline')}</th>
-                                <th className="px-5 py-3 text-right">{t('dashboard.table.actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {scheduledBulletins.map((row: any) => (
-                                <tr key={row.row_id} className="border-b border-slate-100 align-top hover:bg-slate-50/80 dark:border-slate-900 dark:hover:bg-slate-900/60">
-                                    <td className="px-5 py-4"><StatusBadge tone={row.is_on ? 'success' : 'neutral'}>{row.is_on ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge></td>
-                                    <td className="px-5 py-4">
-                                        <Link className="font-semibold text-slate-950 hover:underline dark:text-white" href={row.bulletin_url}>{row.bulletin || '-'}</Link>
-                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{row.frequency || t('dashboard.schedule.noFrequency')} · {row.time?.slice(0, 5) || t('dashboard.schedule.noTime')}</p>
-                                    </td>
-                                    <td className="px-5 py-4 text-slate-600 dark:text-slate-300">{[row.location, row.category].filter(Boolean).join(' · ') || '-'}</td>
-                                    <td className="px-5 py-4"><ProviderBadge provider={row.provider ? { name: row.provider, model: row.model, supports_grounding: row.grounded } : null} missingLabel={t('bulletinTypes.provider.missing')} groundedLabel={t('bulletinTypes.provider.grounded')} /></td>
-                                    <td className="px-5 py-4">
-                                        <p>{formatDateTime(row.next_run)}</p>
-                                        {row.ai_manual_approval_required && <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">{t('dashboard.ai.manualApproval')}</p>}
-                                    </td>
-                                    <td className="px-5 py-4"><PipelineStepBar steps={pipelineFor(row.pipeline, t)} /></td>
-                                    <td className="px-5 py-4">
-                                        <div className="flex justify-end gap-2">
-                                            {row.view_url && <Button asChild size="sm" variant="outline"><Link href={row.view_url}>{t('dashboard.action.configure')}</Link></Button>}
-                                            {isRealUrl(row.run_now_url) && <Button asChild size="sm"><Link href={row.run_now_url} method="post" as="button">{t('dashboard.action.runNow')}</Link></Button>}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </OperationalTable>
-                </DashboardPanel>
-
-                <DashboardPanel accent="amber">
-                    <DashboardSectionHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('dashboard.queue.title')} description={t('dashboard.queue.description')} />
-                    <div className="space-y-3 p-5">
-                        {actionableQueue.length === 0 && <EmptyStateCard title={t('dashboard.queue.empty')} />}
-                        {actionableQueue.slice(0, 10).map((item: any) => (
-                            <div key={item.id} className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-950">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <p className="font-semibold text-slate-950 dark:text-white">{t(item.type_label)}</p>
-                                        <p className="text-slate-600 dark:text-slate-300">{item.bulletin || '-'}</p>
-                                    </div>
-                                    <StatusBadge tone={statusTone(item.status)}>{t(statusKey(item.status))}</StatusBadge>
+            <DashboardPanel accent="cyan" className="mt-6">
+                <DashboardSectionHeader
+                    icon={<RadioTower className="h-4 w-4" />}
+                    title={t('dashboard.scheduledBulletins.title')}
+                    description={t('dashboard.scheduledBulletins.description')}
+                />
+                <div className="grid gap-3 p-5">
+                    {scheduledBulletins.length === 0 && <EmptyStateCard title={t('dashboard.scheduledBulletins.empty')} />}
+                    {scheduledBulletins.map((row: any) => (
+                        <article
+                            key={row.row_id}
+                            className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.35fr)_minmax(0,1.4fr)_auto]"
+                        >
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <StatusBadge tone={row.is_on ? 'success' : 'neutral'}>{row.is_on ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
+                                    {row.is_incomplete && <StatusBadge tone="warning">{t('dashboard.status.requiresAttention')}</StatusBadge>}
                                 </div>
-                                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{[item.provider, item.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {item.view_url && <Button asChild size="sm" variant="outline"><Link href={item.view_url}>{t('dashboard.action.view')}</Link></Button>}
-                                    {isRealUrl(item.action_url) && item.action_method === 'post' && <Button asChild size="sm"><Link href={item.action_url} method="post" as="button">{t(item.next_action)}</Link></Button>}
-                                </div>
+                                <Link className="mt-2 block truncate font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300" href={row.bulletin_url}>
+                                    {row.bulletin || '-'}
+                                </Link>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[row.location, row.category].filter(Boolean).join(' · ') || '-'}</p>
                             </div>
-                        ))}
-                    </div>
-                </DashboardPanel>
-            </section>
+
+                            <div>
+                                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('dashboard.table.schedule')}</p>
+                                <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
+                                    {[t(`frequency.${row.frequency ?? 'daily'}`), row.time?.slice(0, 5), row.timezone].filter(Boolean).join(' · ') || '-'}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('dashboard.table.nextRun')}</p>
+                                <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">{formatDateTime(row.next_run)}</p>
+                                {row.ai_manual_approval_required && <div className="mt-2"><StatusBadge tone="warning">{t('dashboard.ai.manualApproval')}</StatusBadge></div>}
+                            </div>
+
+                            <ProviderBadge
+                                provider={row.provider ? { name: row.provider, model: row.model, supports_grounding: row.grounded } : null}
+                                missingLabel={t('bulletinTypes.provider.missing')}
+                                groundedLabel={t('bulletinTypes.provider.grounded')}
+                            />
+
+                            <PipelineStepBar steps={pipelineFor(row.pipeline, t)} />
+
+                            <ActionButtonGroup actions={scheduleActions(row, t)} />
+                        </article>
+                    ))}
+                </div>
+            </DashboardPanel>
 
             <section className="mt-6 grid gap-5 xl:grid-cols-2">
-                <DashboardPanel accent="violet">
-                    <DashboardSectionHeader icon={<Bot className="h-4 w-4" />} title={t('dashboard.aiEngines.title')} description={t('dashboard.aiEngines.description')} />
-                    <div className="grid gap-3 p-5 md:grid-cols-2">
-                        {aiEngines.map((engine: any) => (
-                            <div key={engine.id} className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-950">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="font-semibold text-slate-950 dark:text-white">{engine.name}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">{engine.model || '-'}</p>
-                                    </div>
-                                    <StatusBadge tone={engine.availability === 'available' ? 'success' : engine.availability === 'rate_limited' ? 'warning' : 'danger'}>{t(engine.availability_label)}</StatusBadge>
-                                </div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    <StatusBadge tone={engine.grounded ? 'success' : 'neutral'}>{engine.grounded ? t('bulletinTypes.provider.grounded') : t('bulletinTypes.provider.notGrounded')}</StatusBadge>
-                                    <StatusBadge tone={engine.env_key_configured ? 'success' : 'danger'}>{engine.env_key_configured ? t('dashboard.ai.keyReady') : t('dashboard.ai.keyMissing')}</StatusBadge>
-                                </div>
-                                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('dashboard.ai.usageToday')}: {engine.usage_today}</p>
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('dashboard.ai.bulletinsUsing')}: {engine.bulletins.join(', ') || '-'}</p>
-                            </div>
+                <DashboardPanel accent="amber">
+                    <DashboardSectionHeader
+                        icon={<AlertTriangle className="h-4 w-4" />}
+                        title={t('dashboard.incidents.title')}
+                        description={t('dashboard.incidents.description')}
+                    />
+                    <div className="space-y-3 p-5">
+                        {incidents.length === 0 && <EmptyStateCard title={t('dashboard.incidents.empty')} />}
+                        {incidents.slice(0, 8).map((item: any) => (
+                            <CompactWorkItem
+                                key={item.id}
+                                item={item}
+                                t={t}
+                                formatDateTime={formatDateTime}
+                            />
                         ))}
                     </div>
                 </DashboardPanel>
 
-                <DashboardPanel accent="emerald">
-                    <DashboardSectionHeader icon={<Layers3 className="h-4 w-4" />} title={t('dashboard.coverage.title')} description={t(coverageByLocationTopic.explanation)} />
-                    <div className="p-5">
-                        <CoverageMatrix
-                            groups={coverageByLocationTopic.groups}
-                            labels={{
-                                active: t('dashboard.coverage.active'),
-                                paused: t('dashboard.coverage.paused'),
-                                missingProvider: t('dashboard.coverage.missingProvider'),
-                                missingSchedule: t('dashboard.coverage.missingSchedule'),
-                                failed: t('dashboard.coverage.failed'),
-                            }}
-                        />
+                <DashboardPanel accent="violet">
+                    <DashboardSectionHeader
+                        icon={<ShieldCheck className="h-4 w-4" />}
+                        title={t('dashboard.review.title')}
+                        description={t('dashboard.review.description')}
+                    />
+                    <div className="space-y-3 p-5">
+                        {scriptsNeedingReview.length === 0 && sourceTasks.length === 0 && <EmptyStateCard title={t('dashboard.review.empty')} />}
+                        {scriptsNeedingReview.slice(0, 5).map((script: any) => (
+                            <article key={`script-${script.id}`} className="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-950">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-slate-950 dark:text-white">{script.title}</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{script.bulletin || '-'} · {formatDateTime(script.updated_at)}</p>
+                                    </div>
+                                    <StatusBadge tone="warning">{t('status.scriptPendingReview')}</StatusBadge>
+                                </div>
+                                <div className="mt-3">
+                                    <ActionButtonGroup actions={[{ key: 'review', label: t('dashboard.action.reviewScript'), href: script.url, variant: 'default' }]} align="start" />
+                                </div>
+                            </article>
+                        ))}
+                        {sourceTasks.slice(0, 5).map((item: any) => (
+                            <CompactWorkItem key={item.id} item={item} t={t} formatDateTime={formatDateTime} />
+                        ))}
                     </div>
                 </DashboardPanel>
             </section>
 
             <DashboardPanel accent="cyan" className="mt-6">
-                <DashboardSectionHeader icon={<RadioTower className="h-4 w-4" />} title={t('dashboard.latest.title')} description={t('dashboard.latest.description')} />
-                <div className="space-y-3 p-5">
+                <DashboardSectionHeader
+                    icon={<FileText className="h-4 w-4" />}
+                    title={t('dashboard.latest.title')}
+                    description={t('dashboard.latest.description')}
+                />
+                <div className="grid gap-3 p-5">
                     {latestExecutions.length === 0 && <EmptyStateCard title={t('dashboard.latest.empty')} />}
-                    {latestExecutions.map((run: any) => (
-                        <div key={run.id} className="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-950">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <p className="font-semibold text-slate-950 dark:text-white">{run.bulletin || '-'}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(run.scheduled_for)} · {[run.provider, run.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
+                    {latestExecutions.map((run: any) => {
+                        const source = sourceStatus(run, t);
+
+                        return (
+                            <article key={run.id} className="rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+                                    <div className="min-w-0">
+                                        <Link href={run.run_url ?? '#'} className="font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300">
+                                            {run.bulletin || '-'}
+                                        </Link>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDateTime(run.scheduled_for)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('dashboard.table.provider')}</p>
+                                        <p className="mt-1 text-slate-700 dark:text-slate-300">{[run.provider, run.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="mb-2 flex flex-wrap gap-1.5">
+                                            <StatusBadge tone={statusTone(run.status)}>{t(statusKey(run.status))}</StatusBadge>
+                                            <StatusBadge tone={source.tone}>{source.label}</StatusBadge>
+                                            <StatusBadge tone="info">{t(run.next_action)}</StatusBadge>
+                                        </div>
+                                        <PipelineStepBar steps={pipelineFor(run.pipeline, t)} />
+                                    </div>
+                                    <ActionButtonGroup actions={latestActions(run, t)} />
                                 </div>
-                                <StatusBadge tone={statusTone(run.status)}>{t(statusKey(run.status))}</StatusBadge>
-                            </div>
-                            <div className="mt-3 grid gap-2 text-slate-600 dark:text-slate-300 md:grid-cols-3">
-                                <p>{t('dashboard.latest.sources')}: {run.sources_pending}/{run.sources_total}</p>
-                                <p>{t('dashboard.latest.nextAction')}: {t(run.next_action)}</p>
-                                <p>{t('dashboard.latest.script')}: {run.script?.title || '-'}</p>
-                            </div>
-                            <div className="mt-4"><PipelineStepBar steps={pipelineFor(run.pipeline, t)} /></div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {run.run_url && <Button asChild size="sm" variant="outline"><Link href={run.run_url}>{t('dashboard.action.viewRun')}</Link></Button>}
-                                {run.prompt_run_url && <Button asChild size="sm" variant="outline"><Link href={run.prompt_run_url}>{t('dashboard.action.viewPromptRun')}</Link></Button>}
-                                {run.script_url && <Button asChild size="sm" variant="outline"><Link href={run.script_url}>{t('dashboard.action.viewScript')}</Link></Button>}
-                                {run.sources_url && <Button asChild size="sm" variant="outline"><Link href={run.sources_url}>{t('dashboard.action.reviewSources')}</Link></Button>}
-                                {isRealUrl(run.action_url) && run.action_method === 'post' && <Button asChild size="sm"><Link href={run.action_url} method="post" as="button">{t(run.next_action)}</Link></Button>}
-                            </div>
-                        </div>
-                    ))}
+                            </article>
+                        );
+                    })}
                 </div>
             </DashboardPanel>
         </EditorLayout>
+    );
+}
+
+function CompactWorkItem({ item, t, formatDateTime }: { item: any; t: (key: string) => string; formatDateTime: (value?: string | null) => string }): JSX.Element {
+    return (
+        <article className="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="font-semibold text-slate-950 dark:text-white">{item.bulletin || t(item.type_label)}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {t(item.type_label)} · {formatDateTime(item.scheduled_for)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.provider, item.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
+                </div>
+                <StatusBadge tone={statusTone(item.status)}>{t(statusKey(item.status))}</StatusBadge>
+            </div>
+            <div className="mt-3">
+                <ActionButtonGroup
+                    align="start"
+                    actions={[
+                        { key: 'next', label: t(item.next_action), href: item.action_url, method: item.action_method === 'post' ? 'post' : 'get', variant: 'default' },
+                        { key: 'view', label: t('dashboard.action.view'), href: item.view_url, variant: 'outline' },
+                    ]}
+                />
+            </div>
+        </article>
     );
 }
 
@@ -300,9 +303,75 @@ function summaryTone(key: string): 'neutral' | 'info' | 'success' | 'warning' | 
     return 'info';
 }
 
-function pipelineFor(rawSteps: string[] = [], t: (key: string) => string): Array<{ key: string; label: string; complete: boolean }> {
+function buildTimelineItems(nextScheduledRuns: any[], latestExecutions: any[], t: (key: string) => string): any[] {
+    const executionItems = latestExecutions.map((run) => {
+        const source = sourceStatus(run, t);
+
+        return {
+            id: `run-${run.id}`,
+            type: 'execution',
+            bulletin: run.bulletin,
+            provider: run.provider,
+            model: run.model,
+            scheduled_for: run.scheduled_for,
+            status: run.status,
+            status_label: t(statusKey(run.status)),
+            status_tone: statusTone(run.status),
+            source_label: source.label,
+            source_tone: source.tone,
+            view_url: run.run_url,
+            action_url: run.action_url || run.script_url || run.run_url,
+            action_method: run.action_method,
+            action_label: t(run.next_action),
+        };
+    });
+
+    const executionTimes = new Set(executionItems.map((item) => `${item.bulletin}|${item.scheduled_for}`));
+    const scheduledItems = nextScheduledRuns
+        .filter((run) => !executionTimes.has(`${run.bulletin}|${run.scheduled_for}`))
+        .map((run) => ({
+            id: `schedule-${run.id}`,
+            type: 'schedule',
+            bulletin: run.bulletin,
+            provider: run.provider,
+            model: run.model,
+            scheduled_for: run.scheduled_for,
+            status: 'scheduled',
+            status_label: t('status.scheduled'),
+            status_tone: 'info',
+            ai_manual_approval_required: run.ai_manual_approval_required,
+            view_url: run.view_url,
+            run_now_url: run.run_now_url,
+        }));
+
+    return [...executionItems, ...scheduledItems];
+}
+
+function scheduleActions(row: any, t: (key: string) => string): any[] {
+    return [
+        { key: 'run', label: t('dashboard.action.runNow'), href: row.run_now_url, method: 'post', variant: 'default' },
+        { key: 'open', label: t('dashboard.action.view'), href: row.view_url, variant: 'outline' },
+        { key: 'runs', label: t('bulletinTypes.action.executions'), href: row.runs_url, variant: 'outline' },
+        { key: 'schedule', label: t('dashboard.action.viewSchedule'), href: row.schedule_url, variant: 'outline' },
+    ];
+}
+
+function latestActions(run: any, t: (key: string) => string): any[] {
+    return [
+        { key: 'next', label: t(run.next_action), href: run.action_url || run.script_url || run.run_url, method: run.action_method === 'post' ? 'post' : 'get', variant: 'default' },
+        { key: 'run', label: t('dashboard.action.viewRun'), href: run.run_url, variant: 'outline' },
+        { key: 'script', label: t('dashboard.action.viewScript'), href: run.script_url, variant: 'outline' },
+        { key: 'sources', label: t('dashboard.action.reviewSources'), href: run.sources_url, variant: 'outline' },
+        { key: 'prompt', label: t('dashboard.action.viewPromptRun'), href: run.prompt_run_url, variant: 'outline' },
+    ];
+}
+
+function pipelineFor(rawSteps: string[] = [], t: (key: string) => string): Array<{ key: string; label: string; complete: boolean; tone: 'neutral' | 'warning' | 'danger' }> {
     const normalized = rawSteps.map(statusKey);
-    return pipelineSteps.map((step) => ({ key: step, label: t(step), complete: normalized.includes(step) || normalized.includes(statusKeyToPipeline(step)) }));
+    return pipelineSteps.map((step) => {
+        const complete = normalized.includes(step) || normalized.includes(statusKeyToPipeline(step));
+        return { key: step, label: t(step), complete, tone: step === 'dashboard.pipeline.ai' ? 'warning' : 'neutral' };
+    });
 }
 
 function statusKeyToPipeline(step: string): string {
@@ -316,10 +385,25 @@ function statusKeyToPipeline(step: string): string {
     return map[step] ?? step;
 }
 
+function sourceStatus(run: any, t: (key: string) => string): { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'violet' } {
+    const total = Number(run.sources_total ?? 0);
+    const pending = Number(run.sources_pending ?? 0);
+    const verified = Number(run.sources_verified ?? 0);
+    const rejected = Number(run.sources_rejected ?? 0);
+
+    if (total === 0) return { label: t('sourceStatus.none'), tone: 'neutral' };
+    if (rejected > 0) return { label: t('sourceStatus.rejected'), tone: 'danger' };
+    if (pending > 0 && verified > 0) return { label: t('sourceStatus.mixed'), tone: 'warning' };
+    if (pending > 0) return { label: t('sourceStatus.pending'), tone: 'warning' };
+    if (verified === total) return { label: t('sourceStatus.verified'), tone: 'success' };
+
+    return { label: t('sourceStatus.mixed'), tone: 'violet' };
+}
+
 function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'violet' {
     if (['completed', 'script_created', 'prompt_generated', 'ready_for_production', 'sources_verified', 'scheduled'].includes(status)) return 'success';
     if (['failed', 'failed_today', 'missing_ai_provider', 'missing_schedule', 'missing_bulletin_type'].includes(status)) return 'danger';
-    if (['schedule_overdue', 'waiting_ai_response'].includes(status)) return 'warning';
+    if (['schedule_overdue', 'waiting_ai_response', 'sources_pending_verification'].includes(status)) return 'warning';
     return 'neutral';
 }
 
@@ -355,8 +439,4 @@ function statusKey(status: string): string {
     };
 
     return map[status] ?? status;
-}
-
-function isRealUrl(url?: string | null): boolean {
-    return Boolean(url && url !== '#');
 }

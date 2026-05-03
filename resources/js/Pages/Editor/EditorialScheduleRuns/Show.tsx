@@ -18,6 +18,7 @@ export default function Show({ run }: any): JSX.Element {
     const { formatDateTime } = useDateFormatter();
     const { t } = useTranslations();
     const form = useForm({ response_text: run.ai_response_text ?? '' });
+    const sources = sourceStatus(run.sources, t);
 
     const copyPrompt = async (): Promise<void> => {
         if (run.generated_prompt && navigator?.clipboard) {
@@ -57,10 +58,11 @@ export default function Show({ run }: any): JSX.Element {
                 {run.error_message && <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">{run.error_message}</p>}
             </DashboardPanel>
 
-            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <DashboardMetricCard label={t('editorialRuns.promptGenerated')} value={run.prompt_generated ? t('common.yes') : t('common.no')} icon={<Clipboard className="h-5 w-5" />} tone={run.prompt_generated ? 'success' : 'warning'} />
                 <DashboardMetricCard label={t('editorialRuns.aiResponseReceived')} value={run.ai_response_received ? t('common.yes') : t('common.no')} icon={<Bot className="h-5 w-5" />} tone={run.ai_response_received ? 'success' : 'warning'} />
                 <DashboardMetricCard label={t('editorialRuns.scriptCreated')} value={run.script_created ? t('common.yes') : t('common.no')} icon={<FileText className="h-5 w-5" />} tone={run.script_created ? 'success' : 'warning'} />
+                <DashboardMetricCard label={t('sourceStatus.sources')} value={sources.label} icon={<FileText className="h-5 w-5" />} tone={sources.tone} helper={run.sources?.total ? `${run.sources.pending}/${run.sources.total}` : undefined} />
                 <DashboardMetricCard label={t('editorialRuns.table.provider')} value={run.provider?.name ?? t('bulletinTypes.provider.missing')} icon={<Wand2 className="h-5 w-5" />} tone={run.provider ? 'info' : 'danger'} helper={run.provider?.model} />
             </div>
 
@@ -80,6 +82,7 @@ export default function Show({ run }: any): JSX.Element {
                             { key: 'prompt', label: t('editorialRuns.promptGenerated'), complete: run.prompt_generated },
                             { key: 'ai', label: t('editorialRuns.aiResponseReceived'), complete: run.ai_response_received },
                             { key: 'script', label: t('editorialRuns.scriptCreated'), complete: run.script_created },
+                            { key: 'sources', label: sources.label, complete: run.sources?.status === 'verified', tone: sources.tone },
                         ]} />
                     </div>
                 </DashboardPanel>
@@ -95,9 +98,11 @@ export default function Show({ run }: any): JSX.Element {
             <DashboardPanel className="mt-6 p-5">
                 <SectionTitle icon={<Clipboard className="h-4 w-4" />} title={t('editorialRuns.show.prompt')} />
                 <div className="mb-3 flex flex-wrap gap-2">
-                    {!run.prompt_generated && run.urls?.generate_prompt && <Button onClick={() => router.post(run.urls.generate_prompt)}>{t('editorialRuns.action.generatePrompt')}</Button>}
+                    <ActionButtonGroup align="start" actions={[
+                        { key: 'generate-prompt', label: t('editorialRuns.action.generatePrompt'), href: !run.prompt_generated ? run.urls?.generate_prompt : null, method: 'post', variant: 'default' },
+                        { key: 'prompt-run', label: t('editorialRuns.action.openPromptRun'), href: run.urls?.prompt_run, variant: 'outline' },
+                    ]} />
                     {run.generated_prompt && <Button type="button" variant="outline" onClick={copyPrompt}>{t('editorialRuns.action.copyPrompt')}</Button>}
-                    {run.urls?.prompt_run && <Button asChild variant="outline"><Link href={run.urls.prompt_run}>{t('editorialRuns.action.openPromptRun')}</Link></Button>}
                 </div>
                 <pre className="max-h-[460px] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
                     {run.generated_prompt || t('editorialRuns.show.promptMissing')}
@@ -159,26 +164,32 @@ function Info({ label, value, fallback = '-' }: { label: string; value?: any; fa
 }
 
 function nextActions(run: any, t: (key: string) => string): any[] {
+    const sourceAction = run.sources?.total ? [{ key: 'sources', label: t('dashboard.action.reviewSources'), href: run.urls?.sources, variant: 'outline' }] : [];
+
     if (!run.prompt_generated) {
         return [
             { key: 'generate-prompt', label: t('editorialRuns.action.generatePrompt'), href: run.urls?.generate_prompt, method: 'post', variant: 'default' },
+            ...sourceAction,
         ];
     }
 
     if (!run.ai_response_received) {
         return [
             { key: 'run-ai', label: t('editorialRuns.action.runAiCreateScript'), href: run.urls?.run_pipeline, method: 'post', variant: 'default' },
+            ...sourceAction,
         ];
     }
 
     if (!run.script_created) {
         return [
             { key: 'create-script', label: t('editorialRuns.action.createScript'), href: run.urls?.create_script_from_prompt_run ?? run.urls?.create_script, method: 'post', variant: 'default' },
+            ...sourceAction,
         ];
     }
 
     return [
         { key: 'script', label: t('dashboard.action.viewScript'), href: run.urls?.script, variant: 'default' },
+        ...sourceAction,
     ];
 }
 
@@ -187,6 +198,20 @@ function nextActionDescription(run: any, t: (key: string) => string): string {
     if (!run.ai_response_received) return run.ai_manual_approval_required ? t('editorialRuns.next.manualAi') : t('editorialRuns.next.runAi');
     if (!run.script_created) return t('editorialRuns.next.createScript');
     return t('editorialRuns.next.reviewScript');
+}
+
+function sourceStatus(sources: any, t: (key: string) => string): { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'violet' } {
+    const status = sources?.status ?? 'none';
+    const map: Record<string, { key: string; tone: 'neutral' | 'success' | 'warning' | 'danger' | 'violet' }> = {
+        none: { key: 'sourceStatus.none', tone: 'neutral' },
+        pending: { key: 'sourceStatus.pending', tone: 'warning' },
+        verified: { key: 'sourceStatus.verified', tone: 'success' },
+        rejected: { key: 'sourceStatus.rejected', tone: 'danger' },
+        mixed: { key: 'sourceStatus.mixed', tone: 'violet' },
+    };
+    const item = map[status] ?? map.none;
+
+    return { label: t(item.key), tone: item.tone };
 }
 
 function statusTone(status?: string | null): 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'violet' {

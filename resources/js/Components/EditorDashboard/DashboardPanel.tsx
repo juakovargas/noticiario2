@@ -20,7 +20,7 @@ export default function DashboardPanel({ children, className, accent = 'none' }:
     return (
         <section
             className={cn(
-                'relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20',
+                'relative overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-950 dark:shadow-black/20',
                 accent !== 'none' && 'before:absolute before:inset-x-0 before:top-0 before:h-1',
                 accents[accent],
                 className,

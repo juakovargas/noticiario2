@@ -41,6 +41,7 @@ class EditorialScheduleRunController extends Controller
             'bulletinPromptRun:id,title,status,generated_prompt,ai_response_text,script_id,editorial_schedule_run_id',
             'edition:id,title,language,scheduled_for',
             'script:id,title,status',
+            'sourceReferences:id,editorial_schedule_run_id,verification_status',
         ]);
 
         $query
@@ -70,6 +71,7 @@ class EditorialScheduleRunController extends Controller
             'schedule.bulletinType.preferredAiProvider:id,name,default_model,supports_grounding,is_active',
             'bulletinPromptRun:id,title,status,generated_prompt,ai_response_text,parsed_response,script_id,editorial_schedule_run_id',
             'edition:id,title,language,scheduled_for', 'script:id,title,status',
+            'sourceReferences:id,editorial_schedule_run_id,verification_status',
         ]);
 
         return Inertia::render('Editor/EditorialScheduleRuns/Show', [
@@ -164,6 +166,11 @@ class EditorialScheduleRunController extends Controller
         $promptGenerated = filled($promptRun?->generated_prompt) || filled($run->generated_prompt);
         $aiResponseReceived = filled($promptRun?->ai_response_text) || filled($run->ai_response_text);
         $scriptCreated = filled($promptRun?->script_id) || filled($run->script_id);
+        $sourceReferences = $run->relationLoaded('sourceReferences') ? $run->sourceReferences : collect();
+        $sourcesTotal = $sourceReferences->count();
+        $sourcesPending = $sourceReferences->where('verification_status', 'pending')->count();
+        $sourcesVerified = $sourceReferences->where('verification_status', 'verified')->count();
+        $sourcesRejected = $sourceReferences->whereIn('verification_status', ['rejected', 'broken', 'missing'])->count();
 
         return [
             'id' => $run->id,
@@ -181,6 +188,20 @@ class EditorialScheduleRunController extends Controller
             'prompt_generated' => $promptGenerated,
             'ai_response_received' => $aiResponseReceived,
             'script_created' => $scriptCreated,
+            'sources' => [
+                'total' => $sourcesTotal,
+                'pending' => $sourcesPending,
+                'verified' => $sourcesVerified,
+                'rejected' => $sourcesRejected,
+                'status' => $sourcesTotal === 0
+                    ? 'none'
+                    : ($sourcesRejected > 0
+                        ? 'rejected'
+                        : ($sourcesPending > 0
+                            ? ($sourcesVerified > 0 ? 'mixed' : 'pending')
+                            : 'verified')),
+                'url' => $this->safeRoute('editor.source-references.index'),
+            ],
             'ai_manual_approval_required' => ! (bool) $run->schedule?->auto_generate_ai_response,
             'schedule' => $run->schedule ? [
                 'id' => $run->schedule->id,
@@ -228,6 +249,7 @@ class EditorialScheduleRunController extends Controller
                 'run_pipeline' => $promptRun ? $this->safeRoute('editor.bulletin-prompt-runs.run-pipeline', $promptRun) : null,
                 'create_script_from_prompt_run' => $promptRun ? $this->safeRoute('editor.bulletin-prompt-runs.create-script', $promptRun) : null,
                 'script' => $run->script_id || $promptRun?->script_id ? $this->safeRoute('editor.scripts.show', $run->script_id ?: $promptRun?->script_id) : null,
+                'sources' => $this->safeRoute('editor.source-references.index'),
             ],
         ];
     }

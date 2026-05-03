@@ -9,3 +9,4 @@ export { default as PipelineStepBar } from './PipelineStepBar';
 export { default as ProviderBadge } from './ProviderBadge';
 export { default as ScheduleTimeline } from './ScheduleTimeline';
 export { default as StatusBadge } from './StatusBadge';
+export { default as TodayTimeline } from './TodayTimeline';

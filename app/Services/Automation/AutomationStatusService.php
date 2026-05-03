@@ -18,7 +18,7 @@ class AutomationStatusService
     {
         $hasActiveProvider = AiProvider::query()->where('is_active', true)->exists();
 
-        return BulletinType::query()->with(['language:id,name,code','location:id,name','newsCategory:id,name','schedules' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),'primarySchedule'])->get()
+        return BulletinType::query()->with(['language:id,name,code','location:id,name','newsCategory:id,name','preferredAiProvider:id,name,default_model,supports_grounding,is_active','schedules' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),'primarySchedule'])->get()
             ->map(fn (BulletinType $bulletinType) => $this->mapBulletinStatus($bulletinType, $hasActiveProvider));
     }
 
@@ -64,6 +64,13 @@ class AutomationStatusService
             'language' => $bulletinType->language?->name,
             'edition_type' => $bulletinType->edition_type,
             'target_duration_seconds' => $bulletinType->target_duration_seconds,
+            'provider' => $bulletinType->preferredAiProvider ? [
+                'id' => $bulletinType->preferredAiProvider->id,
+                'name' => $bulletinType->preferredAiProvider->name,
+                'model' => $bulletinType->preferredAiProvider->default_model,
+                'supports_grounding' => (bool) $bulletinType->preferredAiProvider->supports_grounding,
+                'is_active' => (bool) $bulletinType->preferredAiProvider->is_active,
+            ] : null,
             'scope_label' => collect([$bulletinType->location?->name, $bulletinType->newsCategory?->name, $bulletinType->language?->name, $bulletinType->edition_type])->filter()->join(' · '),
             'automation_enabled' => (bool) ($schedule?->is_active),
             'schedule_status_label_key' => $schedule ? ($schedule->is_active ? 'Automation on' : 'Automation off') : 'Missing schedule',
@@ -93,7 +100,7 @@ class AutomationStatusService
     }
 
     private function formatTime(?string $time): ?string { if (! $time) return null; return substr($time,0,5); }
-    private function statusKeyToTranslation(?string $status): string { return match($status){'prompt_generated'=>'Prompt generated','script_created'=>'Script created','failed'=>'Failed','completed'=>'Completed','pipeline_failed'=>'Pipeline failed', default=>'No executions yet'}; }
+    private function statusKeyToTranslation(?string $status): string { return match($status){'prompt_generated'=>'status.promptGenerated','script_created'=>'status.scriptCreated','failed'=>'status.failed','completed'=>'status.completed','pipeline_failed'=>'status.failed', default=>'automation.execution.none'}; }
 
     public function getLatestExecutionSummary(BulletinType $bulletinType): array { /* unchanged simplified */
         $latestScheduleRun = EditorialScheduleRun::query()->whereHas('editorialSchedule', fn ($q) => $q->where('bulletin_type_id', $bulletinType->id))->latest('created_at')->first();

@@ -127,3 +127,60 @@ Summary:
 - This is consistent with the earlier diagnosed partial MySQL testing schema state in this workspace.
 Next focus:
 - Repair/recreate the MySQL testing database outside this branch workflow, or continue focused verification with an isolated SQLite in-memory database.
+
+[2026-05-03 16:01 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after dashboard timeline, source-status, automation and shared action-label updates.
+Next focus:
+- Run the frontend production build for the dashboard/table cleanup.
+
+[2026-05-03 16:01 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after dashboard timeline, visible pipeline pills and action-menu cleanup.
+Next focus:
+- Run the required Laravel test command and record the known testing database limitation if it persists.
+
+[2026-05-03 16:05 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: php artisan test --env=testing
+Result: FAIL
+Summary:
+- Required full Laravel test command timed out after roughly 244 seconds on the configured MySQL testing database.
+- This matches the existing workspace limitation: the MySQL testing schema is partially migrated/out of sync.
+Next focus:
+- Repair or recreate the MySQL testing database outside this branch workflow, then re-run the full suite.
+
+[2026-05-03 16:08 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after final dashboard panel/doc cleanup.
+Next focus:
+- Final review of changed files and handoff notes.
+
+[2026-05-03 16:11 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after contextual help registry/copy updates for dashboard timeline, pipeline pills and source status.
+Next focus:
+- Re-run the frontend build after help translation updates.
+
+[2026-05-03 16:11 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after contextual help updates.
+Next focus:
+- Final review of changed files and handoff notes.
+
+[2026-05-03 16:12 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after the final timeline separator cleanup.
+Next focus:
+- Final review of changed files and handoff notes.

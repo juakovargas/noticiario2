@@ -92,15 +92,15 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
             </DashboardPanel>
 
             <DashboardPanel>
-                <OperationalTable minWidth="1280px">
+                <OperationalTable minWidth="0">
                     <thead>
                         <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800">
                             <th className="px-5 py-4">{t('bulletinTypes.table.name')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.location')}</th>
+                            <th className="hidden px-5 py-4 lg:table-cell">{t('bulletinTypes.table.location')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.schedule')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.provider')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.latestRun')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.latestScript')}</th>
+                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.latestScript')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.health')}</th>
                             <th className="px-5 py-4 text-right">{t('bulletinTypes.table.actions')}</th>
                         </tr>
@@ -117,9 +117,10 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                                         {item.target_duration_seconds && <StatusBadge tone="info">{item.target_duration_seconds}s</StatusBadge>}
                                         <StatusBadge tone="neutral">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</StatusBadge>
                                     </div>
+                                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 lg:hidden">{[item.location?.name, item.news_category?.name].filter(Boolean).join(' · ') || t('bulletinTypes.empty.notAssigned')}</p>
                                     <p className="mt-2 line-clamp-2 max-w-sm text-xs text-slate-500 dark:text-slate-400">{item.description || t('bulletinTypes.empty.noDescription')}</p>
                                 </td>
-                                <td className="px-5 py-4">
+                                <td className="hidden px-5 py-4 lg:table-cell">
                                     <p className="font-medium text-slate-900 dark:text-slate-100">{item.location?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">{item.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
                                 </td>
@@ -149,7 +150,7 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                                         <span className="text-sm text-slate-500">{t('bulletinTypes.empty.noRuns')}</span>
                                     )}
                                 </td>
-                                <td className="px-5 py-4">
+                                <td className="hidden px-5 py-4 xl:table-cell">
                                     {item.latest_script ? (
                                         <Link className="font-medium text-cyan-700 hover:underline dark:text-cyan-300" href={item.latest_script.url}>
                                             {item.latest_script.title || t('bulletinTypes.table.latestScript')}

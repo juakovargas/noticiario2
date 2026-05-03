@@ -11,6 +11,7 @@ use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Services\EditorialScheduling\EditorialScheduleRunService;
+use App\Services\Pipelines\BulletinPromptRunPipeline;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class EditorialScheduleController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function __construct(private readonly EditorialScheduleRunService $runService, private readonly EditorialScheduleRunner $scheduleRunner)
+    public function __construct(private readonly EditorialScheduleRunService $runService, private readonly EditorialScheduleRunner $scheduleRunner, private readonly BulletinPromptRunPipeline $pipelineService)
     {
     }
 
@@ -136,7 +137,35 @@ class EditorialScheduleController extends Controller
             return to_route('editor.editorial-schedule-runs.show', $run)->with('warning', __('Execution already exists for this scheduled time.'));
         }
 
-        return to_route('editor.editorial-schedule-runs.show', $run)->with('success', 'Editorial run created successfully.');
+        $promptRun = $run->bulletinPromptRun;
+        if ($promptRun && $editorialSchedule->auto_generate_ai_response && $editorialSchedule->auto_run_pipeline) {
+            $summary = $this->pipelineService->run($promptRun->refresh(), request()->user(), [
+                'allow_ai_call' => true,
+                'generate_metadata' => (bool) $editorialSchedule->auto_generate_metadata,
+                'extract_sources' => (bool) $editorialSchedule->auto_extract_sources,
+            ]);
+
+            if ($summary['success']) {
+                $editorialSchedule->forceFill(['last_success_at' => now(), 'last_error_message' => null])->save();
+
+                if ($summary['script_id']) {
+                    return to_route('editor.scripts.show', $summary['script_id'])->with('success', __('Pipeline completed. Script created.'));
+                }
+
+                return to_route('editor.editorial-schedule-runs.show', $run->refresh())->with('success', __('Pipeline completed.'));
+            }
+
+            $editorialSchedule->forceFill([
+                'last_failure_at' => now(),
+                'last_error_message' => ($summary['failed_step'] ?? 'unknown').' - '.($summary['message'] ?? ''),
+            ])->save();
+
+            return to_route('editor.editorial-schedule-runs.show', $run->refresh())
+                ->with('error', __('Pipeline failed').': '.($summary['failed_step'] ?? 'unknown').' - '.($summary['message'] ?? ''));
+        }
+
+        return to_route('editor.editorial-schedule-runs.show', $run)
+            ->with('success', $editorialSchedule->auto_generate_ai_response ? __('Editorial run created successfully.') : __('AI manual approval required.'));
     }
 
     public function recalculateNextRun(EditorialSchedule $editorialSchedule): RedirectResponse

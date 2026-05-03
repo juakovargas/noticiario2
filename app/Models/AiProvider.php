@@ -15,6 +15,7 @@ class AiProvider extends Model
     use HasFactory, SoftDeletes;
 
     public const SUPPORTED_PROVIDER_TYPES = [
+        'text',
         'openai',
         'openrouter',
         'anthropic',
@@ -201,6 +202,10 @@ class AiProvider extends Model
         }
 
         return match ($this->provider_type) {
+            'text' => match ($this->slug) {
+                'deepseek-v4' => 'DEEPSEEK_API_KEY',
+                default => null,
+            },
             'gemini', 'google_gemini' => 'GEMINI_API_KEY',
             'groq' => 'GROQ_API_KEY',
             'openai' => 'OPENAI_API_KEY',
@@ -224,6 +229,7 @@ class AiProvider extends Model
             'OPENAI_API_KEY' => config('services.openai.key'),
             'OPENROUTER_API_KEY' => config('services.openrouter.key'),
             'ANTHROPIC_API_KEY' => config('services.anthropic.key'),
+            'DEEPSEEK_API_KEY' => config('services.deepseek.key'),
             default => null,
         };
 

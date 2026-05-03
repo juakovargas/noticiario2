@@ -232,4 +232,50 @@ class BulletinPromptRunAiGenerationTest extends TestCase
             'status' => 'success',
         ]);
     }
+
+    public function test_deepseek_text_provider_uses_configured_env_key_and_model(): void
+    {
+        putenv('DEEPSEEK_API_KEY=test-deepseek-key');
+        config(['services.deepseek.key' => 'test-deepseek-key']);
+
+        Http::fake(function ($request) {
+            $this->assertSame('Bearer test-deepseek-key', $request->header('Authorization')[0] ?? null);
+            $this->assertStringEndsWith('/chat/completions', $request->url());
+
+            return Http::response([
+                'model' => 'deepseek-v4-flash',
+                'choices' => [['message' => ['content' => 'Guion final de DeepSeek.'], 'finish_reason' => 'stop']],
+                'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 8, 'total_tokens' => 18],
+            ]);
+        });
+
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $provider = AiProvider::query()->create([
+            'name' => 'DeepSeek',
+            'slug' => 'deepseek-v4',
+            'provider_type' => 'text',
+            'client_driver' => 'custom',
+            'provider_category' => 'text',
+            'base_url' => 'https://api.deepseek.com',
+            'api_key_env_name' => 'DEEPSEEK_API_KEY',
+            'default_model' => 'deepseek-v4-flash',
+            'is_active' => true,
+            'is_default' => false,
+            'timeout_seconds' => 60,
+        ]);
+        $type = BulletinType::factory()->create(['preferred_ai_provider_id' => $provider->id]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt', 'status' => 'prompt_ready']);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run))
+            ->assertRedirect();
+
+        $this->assertSame('Guion final de DeepSeek.', $run->fresh()->ai_response_text);
+        $this->assertDatabaseHas('ai_request_logs', [
+            'bulletin_prompt_run_id' => $run->id,
+            'ai_provider_id' => $provider->id,
+            'model' => 'deepseek-v4-flash',
+            'status' => 'success',
+        ]);
+    }
 }

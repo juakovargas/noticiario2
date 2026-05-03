@@ -256,11 +256,11 @@ class EditorDashboardOverviewService
                     'provider' => $provider?->name,
                     'model' => $provider?->default_model,
                     'status' => 'waiting_ai_response',
-                    'next_action' => 'dashboard.action.generateAiResponse',
+                    'next_action' => 'dashboard.action.runAiCreateScript',
                     'scheduled_for' => optional($run->updated_at)?->toIso8601String(),
                     'view_url' => $this->safeRoute('editor.bulletin-prompt-runs.show', $run),
-                    'action_url' => null,
-                    'action_method' => null,
+                    'action_url' => $this->safeRoute('editor.bulletin-prompt-runs.run-pipeline', $run),
+                    'action_method' => 'post',
                 ];
             });
 
@@ -428,7 +428,7 @@ class EditorDashboardOverviewService
         return EditorialScheduleRun::query()
             ->with([
                 'schedule.bulletinType.preferredAiProvider:id,name,default_model',
-                'bulletinPromptRun:id,title,status',
+                'bulletinPromptRun:id,title,status,generated_prompt,script_id',
                 'script:id,title,production_status',
                 'sourceReferences:id,editorial_schedule_run_id,verification_status',
             ])
@@ -463,8 +463,8 @@ class EditorDashboardOverviewService
                     'prompt_run_url' => $run->bulletinPromptRun ? $this->safeRoute('editor.bulletin-prompt-runs.show', $run->bulletinPromptRun) : null,
                     'script_url' => $run->script ? $this->safeRoute('editor.scripts.show', $run->script) : null,
                     'sources_url' => $sourcesPending > 0 ? $this->safeRoute('editor.source-references.index') : null,
-                    'action_url' => $run->status === 'failed' && $run->schedule ? $this->safeRoute('editor.editorial-schedules.run-now', $run->schedule) : null,
-                    'action_method' => $run->status === 'failed' && $run->schedule ? 'post' : null,
+                    'action_url' => $this->latestExecutionActionUrl($run),
+                    'action_method' => $this->latestExecutionActionUrl($run) ? 'post' : null,
                 ];
             });
     }
@@ -589,10 +589,25 @@ class EditorDashboardOverviewService
         }
 
         if ($run->bulletinPromptRun) {
-            return 'dashboard.action.viewPromptRun';
+            return filled($run->bulletinPromptRun->generated_prompt)
+                ? 'dashboard.action.runAiCreateScript'
+                : 'dashboard.action.viewPromptRun';
         }
 
         return 'dashboard.action.viewRun';
+    }
+
+    private function latestExecutionActionUrl(mixed $run): ?string
+    {
+        if ($run->status === 'failed' && $run->schedule) {
+            return $this->safeRoute('editor.editorial-schedules.run-now', $run->schedule);
+        }
+
+        if ($run->bulletinPromptRun && ! $run->script && filled($run->bulletinPromptRun->generated_prompt)) {
+            return $this->safeRoute('editor.bulletin-prompt-runs.run-pipeline', $run->bulletinPromptRun);
+        }
+
+        return null;
     }
 
     private function queueStatus(EditorialSchedule $schedule): string

@@ -30,6 +30,12 @@ class MediaFileModelTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->assertSame(Storage::disk('public')->url('media/images/users/2/avatar.jpg'), $mediaFile->public_url);
+        $this->assertSame('/storage/media/images/users/2/avatar.jpg', $mediaFile->public_url);
+    }
+
+    public function test_public_url_normalizes_legacy_public_paths(): void
+    {
+        $this->assertSame('/storage/avatars/avatar.jpg', MediaFile::publicDiskUrl('storage/app/public/avatars/avatar.jpg'));
+        $this->assertSame('/storage/avatars/avatar.jpg', MediaFile::publicDiskUrl('/storage/avatars/avatar.jpg'));
     }
 }

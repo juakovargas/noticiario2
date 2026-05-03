@@ -37,7 +37,7 @@ class UserAvatarResolutionTest extends TestCase
 
         $user->update(['profile_image_id' => $mediaFile->id]);
 
-        $this->assertSame(Storage::disk('public')->url($mediaFile->path), $user->fresh()->avatar_url);
+        $this->assertSame('/storage/media/images/users/1/profile.png', $user->fresh()->avatar_url);
     }
 
     public function test_user_avatar_url_falls_back_to_avatar_path_when_profile_image_missing(): void
@@ -50,7 +50,17 @@ class UserAvatarResolutionTest extends TestCase
             'profile_image_id' => null,
         ]);
 
-        $this->assertSame(Storage::disk('public')->url('avatars/users/2/legacy.png'), $user->avatar_url);
+        $this->assertSame('/storage/avatars/users/2/legacy.png', $user->avatar_url);
+    }
+
+    public function test_user_avatar_url_normalizes_legacy_storage_path(): void
+    {
+        $user = User::factory()->create([
+            'avatar_path' => 'storage/app/public/avatars/legacy.png',
+            'profile_image_id' => null,
+        ]);
+
+        $this->assertSame('/storage/avatars/legacy.png', $user->avatar_url);
     }
 
     public function test_user_initials_are_generated_from_name(): void

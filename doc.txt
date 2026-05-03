@@ -21,7 +21,9 @@ High-level workflow:
 11. Later audio/video/publishing.
 
 Simplified product model for current Editor production work:
-Informativo / Bulletin Type -> Programacion -> Ejecucion -> Prompt -> AI provider -> Guion / Script -> Sources -> Review -> Production-ready.
+Informativo / Bulletin Type -> Programacion -> Ejecucion -> Guion / Script.
+
+Internal prompt runs still exist because they store generated prompts, AI responses, provider metadata and debug traces, but they are secondary/detail records. The Editor user mental model should stay focused on the product flow: informativo, recurring schedule, concrete execution and generated guion. Sources, review and production readiness follow the guion stage.
 
 Audio generation, video generation and publishing are future stages. They must stay visible as roadmap/placeholder concepts, but should not be implemented inside Editor prompt/script readiness branches unless the branch explicitly targets those stages.
 
@@ -199,6 +201,7 @@ B. Operational workflow:
 - Runner now prevents duplicate runs for the same `editorial_schedule_id + scheduled_for`.
 - Schedule flow now supports `schedule -> editorial_schedule_run -> bulletin_prompt_run` when configured with bulletin type.
 - Prompt generation can be automatic (`auto_generate_prompt`) without calling external AI providers.
+- If `auto_generate_ai_response` and `auto_run_pipeline` are explicitly enabled on a schedule, the runner can call the configured provider pipeline and create the script; the safe default remains prompt-only/manual AI.
 - Added scheduling fields including `next_run_at`, `last_run_at`, frequency/time/day settings and automation flags.
 - Added editor actions: run now and recalculate next run from schedule detail page.
 - Workbench and Editor Dashboard now surface due/upcoming schedule indicators and scheduler-created work counters.
@@ -805,7 +808,7 @@ Historical follow-up from that navigation branch:
 
 ## 13. UPDATE 2026-05-02 (EDITOR DASHBOARD + AVATAR + HELP)
 
-- Avatar rendering was hardened in frontend (`UserAvatar`): relative avatar paths are normalized to absolute URLs (`/path`) and fallback initials are used cleanly when image loading fails.
+- Avatar rendering was hardened in frontend (`UserAvatar`): relative avatar paths are normalized to public `/storage/...` URLs and fallback initials are used cleanly when image loading fails.
 - Editor Dashboard refinement:
   - Queue section renamed to "Cola de trabajo editorial" for clarity.
   - Existing operational cards and tables remain, but labels were aligned for better translation consistency.
@@ -814,8 +817,10 @@ Historical follow-up from that navigation branch:
 
 ## AVATAR/STORAGE AND DASHBOARD NOTES (MAY 2, 2026)
 
-- Fixed avatar/profile image URL regression by using disk-generated public URLs directly from Laravel storage disk API for both `MediaFile::public_url` and `User::avatar_url` fallback path.
-- Verified environment-level root cause in this workspace: missing `public/storage` symlink can prevent `/storage/...` URLs from resolving even with correct DB paths.
+- Fixed avatar/profile image URL regression by generating stable relative `/storage/...` URLs for public media instead of absolute `APP_URL` URLs that can point at the wrong host in Laragon/local environments.
+- Existing legacy paths such as `storage/app/public/...`, `public/...`, `/storage/...` and absolute public URLs are normalized to a browser-readable `/storage/...` URL.
+- New profile image uploads are stored under `storage/app/public/avatars/users/{id}` through the public disk.
+- `public/storage` must exist and point to `storage/app/public`; run `php artisan storage:link` in any environment where avatar URLs 404.
 - Editor dashboard hardening continued with translation cleanup, embedded world map visibility, provider/model traceability per queue row, provider usage linkage by bulletin, exclusive bulletin grouping, and clearer coverage guidance.
 - Keep source-verification and production-readiness visibility in dashboard latest executions.
 
@@ -880,11 +885,12 @@ Production bulletin seeder:
 - Run: `php artisan db:seed --class=SpainProductionBulletinsSeeder`.
 - The seeder is idempotent: it does not wipe data, does not duplicate known slugs, updates matching bulletins/schedules, and restores soft-deleted matching records if needed.
 - It creates/updates the `gemini-grounded` provider record as active script/news provider using the custom Gemini driver, `GEMINI_API_KEY`, `gemini-3-flash-preview`, and grounding/citation capabilities.
+- It creates/updates a DeepSeek provider for future text experiments: name `DeepSeek`, slug `deepseek-v4`, base URL `https://api.deepseek.com`, `DEEPSEEK_API_KEY`, `client_driver=custom`, `default_model=deepseek-v4-flash`, `provider_type=text`, active and not default.
 - It never stores the API key in the database.
 
 Seeded Spain test bulletins:
 - `spain-morning-general-news`: Spain Morning General News, General, Spanish, daily 08:00 Europe/Madrid.
-- `spain-midday-update`: Spain Midday Update, General, Spanish, daily 13:30 Europe/Madrid.
+- `spain-midday-update`: Spain Midday Update, General, Spanish, daily 15:00 Europe/Madrid.
 - `spain-evening-recap`: Spain Evening Recap, General, Spanish, daily 20:00 Europe/Madrid.
 - `spain-sports-preview`: Spain Sports Preview, Sports, Spanish, daily 19:00 Europe/Madrid, next-24-hours sports agenda/preview.
 - All four are active and assign Gemini Grounded through `preferred_ai_provider_id`.
@@ -935,6 +941,51 @@ Testing/verification notes:
 - `phpunit.xml` now includes a harmless testing-only `APP_KEY` so feature tests using encrypted sessions/cookies can run without local `.env` leakage.
 - `AiRequestLog` allows timestamp mass assignment so usage-window tests and rate-limit summaries can create historical logs accurately.
 - The RSS reader and structured response parser were hardened while chasing the full test suite; no scraping/crawling feature was added.
+
+## 20. EDITOR PRODUCT FLOW + TAILADMIN-STYLE COMPONENT LAYER (May 2026)
+
+Product-flow simplification:
+- Primary Editor navigation now emphasizes Dashboard, Informativos, Automatizacion, Ejecuciones, Guiones, Fuentes, Produccion and Configuracion editorial.
+- Prompt runs, prompt templates, editorial desk, workbench, editions, news items and news sources remain available as secondary/debug or detail pages, but they are no longer the main mental model for creating a guion.
+- The preferred product flow is `Informativo -> Programacion -> Ejecucion -> Guion`. Prompt generation is deterministic/local from informativo configuration and is stored internally on linked prompt runs.
+
+Noticiario TailAdmin-style components:
+- Added local React/Tailwind components in `resources/js/Components/EditorDashboard/` inspired by free TailAdmin React dashboard patterns: metric cards, panels, section headers, status badges, provider badges, pipeline bars, timelines, empty states, action groups, coverage matrix and operational table.
+- This is a local Noticiario component layer only. No TailAdmin full template was installed, no TailAdmin router/app shell/sidebar/auth was copied, EditorLayout and Inertia routing remain in place, and no Pro/paid components were used.
+- Dashboard, Informativos and Ejecuciones pages now use stronger visual hierarchy, rounded bordered surfaces, compact badges, useful CTAs, pipeline progress and dark-mode card contrast.
+
+Informativos:
+- Editor > Informativos is the main product page for bulletin types.
+- List rows show ON/OFF, location/category/language, duration, primary schedule, next run, preferred provider/model, grounding, latest execution, latest script and health warnings.
+- Detail page shows one informativo as summary, provider, primary schedule, recent executions, recent scripts, prompt preview and future production placeholders.
+- Create/edit form assigns `preferred_ai_provider_id` through the real `preferredAiProvider()` relation and lists active text/news/script providers while excluding testing-only providers such as Mock.
+
+Run now and executions:
+- Run-now actions from dashboard, Informativos and Automation use the schedule route `editor.editorial-schedules.run-now`; they must never post to `/editor` or `/editor/dashboard`.
+- Run now creates an editorial schedule run plus linked prompt run and generates the prompt. It only calls external AI when the schedule explicitly enables both `auto_generate_ai_response` and `auto_run_pipeline`.
+- Editorial Schedule Run index/show now expose the next action after prompt generation: run the configured AI provider and create the script, or create the script from an existing response.
+- If automatic AI is disabled, the UI shows manual AI approval required but still exposes a deliberate manual action for the editor.
+
+Provider decisions:
+- Gemini Grounded remains the main provider for real/current news bulletins and should use `GEMINI_API_KEY` with `gemini-3-flash-preview`.
+- Groq remains available as an optional future auxiliary review/rewrite provider, not a required automatic step for current-news generation.
+- DeepSeek is seeded as an active non-default text provider (`deepseek-v4`) for future experiments, using `DEEPSEEK_API_KEY` and `deepseek-v4-flash`.
+- API keys are never stored in the database and must never be shown in UI or logs.
+
+Spain production seeder:
+- Active Spain test bulletins are separate recurring emission slots: morning 08:00, midday 15:00, evening 20:00 and sports preview 19:00 Europe/Madrid.
+- The seeder keeps the safe free-tier default: prompt generation on, automatic AI response off. Cron prepares executions and prompts; editors manually approve the AI call.
+- Future candidate bulletins are seeded inactive/OFF for Catalonia, Galicia, Basque Country, Portugal, France and Global Technology so they do not affect the Spain cron test.
+
+Avatar/storage fix:
+- Public avatar/media URLs are generated as relative `/storage/...` URLs, normalizing legacy absolute/local paths and avoiding host mismatch such as `http://localhost` when the app is served from another local host.
+- Existing valid public avatar files under `storage/app/public/avatars` should load through the `public/storage` symlink. If the symlink is missing, run `php artisan storage:link`.
+- New profile image uploads use `avatars/users/{id}` on the public disk.
+
+tests.txt:
+- Root `tests.txt` is now the project test/build history log.
+- Every executed test/build command in this branch should append date/time, branch name, command, pass/fail, short summary and next focus.
+- Current known environment limitation: the configured MySQL testing database `noticiario2_testing` is partially migrated in this workspace. The exact `php artisan test --env=testing` command times out/fails there, while focused tests pass with an isolated SQLite in-memory testing database.
 
 ## CURRENT ROADMAP
 1. Run `SpainProductionBulletinsSeeder` in the target environment and verify Gemini Grounded is active with `GEMINI_API_KEY` configured.

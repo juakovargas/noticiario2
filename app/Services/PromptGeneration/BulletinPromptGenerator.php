@@ -44,6 +44,19 @@ class BulletinPromptGenerator
         [$objective, $rule] = $this->editionGuidanceEs((string) $type->edition_type, (string) ($type->newsCategory?->name ?? 'general'));
         $tone = $this->toneSummaryEs($profile);
 
+        return trim(implode("\n", [
+            'Eres redactor y guionista de informativos breves en video.',
+            'Escribe un guion periodistico claro, natural y listo para locucion.',
+            'El guion sera para el informativo '.$type->name.', con localizacion '.($type->location?->name ?? 'Global').', categoria '.($type->newsCategory?->name ?? 'General').' e idioma '.($type->language?->name ?? 'Espanol').'.',
+            'La emision esta prevista para '.$context['scheduled_for']->timezone($context['timezone'])->format('d/m/Y H:i').' '.$context['timezone'].' y debe durar aproximadamente '.($type->target_duration_seconds ?? 75).' segundos.',
+            'Cubre la ventana informativa de '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            'Selecciona entre '.$minItems.' y '.$maxItems.' hechos relevantes. '.$objective.'. '.$rule.'.',
+            'Usa un tono '.$tone.', con frases cortas y naturales para voz en off.',
+            'No inventes datos, cifras, citas ni fuentes. Si algo no esta confirmado, dilo con cautela.',
+            'Prioriza informacion verificable y factualidad consciente de fuentes, especialmente si el proveedor tiene busqueda o grounding.',
+            'Devuelve solo el guion final en texto plano continuo, sin titulos, encabezados, listas, markdown, notas ni bloques separados.',
+        ]));
+
         $lines = [
             'Eres redactor y guionista de informativos breves en vídeo.',
             'Escribe un guion periodístico claro, natural y listo para locución.',
@@ -88,6 +101,18 @@ class BulletinPromptGenerator
     {
         [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
         $tone = 'serious, neutral and professional';
+
+        return trim(implode("\n", [
+            'You are writing a short video news bulletin for '.($type->location?->name ?? 'a general audience').'.',
+            'Write a clear journalistic narration script ready for voice-over in '.($type->language?->name ?? 'the configured language').'.',
+            'The bulletin is '.$type->name.', the topic is '.($type->newsCategory?->name ?? 'General').', and the target duration is approximately '.($type->target_duration_seconds ?? 75).' seconds.',
+            'Cover the information window from '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            'Choose '.$minItems.' to '.$maxItems.' relevant items or events and summarize the most important developments in that window.',
+            'Use short natural spoken sentences and a '.$tone.' tone.',
+            'Do not invent facts, figures, quotes, or sources. If something is not confirmed, use cautious wording.',
+            'Prioritize reliable, source-aware factuality when grounding or search is available.',
+            'Return only the final narration script as continuous plain text, without headings, markdown, lists, notes, or separated blocks.',
+        ]));
 
         return trim(implode("\n", [
             'You are writing a short video news bulletin for '.($type->location?->name ?? 'a general audience').'.',

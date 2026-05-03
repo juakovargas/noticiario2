@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -95,7 +94,11 @@ class User extends Authenticatable
         }
 
         if (filled($this->avatar_path)) {
-            return Storage::disk('public')->url($this->avatar_path);
+            if (str_starts_with((string) $this->avatar_path, 'http://') || str_starts_with((string) $this->avatar_path, 'https://')) {
+                return (string) $this->avatar_path;
+            }
+
+            return MediaFile::publicDiskUrl($this->avatar_path);
         }
 
         return null;

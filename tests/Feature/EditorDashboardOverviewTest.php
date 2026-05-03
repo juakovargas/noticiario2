@@ -96,5 +96,7 @@ class EditorDashboardOverviewTest extends TestCase
         $this->assertStringNotContainsString('/editor/dashboard', $row['run_now_url']);
 
         $this->actingAs($user)->post($row['run_now_url'])->assertRedirect();
+        $this->assertDatabaseHas('editorial_schedule_runs', ['editorial_schedule_id' => $schedule->id, 'status' => 'prompt_generated']);
+        $this->assertDatabaseHas('bulletin_prompt_runs', ['editorial_schedule_id' => $schedule->id, 'status' => 'prompt_ready']);
     }
 }

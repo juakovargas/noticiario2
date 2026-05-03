@@ -54,6 +54,7 @@ class MediaFileServiceTest extends TestCase
         $second = $service->replaceUserProfileImage($user->fresh(), UploadedFile::fake()->image('second.jpg', 120, 120), $user);
 
         $this->assertSame($second->id, $user->fresh()->profile_image_id);
+        $this->assertStringStartsWith('avatars/users/'.$user->id.'/', $second->path);
         $this->assertSame('archived', MediaFile::query()->findOrFail($first->id)->status);
         $this->assertSame('active', MediaFile::query()->findOrFail($second->id)->status);
     }

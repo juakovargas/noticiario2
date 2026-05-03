@@ -132,6 +132,7 @@ class BulletinPromptRunPipeline
                         ]);
                         $this->runService->saveResponse($run, $aiResponse->text);
                         $run = $run->fresh();
+                        $this->syncEditorialScheduleRun($run);
                         $metadata = (array) ($run->metadata ?? []);
                         $metadata['grounded'] = (bool) $provider->supports_grounding;
                         $metadata['ai_response_metadata'] = $aiResponse->metadata;
@@ -197,6 +198,7 @@ class BulletinPromptRunPipeline
                     return $this->fail($run, $summary, 'script_creation', 'Script creation requires an AI response.');
                 }
                 $script = $this->runService->createScript($refreshed->fresh());
+                $this->syncEditorialScheduleRun($refreshed->fresh());
                 $summary['script_id'] = $script->id;
                 $summary['steps']['script_created'] = true;
             } else {
@@ -218,6 +220,7 @@ class BulletinPromptRunPipeline
             $summary['success'] = true;
             $summary['message'] = 'Pipeline completed. Script created.';
             $run->update(['pipeline_status' => 'completed', 'pipeline_finished_at' => now(), 'pipeline_metadata' => $summary]);
+            $this->syncEditorialScheduleRun($run->fresh());
             return $summary;
         } catch (Throwable $exception) {
             return $this->fail($run, $summary, 'response_parsing', str($exception->getMessage())->limit(500)->toString());
@@ -230,7 +233,35 @@ class BulletinPromptRunPipeline
         $summary['message'] = $message;
         $summary['errors'][] = $message;
         $run->update(['pipeline_status' => $status, 'pipeline_failed_at' => now(), 'pipeline_failed_step' => $failedStep, 'pipeline_error_message' => $message, 'pipeline_metadata' => $summary]);
+        $this->syncEditorialScheduleRun($run->fresh(), $message);
         return $summary;
+    }
+
+    private function syncEditorialScheduleRun(BulletinPromptRun $run, ?string $errorMessage = null): void
+    {
+        if (! $run->editorial_schedule_run_id) {
+            return;
+        }
+
+        $status = match (true) {
+            $errorMessage !== null => 'failed',
+            filled($run->script_id) => 'script_created',
+            filled($run->ai_response_text) => 'response_received',
+            filled($run->generated_prompt) => 'prompt_generated',
+            default => 'prompt_run_created',
+        };
+
+        $run->editorialScheduleRun()->update([
+            'generated_prompt' => $run->generated_prompt,
+            'ai_response_text' => $run->ai_response_text,
+            'parsed_response' => $run->parsed_response,
+            'prompt_generated_at' => $run->prompt_generated_at,
+            'response_received_at' => $run->response_received_at,
+            'script_id' => $run->script_id,
+            'script_created_at' => $run->script_created_at,
+            'status' => $status,
+            'error_message' => $errorMessage,
+        ]);
     }
 
     private function resolveProvider(BulletinPromptRun $run, ?int $providerId): ?AiProvider

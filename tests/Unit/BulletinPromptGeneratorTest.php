@@ -88,10 +88,11 @@ class BulletinPromptGeneratorTest extends TestCase
 
         $prompt = app(BulletinPromptGenerator::class)->generate($run);
 
-        $this->assertStringContainsString('Minimum news items: 3', $prompt);
-        $this->assertStringContainsString('Maximum news items: 4', $prompt);
-        $this->assertStringContainsString('OUTPUT MODE: plain_script', $prompt);
-        $this->assertStringContainsString('Include at least one source hint per news item', $prompt);
-        $this->assertStringContainsString('Do not invent facts.', $prompt);
+        $this->assertStringContainsString('Choose 3 to 4 relevant items', $prompt);
+        $this->assertStringContainsString('Prioritize reliable, source-aware factuality', $prompt);
+        $this->assertStringContainsString('Do not invent facts, figures, quotes, or sources.', $prompt);
+        $this->assertStringNotContainsString('OUTPUT MODE:', $prompt);
+        $this->assertStringNotContainsString('STRUCTURE:', $prompt);
+        $this->assertStringNotContainsString('TITLE:', $prompt);
     }
 }

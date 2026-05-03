@@ -75,6 +75,8 @@ class BulletinPromptRunService
             'status' => 'prompt_ready',
         ]);
 
+        $this->syncEditorialScheduleRun($run->fresh());
+
         return $prompt;
     }
 
@@ -92,6 +94,8 @@ class BulletinPromptRunService
             'response_received_at' => now(),
             'status' => in_array($currentStatus, ['script_created', 'completed', 'archived'], true) ? $currentStatus : 'response_received',
         ]);
+
+        $this->syncEditorialScheduleRun($run->fresh());
 
         return $run->refresh();
     }
@@ -187,7 +191,35 @@ class BulletinPromptRunService
             'status' => $nextStatus,
         ]);
 
+        $this->syncEditorialScheduleRun($run->fresh());
+
         return $script;
+    }
+
+    private function syncEditorialScheduleRun(BulletinPromptRun $run): void
+    {
+        if (! $run->editorial_schedule_run_id) {
+            return;
+        }
+
+        $status = match (true) {
+            filled($run->script_id) => 'script_created',
+            filled($run->ai_response_text) => 'response_received',
+            filled($run->generated_prompt) => 'prompt_generated',
+            default => 'prompt_run_created',
+        };
+
+        $run->editorialScheduleRun()->update([
+            'generated_prompt' => $run->generated_prompt,
+            'ai_response_text' => $run->ai_response_text,
+            'parsed_response' => $run->parsed_response,
+            'prompt_generated_at' => $run->prompt_generated_at,
+            'response_received_at' => $run->response_received_at,
+            'script_id' => $run->script_id,
+            'script_created_at' => $run->script_created_at,
+            'status' => $status,
+            'error_message' => null,
+        ]);
     }
 
     private function resolveScheduledFor(BulletinType $bulletinType, ?string $scheduledForInput): Carbon

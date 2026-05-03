@@ -50,6 +50,10 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
+    'deepseek' => [
+        'key' => env('DEEPSEEK_API_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

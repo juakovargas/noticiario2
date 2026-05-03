@@ -31,10 +31,10 @@ export default function Index({ bulletins }: { bulletins: any[] }) {
             <td className='p-2 text-xs'><div>{t('Prompt runs')}: {b.prompt_runs_count}</div><div>{t('Scripts count')}: {b.scripts_count}</div>{b.latest_script ? <Link className='underline' href={route('editor.scripts.show', b.latest_script.id)}>{t('Latest script')}</Link> : <span className='text-slate-500'>{t('No latest script')}</span>}</td>
             <td className='p-2 text-xs'>{b.attention_reason_keys?.length ? b.attention_reason_keys.map((k: string) => <div key={k}>{t(k)}</div>) : t('Correct')}</td>
             <td className='p-2'><div className='flex flex-col gap-1'>
-              {b.has_schedule ? <Button size='sm' onClick={() => { if (confirm(t('This will send the prompt to the configured AI provider and may consume one request'))) router.post(route('editor.automation.schedules.run-now-and-schedule-next', b.schedule_id)); }}>{b.next_run_status === 'overdue' ? t('Run missed pipeline now') : t('Run full pipeline now')}</Button> : null}
+              {b.has_schedule ? <Button size='sm' onClick={() => router.post(route('editor.editorial-schedules.run-now', b.schedule_id))}>{t('bulletinTypes.action.runNow')}</Button> : null}
               {b.has_schedule ? <Button size='sm' variant='outline' onClick={() => router.post(route('editor.automation.schedules.create-prompt-only', b.schedule_id))}>{t('Create prompt only')}</Button> : null}
               {b.has_schedule && <Button size='sm' variant='outline' onClick={() => router.post(route('editor.automation.schedules.recalculate-next-run', b.schedule_id))}>{t('Recalculate')}</Button>}
-              <Link className='underline' href={route('editor.bulletin-prompt-runs.index', { bulletin_type_id: b.id })}>{t('View executions')}</Link>
+              <Link className='underline' href={route('editor.editorial-schedule-runs.index', { schedule_id: b.schedule_id })}>{t('View executions')}</Link>
               <Link className='underline' href={route('editor.scripts.index', { bulletin_type_id: b.id })}>{t('View scripts')}</Link>
               <Link className='underline' href={route('editor.bulletin-types.edit', b.id)}>{t('Edit bulletin')}</Link>
             </div></td>

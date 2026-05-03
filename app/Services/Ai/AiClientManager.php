@@ -41,7 +41,7 @@ class AiClientManager
         }
 
         return match ($provider->provider_type) {
-            'openai', 'openrouter', 'custom_openai_compatible', 'groq' => new OpenAiCompatibleClient(),
+            'text', 'openai', 'openrouter', 'custom_openai_compatible', 'groq' => new OpenAiCompatibleClient(),
             'ollama' => new OllamaClient(),
             'gemini', 'google_gemini' => new GeminiClient(),
             'mock' => new class implements AiClient {

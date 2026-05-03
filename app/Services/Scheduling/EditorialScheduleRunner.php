@@ -4,12 +4,13 @@ namespace App\Services\Scheduling;
 
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
+use App\Services\Pipelines\BulletinPromptRunPipeline;
 use App\Services\PromptGeneration\BulletinPromptRunService;
 use Carbon\Carbon;
 
 class EditorialScheduleRunner
 {
-    public function __construct(private readonly BulletinPromptRunService $promptRunService)
+    public function __construct(private readonly BulletinPromptRunService $promptRunService, private readonly BulletinPromptRunPipeline $pipelineService)
     {
     }
 
@@ -34,6 +35,9 @@ class EditorialScheduleRunner
             'prompt_runs_created' => 0,
             'prompts_generated' => 0,
             'duplicates_skipped' => 0,
+            'skipped_duplicates' => 0,
+            'pipelines_completed' => 0,
+            'pipelines_failed' => 0,
             'failed' => 0,
             'dry_run' => $dryRun,
             'messages' => [],
@@ -48,8 +52,11 @@ class EditorialScheduleRunner
 
                 $summary['runs_created'] += $run->wasRecentlyCreated ? 1 : 0;
                 $summary['duplicates_skipped'] += $isDuplicate ? 1 : 0;
+                $summary['skipped_duplicates'] = $summary['duplicates_skipped'];
                 $summary['prompt_runs_created'] += $run->bulletin_prompt_run_id ? 1 : 0;
                 $summary['prompts_generated'] += $run->status === 'prompt_generated' ? 1 : 0;
+                $summary['pipelines_completed'] += in_array($run->status, ['script_created', 'completed'], true) ? 1 : 0;
+                $summary['pipelines_failed'] += $run->status === 'failed' ? 1 : 0;
             } catch (\Throwable $e) {
                 $summary['failed']++;
                 $summary['messages'][] = sprintf('schedule %d failed: %s', $schedule->id, $e->getMessage());
@@ -101,6 +108,16 @@ class EditorialScheduleRunner
             if (($options['generate_prompts'] ?? false) || ($schedule->auto_generate_prompt ?? true)) {
                 $this->promptRunService->generatePrompt($promptRun);
                 $run->forceFill(['status' => 'prompt_generated'])->save();
+            }
+
+            if ($schedule->auto_generate_ai_response && $schedule->auto_run_pipeline) {
+                $this->pipelineService->run($promptRun->refresh(), $options['user'] ?? null, [
+                    'allow_ai_call' => true,
+                    'generate_metadata' => (bool) $schedule->auto_generate_metadata,
+                    'extract_sources' => (bool) $schedule->auto_extract_sources,
+                ]);
+
+                $run->refresh();
             }
         }
 

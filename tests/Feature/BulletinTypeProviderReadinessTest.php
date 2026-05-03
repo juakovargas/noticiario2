@@ -53,6 +53,7 @@ class BulletinTypeProviderReadinessTest extends TestCase
         $this->seed(SpainProductionBulletinsSeeder::class);
 
         $provider = AiProvider::query()->where('slug', 'gemini-grounded')->firstOrFail();
+        $deepSeek = AiProvider::query()->where('slug', 'deepseek-v4')->firstOrFail();
         $slugs = [
             'spain-morning-general-news',
             'spain-midday-update',
@@ -68,6 +69,26 @@ class BulletinTypeProviderReadinessTest extends TestCase
             $this->assertSame('plain_final_script', $bulletin->output_mode);
             $this->assertTrue((bool) $bulletin->primarySchedule()->first()?->is_active);
             $this->assertFalse((bool) $bulletin->primarySchedule()->first()?->auto_generate_ai_response);
+        }
+
+        $midday = BulletinType::query()->where('slug', 'spain-midday-update')->firstOrFail();
+        $this->assertSame('15:00', substr((string) $midday->primarySchedule()->first()?->run_time, 0, 5));
+        $this->assertSame('DeepSeek', $deepSeek->name);
+        $this->assertSame('text', $deepSeek->provider_type);
+        $this->assertSame('DEEPSEEK_API_KEY', $deepSeek->api_key_env_name);
+
+        foreach ([
+            'catalonia-morning-briefing',
+            'galicia-morning-briefing',
+            'basque-country-morning-briefing',
+            'portugal-morning-briefing',
+            'france-morning-briefing',
+            'global-technology-briefing',
+        ] as $futureSlug) {
+            $futureBulletin = BulletinType::query()->where('slug', $futureSlug)->firstOrFail();
+            $this->assertFalse((bool) $futureBulletin->is_active);
+            $this->assertFalse((bool) $futureBulletin->primarySchedule()->first()?->is_active);
+            $this->assertSame($provider->id, $futureBulletin->preferred_ai_provider_id);
         }
     }
 }

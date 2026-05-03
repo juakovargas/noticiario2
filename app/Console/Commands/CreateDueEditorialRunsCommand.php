@@ -16,7 +16,7 @@ class CreateDueEditorialRunsCommand extends Command
         {--generate-prompts : Generate prompts for created prompt runs}
         {--limit=100 : Maximum schedules to process}';
 
-    protected $description = 'Create due editorial schedule runs without calling external AI providers.';
+    protected $description = 'Create due editorial schedule runs and only call AI when the schedule explicitly enables automatic AI pipeline.';
 
     public function handle(EditorialScheduleRunner $runner): int
     {
@@ -43,7 +43,7 @@ class CreateDueEditorialRunsCommand extends Command
         $this->line('Prompts generated: '.$summary['prompts_generated']);
         $this->line('Duplicate runs skipped: '.$summary['duplicates_skipped']);
         $this->line('Failed schedules: '.$summary['failed']);
-        $this->line('This command does not call external AI providers.');
+        $this->line('External AI is called only for schedules with automatic AI response and pipeline enabled.');
 
         if ($summary['due_schedules'] === 0) {
             $this->comment('No due schedules found.');

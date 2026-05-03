@@ -119,7 +119,18 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scheduleRuns.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scheduleRuns.actions' },
+            { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.scheduleRuns.pipeline' },
         ],
+    },
+    'editor.editorialscheduleruns.show': {
+        titleKey: 'help.editor.scheduleRunShow.title',
+        summaryKey: 'help.editor.scheduleRunShow.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scheduleRunShow.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scheduleRunShow.actions' },
+            { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.scheduleRunShow.pipeline' },
+        ],
+        tipsKeys: ['help.editor.scheduleRunShow.tip1', 'help.editor.scheduleRunShow.tip2'],
     },
     'admin.dashboard': {
         titleKey: 'help.admin.dashboard.title',

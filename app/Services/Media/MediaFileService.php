@@ -58,7 +58,7 @@ class MediaFileService
         $newMedia = $this->storeUploadedFile($file, $uploadedBy ?? $user, [
             'media_type' => 'image',
             'collection' => 'profile_images',
-            'directory' => sprintf('media/images/users/%d', $user->id),
+            'directory' => sprintf('avatars/users/%d', $user->id),
         ]);
 
         $oldMedia = $user->profileImage;

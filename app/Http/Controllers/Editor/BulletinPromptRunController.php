@@ -494,7 +494,9 @@ class BulletinPromptRunController extends Controller
             'generate_metadata' => ['nullable', 'boolean'],
             'extract_sources' => ['nullable', 'boolean'],
             'force_recreate_script' => ['nullable', 'boolean'],
+            'allow_ai_call' => ['nullable', 'boolean'],
         ]);
+        $data['allow_ai_call'] = $request->boolean('allow_ai_call', true);
 
         $summary = $this->pipelineService->run($bulletinPromptRun, $request->user(), $data);
 

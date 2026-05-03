@@ -70,10 +70,40 @@ class MediaFile extends Model
         }
 
         if ($this->disk === 'public') {
-            return Storage::disk('public')->url($this->path);
+            return self::publicDiskUrl($this->path);
         }
 
         return Storage::disk($this->disk)->url($this->path);
+    }
+
+    public static function publicDiskUrl(?string $path): ?string
+    {
+        $normalizedPath = self::normalizePublicDiskPath($path);
+
+        return $normalizedPath ? '/storage/'.$normalizedPath : null;
+    }
+
+    public static function normalizePublicDiskPath(?string $path): ?string
+    {
+        $path = trim(str_replace('\\', '/', (string) $path));
+
+        if ($path === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $path = (string) parse_url($path, PHP_URL_PATH);
+        }
+
+        $path = ltrim($path, '/');
+
+        foreach (['storage/app/public/', 'public/', 'storage/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+            }
+        }
+
+        return trim($path, '/') ?: null;
     }
 
     public function isImage(): bool

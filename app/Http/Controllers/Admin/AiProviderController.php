@@ -230,7 +230,7 @@ public function clearRateLimitLock(AiProvider $aiProvider): RedirectResponse
     /** @return string[] */
     private function providerTypes(): array
     {
-        return ['openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'groq', 'mock', 'gemini', 'google_gemini', 'gemini_grounded', 'edge_tts', 'elevenlabs', 'google_tts', 'remotion', 'ffmpeg'];
+        return ['text', 'openai', 'openrouter', 'anthropic', 'ollama', 'custom_openai_compatible', 'groq', 'mock', 'gemini', 'google_gemini', 'gemini_grounded', 'edge_tts', 'elevenlabs', 'google_tts', 'remotion', 'ffmpeg'];
     }
 
     /** @return array<string,mixed> */

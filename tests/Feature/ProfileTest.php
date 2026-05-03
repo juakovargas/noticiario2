@@ -150,7 +150,7 @@ class ProfileTest extends TestCase
 
         $this->actingAs($user)
             ->get('/profile')
-            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', Storage::disk('public')->url('avatars/users/1/legacy.png')));
+            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', '/storage/avatars/users/1/legacy.png'));
     }
 
     public function test_auth_shared_props_include_avatar_url_from_profile_image(): void
@@ -171,7 +171,7 @@ class ProfileTest extends TestCase
 
         $this->actingAs($user->fresh())
             ->get('/profile')
-            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', Storage::disk('public')->url($mediaFile->path)));
+            ->assertInertia(fn ($page) => $page->where('auth.user.avatar_url', '/storage/'.$mediaFile->path));
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void

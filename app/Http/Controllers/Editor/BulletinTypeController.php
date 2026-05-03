@@ -4,13 +4,18 @@ namespace App\Http\Controllers\Editor;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiProvider;
+use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
+use App\Models\EditorialScheduleRun;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\PromptProfile;
+use App\Models\Script;
+use App\Services\PromptGeneration\BulletinPromptGenerator;
 use App\Services\Scheduling\BulletinTypeScheduleSyncService;
 use App\Support\GeneratesUniqueSlug;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,7 +24,7 @@ use Inertia\Response;
 
 class BulletinTypeController extends Controller
 {
-    public function __construct(private readonly BulletinTypeScheduleSyncService $scheduleSyncService)
+    public function __construct(private readonly BulletinTypeScheduleSyncService $scheduleSyncService, private readonly BulletinPromptGenerator $promptGenerator)
     {
     }
 
@@ -30,6 +35,8 @@ class BulletinTypeController extends Controller
         $filters = [
             'location_id' => (string) $request->query('location_id', ''),
             'provider' => (string) $request->query('provider', ''),
+            'active' => (string) $request->query('active', ''),
+            'health' => (string) $request->query('health', ''),
         ];
 
         $providerOptions = $this->scriptProviderQuery()
@@ -44,15 +51,20 @@ class BulletinTypeController extends Controller
                     'language:id,name,code',
                     'promptProfile:id,name',
                     'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category',
-                    'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at',
+                    'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
                 ])
                 ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
+                ->when($filters['active'] === '1', fn ($query) => $query->where('is_active', true))
+                ->when($filters['active'] === '0', fn ($query) => $query->where('is_active', false))
                 ->when($filters['provider'] === 'missing', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
                 ->when(is_numeric($filters['provider']), fn ($query) => $query->where('preferred_ai_provider_id', (int) $filters['provider']))
+                ->when($filters['health'] === 'missing_schedule', fn ($query) => $query->whereDoesntHave('primarySchedule'))
+                ->when($filters['health'] === 'missing_provider', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
                 ->orderByDesc('is_active')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->paginate(20)
+                ->through(fn (BulletinType $bulletinType) => $this->presentBulletinIndexRow($bulletinType))
                 ->withQueryString(),
             'filters' => $filters,
             'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
@@ -85,9 +97,17 @@ class BulletinTypeController extends Controller
             'promptProfile:id,name',
             'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category,is_active',
             'schedules' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),
+            'primarySchedule',
         ]);
 
-        return Inertia::render('Editor/BulletinTypes/Show', ['bulletinType' => $bulletinType]);
+        return Inertia::render('Editor/BulletinTypes/Show', [
+            'bulletinType' => $bulletinType,
+            'primarySchedule' => $bulletinType->primarySchedule,
+            'recentExecutions' => $this->recentExecutions($bulletinType),
+            'recentScripts' => $this->recentScripts($bulletinType),
+            'promptPreview' => $this->promptPreview($bulletinType),
+            'health' => $this->bulletinHealth($bulletinType),
+        ]);
     }
 
     public function edit(BulletinType $bulletinType): Response
@@ -212,5 +232,152 @@ class BulletinTypeController extends Controller
                     ->orWhereJsonContains('capabilities', 'news_grounding')
                     ->orWhereJsonContains('capabilities', 'text_generation');
             });
+    }
+
+    private function presentBulletinIndexRow(BulletinType $bulletinType): array
+    {
+        $data = $bulletinType->toArray();
+        $schedule = $bulletinType->primarySchedule;
+        $latestExecution = EditorialScheduleRun::query()
+            ->whereHas('schedule', fn ($query) => $query->where('bulletin_type_id', $bulletinType->id))
+            ->latest('scheduled_for')
+            ->first(['id', 'status', 'scheduled_for', 'script_id', 'bulletin_prompt_run_id']);
+        $latestScript = Script::query()
+            ->whereHas('bulletinPromptRun', fn ($query) => $query->where('bulletin_type_id', $bulletinType->id))
+            ->latest()
+            ->first(['id', 'title', 'review_status', 'production_status', 'created_at']);
+
+        return [
+            ...$data,
+            'latest_execution' => $latestExecution ? [
+                'id' => $latestExecution->id,
+                'status' => $latestExecution->status,
+                'scheduled_for' => optional($latestExecution->scheduled_for)?->toIso8601String(),
+                'url' => $this->safeRoute('editor.editorial-schedule-runs.show', $latestExecution),
+            ] : null,
+            'latest_script' => $latestScript ? [
+                'id' => $latestScript->id,
+                'title' => $latestScript->title,
+                'review_status' => $latestScript->review_status,
+                'production_status' => $latestScript->production_status,
+                'created_at' => optional($latestScript->created_at)?->toIso8601String(),
+                'url' => $this->safeRoute('editor.scripts.show', $latestScript),
+            ] : null,
+            'health' => $this->bulletinHealth($bulletinType),
+            'urls' => [
+                'show' => $this->safeRoute('editor.bulletin-types.show', $bulletinType),
+                'edit' => $this->safeRoute('editor.bulletin-types.edit', $bulletinType),
+                'run_now' => $schedule ? $this->safeRoute('editor.editorial-schedules.run-now', $schedule) : null,
+                'toggle_schedule' => $schedule ? $this->safeRoute('editor.automation.schedules.toggle', $schedule) : null,
+                'executions' => $this->safeRoute('editor.editorial-schedule-runs.index', ['schedule_id' => $schedule?->id]),
+                'scripts' => $this->safeRoute('editor.scripts.index', ['bulletin_type_id' => $bulletinType->id]),
+            ],
+        ];
+    }
+
+    private function recentExecutions(BulletinType $bulletinType): array
+    {
+        return EditorialScheduleRun::query()
+            ->with(['bulletinPromptRun:id,status,generated_prompt,ai_response_text,script_id', 'script:id,title,status'])
+            ->whereHas('schedule', fn ($query) => $query->where('bulletin_type_id', $bulletinType->id))
+            ->latest('scheduled_for')
+            ->limit(8)
+            ->get()
+            ->map(fn (EditorialScheduleRun $run) => [
+                'id' => $run->id,
+                'scheduled_for' => optional($run->scheduled_for)?->toIso8601String(),
+                'status' => $run->status,
+                'prompt_generated' => filled($run->generated_prompt) || filled($run->bulletinPromptRun?->generated_prompt),
+                'ai_response_received' => filled($run->ai_response_text) || filled($run->bulletinPromptRun?->ai_response_text),
+                'script_created' => filled($run->script_id) || filled($run->bulletinPromptRun?->script_id),
+                'error_message' => $run->error_message,
+                'url' => $this->safeRoute('editor.editorial-schedule-runs.show', $run),
+                'script_url' => ($run->script_id || $run->bulletinPromptRun?->script_id) ? $this->safeRoute('editor.scripts.show', $run->script_id ?: $run->bulletinPromptRun?->script_id) : null,
+            ])
+            ->all();
+    }
+
+    private function recentScripts(BulletinType $bulletinType): array
+    {
+        return Script::query()
+            ->whereHas('bulletinPromptRun', fn ($query) => $query->where('bulletin_type_id', $bulletinType->id))
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'title', 'status', 'review_status', 'production_status', 'created_at'])
+            ->map(fn (Script $script) => [
+                'id' => $script->id,
+                'title' => $script->title,
+                'status' => $script->status,
+                'review_status' => $script->review_status,
+                'production_status' => $script->production_status,
+                'created_at' => optional($script->created_at)?->toIso8601String(),
+                'url' => $this->safeRoute('editor.scripts.show', $script),
+                'review_url' => $this->safeRoute('editor.scripts.review', $script),
+            ])
+            ->all();
+    }
+
+    private function promptPreview(BulletinType $bulletinType): array
+    {
+        $schedule = $bulletinType->primarySchedule;
+        $scheduledFor = $schedule?->next_run_at ?: now();
+        $previewRun = new BulletinPromptRun([
+            'bulletin_type_id' => $bulletinType->id,
+            'prompt_profile_id' => $bulletinType->default_prompt_profile_id,
+            'scheduled_for' => $scheduledFor,
+            'title' => $bulletinType->name.' preview',
+        ]);
+        $previewRun->setRelation('bulletinType', $bulletinType);
+        if ($bulletinType->promptProfile) {
+            $previewRun->setRelation('promptProfile', $bulletinType->promptProfile);
+        }
+
+        try {
+            $text = $this->promptGenerator->generate($previewRun);
+        } catch (\Throwable $exception) {
+            $text = '';
+        }
+
+        return [
+            'text' => $text,
+            'scheduled_for' => optional($scheduledFor)?->toIso8601String(),
+            'location' => $bulletinType->location?->name,
+            'category' => $bulletinType->newsCategory?->name,
+            'duration' => $bulletinType->target_duration_seconds,
+            'purpose' => $bulletinType->description,
+        ];
+    }
+
+    private function bulletinHealth(BulletinType $bulletinType): array
+    {
+        $schedule = $bulletinType->primarySchedule;
+        $provider = $bulletinType->preferredAiProvider;
+        $warnings = [];
+
+        if (! $provider) {
+            $warnings[] = 'bulletinTypes.health.missingProvider';
+        } elseif (! $provider->is_active || ! $provider->hasConfiguredApiKey()) {
+            $warnings[] = 'bulletinTypes.health.providerMisconfigured';
+        }
+
+        if (! $schedule) {
+            $warnings[] = 'bulletinTypes.health.missingSchedule';
+        } elseif (! $schedule->is_active) {
+            $warnings[] = 'bulletinTypes.health.scheduleOff';
+        }
+
+        if (! $bulletinType->is_active) {
+            $warnings[] = 'bulletinTypes.health.bulletinOff';
+        }
+
+        return [
+            'status' => count($warnings) === 0 ? 'ready' : 'attention',
+            'warnings' => $warnings,
+        ];
+    }
+
+    private function safeRoute(string $name, mixed $parameters = []): ?string
+    {
+        return Route::has($name) ? route($name, $parameters) : null;
     }
 }

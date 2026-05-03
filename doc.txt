@@ -951,8 +951,10 @@ Product-flow simplification:
 
 Noticiario TailAdmin-style components:
 - Added local React/Tailwind components in `resources/js/Components/EditorDashboard/` inspired by free TailAdmin React dashboard patterns: metric cards, panels, section headers, status badges, provider badges, pipeline bars, timelines, empty states, action groups, coverage matrix and operational table.
+- Added shared topbar components in `resources/js/Components/Topbar/` for Admin, Editor and Viewer: `AppTopbar`, sidebar toggle, compact icon buttons, appearance selector, language selector, messages button and user menu.
 - This is a local Noticiario component layer only. No TailAdmin full template was installed, no TailAdmin router/app shell/sidebar/auth was copied, EditorLayout and Inertia routing remain in place, and no Pro/paid components were used.
 - Dashboard, Informativos and Ejecuciones pages now use stronger visual hierarchy, rounded bordered surfaces, compact badges, useful CTAs, pipeline progress and dark-mode card contrast.
+- Admin, Editor and Viewer layouts now use a consistent TailAdmin-style topbar with a desktop sidebar collapse/expand control, mobile menu open/close behavior, compact theme/language/messages actions and a clean user dropdown. Existing appearance, locale, unread message, profile, impersonation and logout behavior is preserved.
 
 Informativos:
 - Editor > Informativos is the main product page for bulletin types.

@@ -16,10 +16,10 @@ class GeminiClient implements AiClient
 
     public function generateText(AiProvider $provider, string $prompt, array $options = []): AiResponseData
     {
-        $key = trim((string) env($provider->api_key_env_name ?? 'GEMINI_API_KEY'));
+        $key = trim((string) $provider->apiKeyValue());
         if ($key === '') throw new AiProviderException('Environment key is not configured.', null, false, null, false, 'api_key_missing');
 
-        $model = trim((string) ($provider->default_model ?: 'gemini-3-flash-preview'));
+        $model = trim((string) (($options['model'] ?? $provider->default_model) ?: 'gemini-3-flash-preview'));
         if ($model === '') {
             throw new AiProviderException('Model is required for Gemini requests.', null, false, null, false, 'model_missing');
         }

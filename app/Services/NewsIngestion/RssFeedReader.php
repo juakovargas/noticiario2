@@ -2,7 +2,7 @@
 
 namespace App\Services\NewsIngestion;
 
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
@@ -53,10 +53,9 @@ class RssFeedReader
     {
         $items = [];
 
-        foreach (array_slice(iterator_to_array($xml->channel->item ?? []), 0, $limit) as $item) {
-            $item = $item instanceof \SimpleXMLElement ? $item : null;
-            if (! $item) {
-                continue;
+        foreach ($xml->channel->item ?? [] as $item) {
+            if (count($items) >= $limit || ! $item instanceof \SimpleXMLElement) {
+                break;
             }
 
             $metadata = [
@@ -83,10 +82,9 @@ class RssFeedReader
     {
         $items = [];
 
-        foreach (array_slice(iterator_to_array($xml->entry ?? []), 0, $limit) as $entry) {
-            $entry = $entry instanceof \SimpleXMLElement ? $entry : null;
-            if (! $entry) {
-                continue;
+        foreach ($xml->entry ?? [] as $entry) {
+            if (count($items) >= $limit || ! $entry instanceof \SimpleXMLElement) {
+                break;
             }
 
             $link = null;

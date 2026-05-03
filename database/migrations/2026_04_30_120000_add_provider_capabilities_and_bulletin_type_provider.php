@@ -23,8 +23,8 @@ return new class extends Migration
         });
 
         Schema::table('bulletin_types', function (Blueprint $table): void {
-            if (! Schema::hasColumn('bulletin_types', 'ai_provider_id')) {
-                $table->foreignId('ai_provider_id')->nullable()->after('default_prompt_profile_id')->constrained('ai_providers')->nullOnDelete();
+            if (! Schema::hasColumn('bulletin_types', 'preferred_ai_provider_id')) {
+                $table->foreignId('preferred_ai_provider_id')->nullable()->after('default_prompt_profile_id')->constrained('ai_providers')->nullOnDelete();
             }
         });
     }
@@ -32,8 +32,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('bulletin_types', function (Blueprint $table): void {
-            if (Schema::hasColumn('bulletin_types', 'ai_provider_id')) {
-                $table->dropConstrainedForeignId('ai_provider_id');
+            if (Schema::hasColumn('bulletin_types', 'preferred_ai_provider_id')) {
+                $table->dropConstrainedForeignId('preferred_ai_provider_id');
             }
         });
     }

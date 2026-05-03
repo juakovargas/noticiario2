@@ -32,6 +32,8 @@ class AiRequestLog extends Model
         'metadata',
         'started_at',
         'completed_at',
+        'created_at',
+        'updated_at',
     ];
 
     protected function casts(): array

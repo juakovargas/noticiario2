@@ -91,7 +91,7 @@ class BulletinPromptRunPipeline
                         if ($this->requiresGroundedProvider($run)) {
                             return $this->fail($run, $summary, 'ai_provider', 'No grounded news provider is configured for this informativo.');
                         }
-                        return $this->fail($run, $summary, 'ai_provider', 'Provider missing.');
+                        return $this->fail($run, $summary, 'ai_provider', 'No AI provider configured for this bulletin.');
                     }
                     $selectedProviderMeta = [
                         'selected_provider_id' => $provider->id,
@@ -104,7 +104,7 @@ class BulletinPromptRunPipeline
                     $run->update(['metadata' => array_merge((array) ($run->metadata ?? []), $selectedProviderMeta)]);
                     $summary['pipeline_metadata'] = array_merge($summary['pipeline_metadata'] ?? [], $selectedProviderMeta);
                     if ($provider->requiresApiKey() && ! $provider->hasConfiguredApiKey()) {
-                        return $this->fail($run, $summary, 'ai_provider', 'API key missing.');
+                        return $this->fail($run, $summary, 'ai_provider', sprintf('Environment key %s is not configured.', $provider->apiKeyEnvName() ?: 'API_KEY'));
                     }
                     $limitCheck = $this->usageLimitService->checkProviderLimits($provider);
                     if ($limitCheck['blocked'] === true) {
@@ -244,33 +244,15 @@ class BulletinPromptRunPipeline
             return $explicit;
         }
 
-        $preferredId = $run->bulletinType?->ai_provider_id ?? null;
+        $preferredId = $run->bulletinType?->preferred_ai_provider_id ?? null;
         if ($preferredId) {
             $preferred = AiProvider::query()->active()->find($preferredId);
-            if ($preferred) {
+            if ($preferred && (! $requiresGrounded || $this->isGroundedProvider($preferred))) {
                 return $preferred;
             }
         }
 
-        if ($requiresGrounded) {
-            return AiProvider::query()->active()
-                ->where(function ($q): void {
-                    $q->where('supports_grounding', true)
-                        ->orWhere('provider_category', 'grounded_text');
-                })
-                ->where(function ($q): void {
-                    $q->whereJsonContains('capabilities', 'news_grounding')
-                        ->orWhereJsonContains('capabilities', 'google_search_grounding');
-                })
-                ->orderByDesc('is_default')
-                ->first();
-        }
-
-        return AiProvider::query()->active()->where('is_default', true)->where('is_testing', false)->first()
-            ?? AiProvider::query()->active()->where('slug', 'groq')->first()
-            ?? AiProvider::query()->active()->where('provider_category', 'grounded_text')->first()
-            ?? AiProvider::query()->active()->where('provider_type', '!=', 'mock')->first()
-            ?? AiProvider::query()->active()->first();
+        return null;
     }
 
     private function requiresGroundedProvider(BulletinPromptRun $run): bool

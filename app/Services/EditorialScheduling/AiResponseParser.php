@@ -144,6 +144,10 @@ class AiResponseParser
 
     private function resolveTopLevelLabel(string $line): ?string
     {
+        if (! str_contains($line, ':')) {
+            return null;
+        }
+
         $normalized = $this->normalizeLabel($line);
 
         return match ($normalized) {
@@ -230,7 +234,11 @@ class AiResponseParser
             return null;
         }
 
-        return $this->nullIfEmpty((string) ($match[1] ?? ''));
+        $value = (string) ($match[1] ?? '');
+        $value = trim((string) (preg_replace('/^[*_#\s]+/u', '', $value) ?? $value));
+        $value = trim((string) (preg_replace('/\s*[*_]+$/u', '', $value) ?? $value));
+
+        return $this->nullIfEmpty($value);
     }
 
     /**
@@ -377,6 +385,7 @@ class AiResponseParser
 
         $parts = explode(':', $line, 2);
         $value = trim($parts[1] ?? '');
+        $value = trim((string) (preg_replace('/^[*_#\s]+/u', '', $value) ?? $value));
 
         return $value !== '' ? $value : null;
     }

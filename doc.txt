@@ -20,6 +20,11 @@ High-level workflow:
 10. Prepare production metadata.
 11. Later audio/video/publishing.
 
+Simplified product model for current Editor production work:
+Informativo / Bulletin Type -> Programacion -> Ejecucion -> Prompt -> AI provider -> Guion / Script -> Sources -> Review -> Production-ready.
+
+Audio generation, video generation and publishing are future stages. They must stay visible as roadmap/placeholder concepts, but should not be implemented inside Editor prompt/script readiness branches unless the branch explicitly targets those stages.
+
 Architecture:
 - Laravel 13
 - Inertia
@@ -198,12 +203,17 @@ B. Operational workflow:
 - Added editor actions: run now and recalculate next run from schedule detail page.
 - Workbench and Editor Dashboard now surface due/upcoming schedule indicators and scheduler-created work counters.
 - Automatic runner never calls external AI providers by default; `auto_generate_ai_response` remains disabled by default.
+- Dashboard run-now actions must post to schedule run-now routes (`editor.editorial-schedules.run-now`) and must never post to `/editor` or `/editor/dashboard`.
+- The safe cron-test default is: create schedule runs and prompt runs, generate prompts, and require manual approval before external AI calls unless `auto_generate_ai_response` is intentionally enabled.
 
 ## 5E. EDITOR GROUNDED BULLETIN FLOW
 
 - Editor Bulletin Prompt Run flow now reuses grounded-provider selection logic consistent with pipeline behavior.
 - Current-news bulletins (metadata grounded/current-news flags) require a grounded-capable provider and no longer silently fall back to Groq.
-- Non-grounded bulletins keep existing default/provider fallback behavior including Groq availability for normal text tasks.
+- Normal Editor execution resolves the AI provider from `BulletinType::preferredAiProvider()` / `bulletin_types.preferred_ai_provider_id`.
+- Do not use a fake `BulletinType::aiProvider()` relationship or `bulletin_types.ai_provider_id` for the Editor bulletin/dashboard flow.
+- If a bulletin has no preferred provider, normal Editor AI generation must fail clearly with "No AI provider configured for this bulletin."
+- Groq remains available for explicitly assigned non-grounded text tasks, rewrites, debugging and low-cost auxiliary generation, but should not be silently selected for current-news grounded bulletins.
 - Editor AI response generation now stores provider/model selection and AI response metadata on the prompt run metadata.
 - Grounded AI metadata is now used by source extraction to create/link `SourceReference` records (pending verification) when URLs are provided.
 - When grounded metadata has no extractable URLs, script flow can continue while preserving warnings in workflow metadata/UI.
@@ -252,6 +262,8 @@ At the end of every branch, doc.txt must contain one single current roadmap.
 - No public map filtering yet.
 - No real publication URLs unless future publishing module persists them.
 - Source verification is still manual; no live URL checking, scraping or automatic fact-checking.
+- No custom crawling or feed/site scraping should be introduced for Spain production bulletins.
+- The Spain one-day production test defaults to manual AI approval before external Gemini calls to protect quota and cost.
 - No audio/video processing yet.
 - No media picker/thumbnails/S3 yet.
 
@@ -285,16 +297,7 @@ At the end of every branch, doc.txt must contain one single current roadmap.
   - no audio/image generation introduced
   - parser workflow remains active and unchanged
 
-## 11. CURRENT ROADMAP
-
-1. feature/queue-worker-foundation
-2. feature/audio-production-foundation
-3. feature/video-production-foundation
-4. feature/publishing-foundation
-5. feature/public-viewer-content-and-search
-6. feature/media-picker-and-assets
-7. feature/live-source-checking-optional
-8. feature/privacy-consent-and-public-seo-hardening
+## 11. IMPLEMENTATION HISTORY
 
 ## QUEUE WORKER FOUNDATION
 
@@ -323,15 +326,6 @@ Current limitations:
 - No publishing jobs yet.
 - No Supervisor config yet.
 
-## CURRENT ROADMAP
-1. feature/audio-production-foundation
-2. feature/video-production-foundation
-3. feature/publishing-foundation
-4. feature/public-viewer-content-and-search
-5. feature/media-picker-and-assets
-6. feature/live-source-checking-optional
-7. feature/privacy-consent-and-public-seo-hardening
-
 ## OPERATIONS MONITORING AND ALERTS
 
 Implemented in this branch:
@@ -348,16 +342,6 @@ Limitations:
 - No Horizon/Redis requirement.
 - Alert delivery depends on mail configuration.
 - No external uptime monitor integration yet.
-
-## CURRENT ROADMAP
-1. feature/audio-production-foundation
-2. feature/video-production-foundation
-3. feature/publishing-foundation
-4. feature/public-viewer-content-and-search
-5. feature/media-picker-and-assets
-6. feature/live-source-checking-optional
-7. feature/privacy-consent-and-public-seo-hardening
-
 
 ## GROQ PROVIDER SUPPORT
 
@@ -412,17 +396,6 @@ Limitations:
 - Script rejection now triggers internal notification to manager/responsible fallback user.
 - Limitations: simple inbox only, no realtime sockets, no external email dispatch yet.
 
-## CURRENT ROADMAP
-1. feature/operations-monitoring-dashboard-alerts
-2. feature/audio-production-foundation
-3. feature/video-production-foundation
-4. feature/publishing-foundation
-5. feature/public-viewer-content-and-search
-6. feature/media-picker-and-assets
-7. feature/live-source-checking-optional
-8. feature/privacy-consent-and-public-seo-hardening
-
-
 ## 5E. INTERNAL MESSAGES + HEADER SAFETY
 
 - Added authenticated internal message routes (`messages.index/show/mark-read/archive`) backed by Inertia pages.
@@ -467,16 +440,6 @@ Limitations:
 - Pipeline avoids overwriting existing response/script unless force options are used.
 - Pipeline failures are stored in run state and can be retried.
 
-## CURRENT ROADMAP
-1. feature/operations-monitoring-dashboard-alerts
-2. feature/audio-production-foundation
-3. feature/video-production-foundation
-4. feature/publishing-foundation
-5. feature/public-viewer-content-and-search
-6. feature/media-picker-and-assets
-7. feature/live-source-checking-optional
-8. feature/privacy-consent-and-public-seo-hardening
-
 ## EDITORIAL AUTOMATION CONTROL PANEL
 
 Implemented:
@@ -489,7 +452,7 @@ Implemented:
 - AI spending rule preserved: automatic AI requests remain disabled by default unless explicitly enabled.
 - Future cron command path remains `php artisan noticiario:create-due-runs --run-pipeline` (server cron setup stays out of scope).
 
-Current roadmap:
+Historical follow-up from that automation branch:
 1. feature/operations-monitoring-dashboard-alerts
 2. feature/cron-scheduler-integration
 3. feature/audio-production-foundation
@@ -535,7 +498,7 @@ Current roadmap:
 - Technical/system configuration responsibilities remain in Admin.
 - Contextual help definitions were improved for key workflow pages touched in this branch.
 
-Current roadmap:
+Historical follow-up from that navigation branch:
 1. Finish recurring bulletin automation.
 2. Complete full prompt -> AI -> script -> metadata pipeline for automatic/manual execution.
 3. Improve operations monitoring for editorial and automation failures.
@@ -599,14 +562,6 @@ Current roadmap:
 - Script rows keep route-safe action links for script view/review and prompt run access where available.
 - This page prepares future audio/video/publication phases without implementing generation in this branch.
 
-## CURRENT ROADMAP
-
-1. feature/gemini-grounded-ai-provider
-2. feature/source-confidence-from-ai-citations
-3. feature/audio-production-foundation-edge-tts
-4. feature/video-production-foundation-remotion
-5. feature/publishing-foundation
-
 ## PROVIDER CATEGORIES AND GEMINI GROUNDED
 
 - AI providers now support category + capabilities metadata for broader provider configuration (text, grounded_text, local, testing).
@@ -614,16 +569,10 @@ Current roadmap:
 - Gemini Grounded is added as a real provider option for grounded/current-news script generation using `GEMINI_API_KEY`.
 - Mock provider remains testing-only and should not be default outside explicit testing setup.
 - Local/Ollama provider support is preserved.
-- Bulletin Types can now choose a preferred script provider; pipeline resolves this preferred provider before global default.
+- Bulletin Types choose a preferred script provider via `preferred_ai_provider_id`; Editor dashboard/pipeline code should use the `preferredAiProvider()` relationship consistently.
 - Grounding metadata from Gemini responses is captured in AI response metadata for source-candidate workflows.
 - Audio/video providers remain future phases and are not implemented in this branch.
 - Gemini key setup: Google AI Studio -> API keys -> Create API key, then assign to `GEMINI_API_KEY` in environment.
-
-Roadmap (current):
-1. feature/source-confidence-from-ai-citations
-2. feature/audio-production-foundation-edge-tts
-3. feature/video-production-foundation-remotion
-4. feature/publishing-foundation
 
 ## PROVIDER ADMIN UI AND CAPABILITIES
 - Admin AI Providers now includes category-oriented provider management with quick active/default actions from index.
@@ -831,16 +780,6 @@ Roadmap (current):
 - No new task table/system was created; work items are derived from schedules, runs, scripts, source references, and automation state.
 - No external AI calls are triggered from the dashboard.
 
-## CURRENT ROADMAP
-
-1. Finalize Gemini Grounded production flow for bulletin runs.
-2. Extract and persist Gemini grounding/citation metadata as source references.
-3. Improve script review/source confidence workflow.
-4. Stabilize automated schedule -> prompt -> AI -> script pipeline with rate/cost controls.
-5. Start audio production foundation with Edge TTS.
-6. Start video production foundation with Remotion/FFmpeg.
-7. Publishing foundation.
-
 ## GEMINI GROUNDED EDITOR FLOW
 
 - Gemini Grounded (`gemini-3-flash-preview`) is the main provider for current-news bulletin generation in the normal Editor workflow.
@@ -850,14 +789,6 @@ Roadmap (current):
 - Grounding/citation metadata from Gemini responses is preserved in run metadata.
 - Source references continue in manual verification flow and remain pending by default.
 - No custom scraping or feed scraping is introduced.
-
-## CURRENT ROADMAP
-1. Complete Gemini Grounded source confidence/citation refinement.
-2. Stabilize Editor Dashboard operational work queue.
-3. Stabilize automated schedule -> prompt -> Gemini -> script -> source verification pipeline.
-4. Add Edge TTS audio foundation.
-5. Add Remotion/FFmpeg video foundation.
-6. Add publishing foundation.
 
 ## 5F. EDITOR DASHBOARD CONTROL PANEL REFINEMENT
 
@@ -881,16 +812,16 @@ Roadmap (current):
 - Translation updates were applied for newly touched dashboard/help strings in EN/ES/FR.
 - Contextual help for `editor.dashboard` now includes practical tips focused on overdue schedules and coverage configuration before automation.
 
-## 10. CURRENT ROADMAP (UPDATED MAY 2, 2026)
+## AVATAR/STORAGE AND DASHBOARD NOTES (MAY 2, 2026)
 
 - Fixed avatar/profile image URL regression by using disk-generated public URLs directly from Laravel storage disk API for both `MediaFile::public_url` and `User::avatar_url` fallback path.
 - Verified environment-level root cause in this workspace: missing `public/storage` symlink can prevent `/storage/...` URLs from resolving even with correct DB paths.
-- Editor dashboard remains in active hardening: translation cleanup, embedded world map visibility, provider/model traceability per queue row, provider usage linkage by bulletin, exclusive bulletin grouping, and clearer coverage guidance are the current priorities.
+- Editor dashboard hardening continued with translation cleanup, embedded world map visibility, provider/model traceability per queue row, provider usage linkage by bulletin, exclusive bulletin grouping, and clearer coverage guidance.
 - Keep source-verification and production-readiness visibility in dashboard latest executions.
 
 ## 17. EDITOR DASHBOARD PROFESSIONAL CONTROL PANEL (May 2026)
 - `/editor` now provides a professional editorial control panel with operational summary, map overview, actionable work queue, exclusive bulletin groups, coverage matrix, AI provider status, latest executions, and editorial alerts.
-- Bulletin types already support assigned AI provider via `bulletin_types.ai_provider_id` and dashboard now reports missing provider explicitly (no hidden default in UI health state).
+- Bulletin types support assigned AI provider via `bulletin_types.preferred_ai_provider_id` and `BulletinType::preferredAiProvider()`; dashboard reports missing provider explicitly.
 - Work queue now shows provider/model/grounding/automation per task and highlights missing provider configuration.
 - AI provider status is linked to bulletins using each provider.
 - Coverage section is actionable by location/category with explicit states (covered, missing provider, missing schedule, failed, disabled, not configured).
@@ -937,9 +868,80 @@ Roadmap (current):
   - compact pipeline progress visibility including future placeholders (audio/video/publishing).
 - Summary KPI cards now include scheduled today (instead of generic pending-only metric) plus overdue/failures/review/source/production signals.
 
+## 19. SPAIN PRODUCTION BULLETIN READINESS (May 2026)
+
+Branch goal:
+- Prepare the Editor panel for a one-day real Spain bulletin production test with cron running safely.
+- Keep the active product scope on informativos, prompt generation, Gemini Grounded, guion creation, source verification, review, and production-readiness visibility.
+- Do not implement audio, video or publishing in this branch.
+
+Production bulletin seeder:
+- Seeder: `database/seeders/SpainProductionBulletinsSeeder.php`.
+- Run: `php artisan db:seed --class=SpainProductionBulletinsSeeder`.
+- The seeder is idempotent: it does not wipe data, does not duplicate known slugs, updates matching bulletins/schedules, and restores soft-deleted matching records if needed.
+- It creates/updates the `gemini-grounded` provider record as active script/news provider using the custom Gemini driver, `GEMINI_API_KEY`, `gemini-3-flash-preview`, and grounding/citation capabilities.
+- It never stores the API key in the database.
+
+Seeded Spain test bulletins:
+- `spain-morning-general-news`: Spain Morning General News, General, Spanish, daily 08:00 Europe/Madrid.
+- `spain-midday-update`: Spain Midday Update, General, Spanish, daily 13:30 Europe/Madrid.
+- `spain-evening-recap`: Spain Evening Recap, General, Spanish, daily 20:00 Europe/Madrid.
+- `spain-sports-preview`: Spain Sports Preview, Sports, Spanish, daily 19:00 Europe/Madrid, next-24-hours sports agenda/preview.
+- All four are active and assign Gemini Grounded through `preferred_ai_provider_id`.
+- All four use `plain_final_script` prompts; normal production prompts must not reintroduce `TITLE`, `INTRO`, `NEWS ITEMS`, `SCRIPT`, `OUTRO` or `NOTES` blocks.
+
+Safe automation defaults for the one-day cron test:
+- `auto_create_prompt_run`: true.
+- `auto_generate_prompt`: true.
+- `auto_create_script`: true.
+- `auto_extract_sources`: true.
+- `auto_run_pipeline`: false.
+- `auto_generate_ai_response`: false by default.
+- Rationale: the cron can create schedule runs and prompts without spending Gemini quota; editors manually approve AI generation. If a real automatic test is desired, enable `auto_generate_ai_response` intentionally and monitor rate/cost limits.
+
+Run-now behavior:
+- Dashboard "Ejecutar ahora" / "Run now" actions post to `editor.editorial-schedules.run-now`.
+- They must never post to `/editor` or `/editor/dashboard`.
+- Run now creates the schedule run/prompt run according to the existing schedule workflow and redirects back to useful run context.
+- Run now should not call external AI unless the schedule/bulletin automation settings explicitly enable that behavior.
+
+Gemini Grounded normal Editor flow:
+- Normal Editor AI generation resolves the provider from `BulletinType::preferredAiProvider()`.
+- Gemini Grounded uses `GEMINI_API_KEY` or the configured provider env key, resolved through provider key helpers and `config('services.gemini.key')`.
+- If no preferred provider is configured, show a clear configuration error instead of falling back silently.
+- For current-news/grounded bulletins, do not silently fallback to Groq.
+- Groq remains a valid auxiliary provider for explicitly assigned non-grounded text work.
+
+Bulletin Type UI:
+- Editor > Bulletin Types list/show/create/edit now surfaces preferred provider, model and grounding status.
+- Provider selector uses `preferred_ai_provider_id`, filters to active script/news/text providers, and excludes testing-only providers such as Mock.
+- Missing provider should be shown with translated labels in en/es/fr.
+
+Editor Dashboard production-readiness redesign:
+- Main dashboard focus is next active work, not old accumulated history.
+- Sections: header, embedded editorial map/location overview, summary cards, next scheduled runs, scheduled bulletins, tasks to execute, editorial AI engines, coverage by location/topic, and latest executions.
+- Scheduled bulletins show ON/OFF state, provider/model, grounding, run timing, manual-AI approval state, pipeline chips and direct actions.
+- Tasks to execute should only include actionable work: overdue/failed active schedules, incomplete operational configuration, prompt runs waiting for AI, scripts pending review, and sources pending verification.
+- Latest executions show date/time, bulletin, provider/model, translated status, script/prompt links when available, source counters and the next useful action.
+- TailAdmin free MIT patterns were adapted for visual polish only; the full TailAdmin app, router, shell and Pro components were not copied.
+
+Contextual help and translations:
+- Help for Editor Dashboard and Bulletin Types pages explains the operational model, schedules ON/OFF, provider/model assignment, map coverage, task queue, latest executions, source/review pipeline, and future audio/video/publishing stages.
+- Touched visible UI strings must remain translated in `resources/js/i18n/translations.ts` for en/es/fr.
+- Run `npm run check:translations` after translation changes.
+
+Testing/verification notes:
+- Tests were added/updated for preferred provider relationship usage, bulletin list provider/model props, dashboard run-now URLs, Gemini Grounded provider/key resolution, Spain seeder idempotency, active scheduled work filtering, and dashboard loading.
+- `phpunit.xml` now includes a harmless testing-only `APP_KEY` so feature tests using encrypted sessions/cookies can run without local `.env` leakage.
+- `AiRequestLog` allows timestamp mass assignment so usage-window tests and rate-limit summaries can create historical logs accurately.
+- The RSS reader and structured response parser were hardened while chasing the full test suite; no scraping/crawling feature was added.
+
 ## CURRENT ROADMAP
-1. Complete Gemini Grounded source confidence/citation refinement.
-2. Stabilize automated schedule -> prompt -> Gemini -> script -> source verification pipeline.
-3. Add Edge TTS audio foundation.
-4. Add Remotion/FFmpeg video foundation.
-5. Add publishing foundation.
+1. Run `SpainProductionBulletinsSeeder` in the target environment and verify Gemini Grounded is active with `GEMINI_API_KEY` configured.
+2. Run the one-day Spain cron test with the safe manual-AI default, then inspect schedule runs, prompt runs, scripts, source references and review tasks.
+3. Decide whether future production tests should enable `auto_generate_ai_response` for selected bulletins, with explicit provider limits/rate monitoring.
+4. Refine Gemini grounding/citation source confidence and source-verification UX.
+5. Stabilize schedule -> prompt -> Gemini -> script -> source verification automation with queue/rate/cost controls.
+6. Add Edge TTS audio foundation.
+7. Add Remotion/FFmpeg video foundation.
+8. Add publishing foundation.

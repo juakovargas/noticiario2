@@ -192,14 +192,52 @@ class AiProvider extends Model
         return $this->provider_type !== 'ollama' && $this->provider_type !== 'mock';
     }
 
+    public function apiKeyEnvName(): ?string
+    {
+        $envName = trim((string) $this->api_key_env_name);
+
+        if ($envName !== '') {
+            return $envName;
+        }
+
+        return match ($this->provider_type) {
+            'gemini', 'google_gemini' => 'GEMINI_API_KEY',
+            'groq' => 'GROQ_API_KEY',
+            'openai' => 'OPENAI_API_KEY',
+            'openrouter' => 'OPENROUTER_API_KEY',
+            'anthropic' => 'ANTHROPIC_API_KEY',
+            default => null,
+        };
+    }
+
+    public function apiKeyValue(): ?string
+    {
+        $envName = $this->apiKeyEnvName();
+
+        if (! $envName) {
+            return null;
+        }
+
+        $configValue = match ($envName) {
+            'GEMINI_API_KEY' => config('services.gemini.key'),
+            'GROQ_API_KEY' => config('services.groq.key'),
+            'OPENAI_API_KEY' => config('services.openai.key'),
+            'OPENROUTER_API_KEY' => config('services.openrouter.key'),
+            'ANTHROPIC_API_KEY' => config('services.anthropic.key'),
+            default => null,
+        };
+
+        $value = $configValue ?: env($envName) ?: getenv($envName) ?: ($_ENV[$envName] ?? null) ?: ($_SERVER[$envName] ?? null);
+
+        return filled($value) ? (string) $value : null;
+    }
+
     public function hasConfiguredApiKey(): bool
     {
         if (! $this->requiresApiKey()) {
             return true;
         }
 
-        $envName = trim((string) $this->api_key_env_name);
-
-        return $envName !== '' && filled(env($envName));
+        return filled($this->apiKeyValue());
     }
 }

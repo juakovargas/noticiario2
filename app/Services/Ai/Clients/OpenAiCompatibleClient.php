@@ -82,13 +82,13 @@ class OpenAiCompatibleClient implements AiClient
 
     private function resolveApiKey(AiProvider $provider): string
     {
-        $envName = trim((string) $provider->api_key_env_name);
+        $envName = $provider->apiKeyEnvName();
 
-        if ($envName === '') {
+        if (! $envName) {
             throw new AiProviderException('Environment key is not configured.');
         }
 
-        $key = env($envName);
+        $key = $provider->apiKeyValue();
         if (! filled($key)) {
             throw new AiProviderException('Environment key is not configured.');
         }

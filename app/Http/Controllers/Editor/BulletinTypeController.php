@@ -29,18 +29,34 @@ class BulletinTypeController extends Controller
     {
         $filters = [
             'location_id' => (string) $request->query('location_id', ''),
+            'provider' => (string) $request->query('provider', ''),
         ];
+
+        $providerOptions = $this->scriptProviderQuery()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'default_model', 'supports_grounding']);
 
         return Inertia::render('Editor/BulletinTypes/Index', [
             'bulletinTypes' => BulletinType::query()
-                ->with(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'promptProfile:id,name'])
+                ->with([
+                    'location:id,name',
+                    'newsCategory:id,name',
+                    'language:id,name,code',
+                    'promptProfile:id,name',
+                    'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category',
+                    'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at',
+                ])
                 ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
+                ->when($filters['provider'] === 'missing', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
+                ->when(is_numeric($filters['provider']), fn ($query) => $query->where('preferred_ai_provider_id', (int) $filters['provider']))
                 ->orderByDesc('is_active')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->paginate(20)
                 ->withQueryString(),
             'filters' => $filters,
+            'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'providerOptions' => $providerOptions,
         ]);
     }
 
@@ -62,7 +78,14 @@ class BulletinTypeController extends Controller
 
     public function show(BulletinType $bulletinType): Response
     {
-        $bulletinType->load(['location:id,name', 'newsCategory:id,name', 'language:id,name,code', 'promptProfile:id,name']);
+        $bulletinType->load([
+            'location:id,name',
+            'newsCategory:id,name',
+            'language:id,name,code',
+            'promptProfile:id,name',
+            'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category,is_active',
+            'schedules' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),
+        ]);
 
         return Inertia::render('Editor/BulletinTypes/Show', ['bulletinType' => $bulletinType]);
     }
@@ -128,7 +151,7 @@ class BulletinTypeController extends Controller
             'news_category_id' => ['nullable', 'exists:news_categories,id'],
             'language_id' => ['nullable', 'exists:languages,id'],
             'default_prompt_profile_id' => ['nullable', 'exists:prompt_profiles,id'],
-            'ai_provider_id' => ['nullable', 'exists:ai_providers,id'],
+            'preferred_ai_provider_id' => ['nullable', 'exists:ai_providers,id'],
             'edition_type' => ['nullable', 'string', 'max:50'],
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'default_schedule_time' => ['nullable', 'date_format:H:i'],
@@ -165,13 +188,29 @@ class BulletinTypeController extends Controller
             'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
             'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'promptProfiles' => PromptProfile::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
-            'scriptProviders' => AiProvider::query()->where('is_active', true)->where('is_testing', false)->where(function ($q): void {
-                $q->where('provider_category', 'text')->orWhere('provider_category', 'grounded_text')->orWhereJsonContains('capabilities', 'script_generation')->orWhereJsonContains('capabilities', 'news_grounding');
-            })->orderByDesc('is_default')->orderBy('name')->get(['id','name','provider_category','capabilities']),
+            'scriptProviders' => $this->scriptProviderQuery()
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get(['id','name','slug','provider_category','default_model','supports_grounding','capabilities']),
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
             'coverageModes' => ['previous_period', 'today_so_far', 'yesterday', 'last_24_hours', 'next_24_hours', 'custom', 'none'],
             'promptLanguages' => ['es', 'en', 'fr'],
             'outputModes' => ['plain_final_script', 'structured_script'],
         ];
+    }
+
+    private function scriptProviderQuery()
+    {
+        return AiProvider::query()
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query->where('is_testing', false)->orWhereNull('is_testing');
+            })
+            ->where(function ($q): void {
+                $q->whereIn('provider_category', ['text', 'grounded_text', 'local'])
+                    ->orWhereJsonContains('capabilities', 'script_generation')
+                    ->orWhereJsonContains('capabilities', 'news_grounding')
+                    ->orWhereJsonContains('capabilities', 'text_generation');
+            });
     }
 }

@@ -61,24 +61,24 @@ class LaravelAiSdkClient implements AiClient
 
     private function buildSdkSafeMessage(AiProvider $provider, \Throwable $error): string
     {
-        if (! class_exists(\Laravel\Ai\Facades\Ai::class)) {
+        if ($error instanceof AiProviderException && $error->errorCode === 'sdk_package_missing') {
             return 'Laravel AI SDK is not installed.';
         }
 
-        if (($provider->api_key_env_name ?? '') === '' || ! (bool) env((string) $provider->api_key_env_name)) {
-            return 'Missing GEMINI_API_KEY for Laravel AI SDK.';
+        if (($provider->api_key_env_name ?? '') !== '' && ! (bool) env((string) $provider->api_key_env_name)) {
+            return 'Missing '.$provider->api_key_env_name.' for Laravel AI SDK.';
         }
 
-        return 'Laravel AI SDK request failed: '.$error->getMessage();
+        return 'Laravel AI SDK request failed.';
     }
 
     private function resolveFailureCode(AiProvider $provider, \Throwable $error): string
     {
-        if (! class_exists(\Laravel\Ai\Facades\Ai::class)) {
+        if ($error instanceof AiProviderException && $error->errorCode === 'sdk_package_missing') {
             return 'sdk_package_missing';
         }
 
-        if (($provider->api_key_env_name ?? '') === '' || ! (bool) env((string) $provider->api_key_env_name)) {
+        if (($provider->api_key_env_name ?? '') !== '' && ! (bool) env((string) $provider->api_key_env_name)) {
             return 'sdk_key_missing';
         }
 
@@ -93,4 +93,3 @@ class LaravelAiSdkClient implements AiClient
         };
     }
 }
-

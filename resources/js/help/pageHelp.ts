@@ -19,9 +19,9 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.dashboard.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.dashboard.actions' },
+            { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.dashboard.pipeline' },
         ],
-        tipsKeys: ['help.editor.dashboard.tip1', 'help.editor.dashboard.tip2'],
-        nextStepsKeys: ['help.editor.dashboard.next'],
+        tipsKeys: ['help.editor.dashboard.tip1', 'help.editor.dashboard.tip2', 'help.editor.dashboard.tip3'],
     },
     'editor.workbench.index': {
         titleKey: 'help.editor.workbench.title',
@@ -64,7 +64,35 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.actions' },
+            { titleKey: 'bulletinTypes.table.provider', contentKey: 'help.editor.bulletinTypes.provider' },
         ],
+    },
+    'editor.bulletintypes.create': {
+        titleKey: 'help.editor.bulletinTypes.create.title',
+        summaryKey: 'help.editor.bulletinTypes.create.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.create.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.create.actions' },
+        ],
+        tipsKeys: ['help.editor.bulletinTypes.create.tip1', 'help.editor.bulletinTypes.create.tip2'],
+    },
+    'editor.bulletintypes.edit': {
+        titleKey: 'help.editor.bulletinTypes.edit.title',
+        summaryKey: 'help.editor.bulletinTypes.edit.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.edit.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.edit.actions' },
+        ],
+        tipsKeys: ['help.editor.bulletinTypes.edit.tip1', 'help.editor.bulletinTypes.edit.tip2'],
+    },
+    'editor.bulletintypes.show': {
+        titleKey: 'help.editor.bulletinTypes.show.title',
+        summaryKey: 'help.editor.bulletinTypes.show.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.show.what' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.show.actions' },
+        ],
+        tipsKeys: ['help.editor.bulletinTypes.show.tip1', 'help.editor.bulletinTypes.show.tip2'],
     },
     'editor.editorialschedules.index': {
         titleKey: 'help.editor.schedules.title',

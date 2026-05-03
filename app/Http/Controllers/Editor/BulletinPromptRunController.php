@@ -77,7 +77,7 @@ class BulletinPromptRunController extends Controller
 
         $query = BulletinPromptRun::query()
             ->with([
-                'bulletinType:id,name',
+            'bulletinType:id,name,preferred_ai_provider_id',
                 'promptProfile:id,name',
                 'script:id,title,status,review_status,production_status,final_title,production_name,public_description,short_description,hashtags,target_platforms',
                 'createdBy:id,name,email,profile_image_id',
@@ -171,6 +171,7 @@ class BulletinPromptRunController extends Controller
             'bulletinType.location:id,name',
             'bulletinType.newsCategory:id,name',
             'bulletinType.language:id,name,code',
+            'bulletinType.preferredAiProvider:id,name,default_model,supports_grounding,provider_category,is_active',
             'promptProfile:id,name',
             'edition:id,title',
             'script:id,title,status,review_status,production_status,final_title,production_name,public_description,short_description,hashtags,target_platforms',
@@ -307,13 +308,13 @@ class BulletinPromptRunController extends Controller
 
         if (! $provider || ! $provider->is_active) {
             if ($this->requiresGroundedProvider($bulletinPromptRun)) {
-                return back()->with('error', 'No grounded news provider is configured for this informativo.');
+                return back()->with('error', 'No AI provider configured for this bulletin.');
             }
-            return back()->with('error', 'No active AI provider configured.');
+            return back()->with('error', 'No AI provider configured for this bulletin.');
         }
 
         if ($provider->requiresApiKey() && ! $provider->hasConfiguredApiKey()) {
-            return back()->with('error', 'Environment key is not configured.');
+            return back()->with('error', sprintf('Environment key %s is not configured.', $provider->apiKeyEnvName() ?: 'API_KEY'));
         }
 
         $limitCheck = $this->usageLimitService->checkProviderLimits($provider);
@@ -405,7 +406,7 @@ class BulletinPromptRunController extends Controller
             return $explicit;
         }
 
-        $preferredId = $run->bulletinType?->ai_provider_id;
+        $preferredId = $run->bulletinType?->preferred_ai_provider_id;
         if ($preferredId) {
             $preferred = AiProvider::query()->active()->find($preferredId);
             if ($preferred && (! $requiresGrounded || $this->isGroundedProvider($preferred))) {
@@ -413,25 +414,7 @@ class BulletinPromptRunController extends Controller
             }
         }
 
-        if ($requiresGrounded) {
-            return AiProvider::query()->active()
-                ->where(function ($q): void {
-                    $q->where('supports_grounding', true)
-                        ->orWhere('provider_category', 'grounded_text');
-                })
-                ->where(function ($q): void {
-                    $q->whereJsonContains('capabilities', 'news_grounding')
-                        ->orWhereJsonContains('capabilities', 'google_search_grounding');
-                })
-                ->orderByDesc('is_default')
-                ->orderBy('name')
-                ->first();
-        }
-
-        return AiProvider::query()->active()->where('is_default', true)->where('is_testing', false)->first()
-            ?? AiProvider::query()->active()->where('slug', 'groq')->first()
-            ?? AiProvider::query()->active()->where('provider_type', '!=', 'mock')->first()
-            ?? AiProvider::query()->active()->first();
+        return null;
     }
 
     private function requiresGroundedProvider(BulletinPromptRun $run): bool
@@ -547,7 +530,7 @@ class BulletinPromptRunController extends Controller
     {
         $providerId = data_get($run->pipeline_metadata, 'pipeline_metadata.provider_id')
             ?? data_get($run->pipeline_metadata, 'provider_id')
-            ?? $run->bulletinType?->ai_provider_id;
+            ?? $run->bulletinType?->preferred_ai_provider_id;
 
         return $providerId ? AiProvider::query()->find($providerId) : null;
     }

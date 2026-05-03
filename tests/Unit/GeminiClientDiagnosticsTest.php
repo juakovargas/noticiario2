@@ -13,6 +13,7 @@ class GeminiClientDiagnosticsTest extends TestCase
     public function test_gemini_uses_x_goog_api_key_header(): void
     {
         putenv('GEMINI_API_KEY=test-key');
+        config(['services.gemini.key' => 'test-key']);
         Http::fake(['*' => Http::response(['candidates' => [['content' => ['parts' => [['text' => 'OK']]]]], 'usageMetadata' => []], 200)]);
         $provider = new AiProvider(['provider_type' => 'gemini', 'api_key_env_name' => 'GEMINI_API_KEY', 'default_model' => 'gemini-2.0-flash', 'timeout_seconds' => 30, 'base_url' => 'https://generativelanguage.googleapis.com/v1beta']);
 
@@ -26,6 +27,7 @@ class GeminiClientDiagnosticsTest extends TestCase
     public function test_missing_api_key_throws_without_request(): void
     {
         putenv('GEMINI_API_KEY');
+        config(['services.gemini.key' => null]);
         Http::fake();
         $provider = new AiProvider(['provider_type' => 'gemini', 'api_key_env_name' => 'GEMINI_API_KEY', 'default_model' => 'gemini-2.0-flash', 'timeout_seconds' => 30]);
 

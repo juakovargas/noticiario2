@@ -31,7 +31,8 @@ class BulletinPromptRunAiGenerationTest extends TestCase
         $provider = AiProvider::query()->create([
             'name' => 'OpenAI', 'slug' => 'openai', 'provider_type' => 'openai', 'base_url' => 'https://api.openai.com/v1', 'api_key_env_name' => 'OPENAI_API_KEY', 'default_model' => 'gpt-4o-mini', 'is_active' => true, 'is_default' => true, 'timeout_seconds' => 60,
         ]);
-        $run = BulletinPromptRun::factory()->create(['generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
+        $type = BulletinType::factory()->create(['preferred_ai_provider_id' => $provider->id]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
 
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run), ['ai_provider_id' => $provider->id])->assertRedirect();
 
@@ -80,7 +81,8 @@ class BulletinPromptRunAiGenerationTest extends TestCase
             'name' => 'OpenAI', 'slug' => 'openai', 'provider_type' => 'openai', 'base_url' => 'https://api.openai.com/v1', 'api_key_env_name' => 'OPENAI_API_KEY', 'default_model' => 'gpt-4o-mini', 'is_active' => true, 'is_default' => true, 'timeout_seconds' => 60,
         ]);
 
-        $run = BulletinPromptRun::factory()->create(['generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
+        $type = BulletinType::factory()->create(['preferred_ai_provider_id' => AiProvider::query()->where('slug', 'openai')->value('id')]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
 
         $this->actingAs($editor)->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run))->assertSessionHas('error');
         $this->assertDatabaseHas('ai_request_logs', ['bulletin_prompt_run_id' => $run->id, 'status' => 'failed']);
@@ -98,6 +100,17 @@ class BulletinPromptRunAiGenerationTest extends TestCase
         $this->assertSame('TITLE: Manual', $run->fresh()->ai_response_text);
     }
 
+    public function test_generation_without_bulletin_provider_returns_clear_configuration_error(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $type = BulletinType::factory()->create(['preferred_ai_provider_id' => null]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt', 'status' => 'prompt_ready']);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run))
+            ->assertSessionHas('error', 'No AI provider configured for this bulletin.');
+    }
+
     public function test_generation_is_blocked_when_daily_limit_reached_without_external_call(): void
     {
         putenv('OPENAI_API_KEY=test-key');
@@ -107,7 +120,8 @@ class BulletinPromptRunAiGenerationTest extends TestCase
         $provider = AiProvider::query()->create([
             'name' => 'OpenAI', 'slug' => 'openai', 'provider_type' => 'openai', 'base_url' => 'https://api.openai.com/v1', 'api_key_env_name' => 'OPENAI_API_KEY', 'default_model' => 'gpt-4o-mini', 'is_active' => true, 'is_default' => true, 'timeout_seconds' => 60, 'daily_request_limit' => 1,
         ]);
-        $run = BulletinPromptRun::factory()->create(['generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
+        $type = BulletinType::factory()->create(['preferred_ai_provider_id' => $provider->id]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt text', 'status' => 'prompt_ready']);
 
         $this->assertDatabaseCount('ai_request_logs', 0);
         $this->assertDatabaseHas('ai_providers', ['id' => $provider->id]);
@@ -162,5 +176,60 @@ class BulletinPromptRunAiGenerationTest extends TestCase
             'model' => 'gpt-4.1-mini',
         ]);
         $this->assertNotNull($run->fresh()->ai_response_text);
+    }
+
+    public function test_gemini_grounded_resolves_from_bulletin_preferred_provider_and_env_key(): void
+    {
+        putenv('GEMINI_API_KEY=test-gemini-key');
+        config(['services.gemini.key' => 'test-gemini-key']);
+
+        Http::fake(function ($request) {
+            $this->assertSame('test-gemini-key', $request->header('x-goog-api-key')[0] ?? null);
+            $this->assertStringContainsString('/models/gemini-3-flash-preview:generateContent', $request->url());
+
+            return Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => 'Guion final listo para locucion.']]],
+                    'finishReason' => 'STOP',
+                    'groundingMetadata' => ['searchEntryPoint' => ['renderedContent' => '']],
+                ]],
+                'usageMetadata' => ['promptTokenCount' => 10, 'candidatesTokenCount' => 8, 'totalTokenCount' => 18],
+            ]);
+        });
+
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $provider = AiProvider::query()->create([
+            'name' => 'Gemini Grounded',
+            'slug' => 'gemini-grounded',
+            'provider_type' => 'gemini',
+            'client_driver' => 'custom',
+            'provider_category' => 'grounded_text',
+            'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
+            'api_key_env_name' => 'GEMINI_API_KEY',
+            'default_model' => 'gemini-3-flash-preview',
+            'is_active' => true,
+            'is_default' => false,
+            'supports_grounding' => true,
+            'capabilities' => ['script_generation', 'news_grounding', 'google_search_grounding'],
+            'timeout_seconds' => 60,
+            'max_tokens' => 1000,
+        ]);
+        $type = BulletinType::factory()->create([
+            'preferred_ai_provider_id' => $provider->id,
+            'metadata' => ['requires_current_news' => true, 'requires_grounded_news' => true],
+        ]);
+        $run = BulletinPromptRun::factory()->create(['bulletin_type_id' => $type->id, 'generated_prompt' => 'Prompt actual de Espana', 'status' => 'prompt_ready']);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-prompt-runs.generate-ai-response', $run))
+            ->assertRedirect();
+
+        $this->assertSame('Guion final listo para locucion.', $run->fresh()->ai_response_text);
+        $this->assertDatabaseHas('ai_request_logs', [
+            'bulletin_prompt_run_id' => $run->id,
+            'ai_provider_id' => $provider->id,
+            'model' => 'gemini-3-flash-preview',
+            'status' => 'success',
+        ]);
     }
 }

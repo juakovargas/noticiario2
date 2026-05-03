@@ -56,6 +56,9 @@ class BulletinPromptGenerator
             'Duración objetivo: '.($type->target_duration_seconds ?? 75).' segundos.',
             'Propósito: '.$objective,
             'Ventana informativa: de '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            'Mínimo de noticias: '.$minItems.'.',
+            'Máximo de noticias: '.$maxItems.'.',
+            'Modo de salida: '.($type->output_mode ?: 'plain_final_script').'.',
             'PERSONALIDAD EDITORIAL (0-10):',
             '- Felicidad: '.((int) ($profile->happiness_level ?? 7)),
             '- Optimismo: '.((int) ($profile->optimism_level ?? 7)),
@@ -94,6 +97,9 @@ class BulletinPromptGenerator
             'TOPIC: '.($type->newsCategory?->name ?? 'General').'.',
             'WINDOW: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
             'OBJECTIVE: Summarize the most relevant developments in the configured window.',
+            'Minimum news items: '.$minItems.'.',
+            'Maximum news items: '.$maxItems.'.',
+            'OUTPUT MODE: '.($type->output_mode ?: 'plain_final_script').'.',
             'EDITORIAL PERSONALITY (0-10):',
             '- Happiness: '.((int) ($profile->happiness_level ?? 7)),
             '- Optimism: '.((int) ($profile->optimism_level ?? 7)),
@@ -106,6 +112,7 @@ class BulletinPromptGenerator
             '',
             'STRUCTURE:',
             '- Include '.$minItems.' to '.$maxItems.' relevant items or events.',
+            '- Include at least one source hint per news item when source material is available.',
             '- Do not invent facts.',
             '- Use short natural spoken sentences.',
             '- If something is not confirmed, use cautious wording.',
@@ -118,12 +125,94 @@ class BulletinPromptGenerator
 
     private function generateStructuredPromptEs($type, array $context): string
     {
-        return "MODO AVANZADO structured_script\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\nOUTRO:\nNOTES:";
+        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+        $scheduled = $context['scheduled_for']->copy()->timezone($context['timezone']);
+
+        return trim(implode("\n", [
+            'MODO AVANZADO structured_script',
+            '',
+            'FECHA Y HORA DE EMISIÓN',
+            'Fecha de emisión: '.$scheduled->format('Y-m-d').'.',
+            'Hora de emisión: '.$scheduled->format('H:i').'.',
+            'Zona horaria: '.$context['timezone'].'.',
+            '',
+            'CONTEXTO EDITORIAL',
+            'Informativo: '.$type->name.'.',
+            'Localización: '.($type->location?->name ?? 'Global').'.',
+            'Categoría: '.($type->newsCategory?->name ?? 'General').'.',
+            'Duración objetivo: '.($type->target_duration_seconds ?? 75).' segundos.',
+            'Ventana informativa: de '.$this->formatWindow($context['coverage_from'], $context['timezone']).' a '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            '',
+            'NÚMERO DE NOTICIAS',
+            'Mínimo de noticias: '.$minItems.'.',
+            'Máximo de noticias: '.$maxItems.'.',
+            '',
+            'REGLAS DE SELECCIÓN DE NOTICIAS',
+            '- Prioriza hechos recientes, relevantes y verificables.',
+            '- No inventes datos, cifras, citas ni fuentes.',
+            '- Incluye al menos una pista de fuente por noticia.',
+            '- Si algo no está confirmado, dilo con cautela.',
+            '',
+            'MODO DE SALIDA: structured_script',
+            'Los bloques SCRIPT son la narración principal que se usará para crear el guion.',
+            'Devuelve exactamente esta estructura:',
+            'TITLE:',
+            'INTRO:',
+            'NEWS ITEMS:',
+            '1. HEADLINE:',
+            'SUMMARY:',
+            'SCRIPT:',
+            'EDITORIAL ANGLE:',
+            'SOURCE HINTS:',
+            'OUTRO:',
+            'NOTES:',
+        ]));
     }
 
     private function generateStructuredPromptEn($type, array $context): string
     {
-        return "ADVANCED MODE structured_script\nTITLE:\nINTRO:\nNEWS ITEMS:\n1. HEADLINE:\nSUMMARY:\nSCRIPT:\nEDITORIAL ANGLE:\nSOURCE HINTS:\nOUTRO:\nNOTES:";
+        [$minItems, $maxItems] = $this->resolveNewsItemRange($type->min_news_items, $type->max_news_items, $type->target_duration_seconds);
+        $scheduled = $context['scheduled_for']->copy()->timezone($context['timezone']);
+
+        return trim(implode("\n", [
+            'ADVANCED MODE structured_script',
+            '',
+            'BROADCAST TIMING',
+            'Broadcast date: '.$scheduled->format('Y-m-d').'.',
+            'Broadcast time: '.$scheduled->format('H:i').'.',
+            'Timezone: '.$context['timezone'].'.',
+            '',
+            'EDITORIAL CONTEXT',
+            'Bulletin: '.$type->name.'.',
+            'Location: '.($type->location?->name ?? 'Global').'.',
+            'Category: '.($type->newsCategory?->name ?? 'General').'.',
+            'Target duration: '.($type->target_duration_seconds ?? 75).' seconds.',
+            'Coverage window: '.$this->formatWindow($context['coverage_from'], $context['timezone']).' to '.$this->formatWindow($context['coverage_to'], $context['timezone']).'.',
+            '',
+            'NEWS ITEM COUNT',
+            'Minimum news items: '.$minItems.'.',
+            'Maximum news items: '.$maxItems.'.',
+            '',
+            'NEWS SELECTION RULES',
+            '- Prioritize recent, relevant, verifiable facts.',
+            '- Do not invent facts, figures, quotes, or sources.',
+            '- Include at least one source hint per news item.',
+            '- Use cautious wording when something is not confirmed.',
+            '',
+            'OUTPUT MODE: structured_script',
+            'SCRIPT blocks are the main narration used to create the script.',
+            'Return exactly this structure:',
+            'TITLE:',
+            'INTRO:',
+            'NEWS ITEMS:',
+            '1. HEADLINE:',
+            'SUMMARY:',
+            'SCRIPT:',
+            'EDITORIAL ANGLE:',
+            'SOURCE HINTS:',
+            'OUTRO:',
+            'NOTES:',
+        ]));
     }
 
 

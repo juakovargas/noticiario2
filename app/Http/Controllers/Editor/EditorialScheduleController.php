@@ -130,17 +130,13 @@ class EditorialScheduleController extends Controller
 
     public function runNow(EditorialSchedule $editorialSchedule): RedirectResponse
     {
-        $result = $this->scheduleRunner->createRunForSchedule($editorialSchedule->load('bulletinType'), now()->utc()->startOfMinute(), ['generate_prompts' => true]);
+        $run = $this->scheduleRunner->createRunForSchedule($editorialSchedule->load('bulletinType'), now()->utc()->startOfMinute(), ['generate_prompts' => true]);
 
-        if (($result['status'] ?? '') === 'duplicate' && isset($result['run_id'])) {
-            return to_route('editor.editorial-schedule-runs.show', $result['run_id'])->with('success', 'Duplicate run skipped.');
+        if (! $run->wasRecentlyCreated) {
+            return to_route('editor.editorial-schedule-runs.show', $run)->with('warning', __('Execution already exists for this scheduled time.'));
         }
 
-        if (! isset($result['run_id'])) {
-            return back()->with('success', 'Run processed.');
-        }
-
-        return to_route('editor.editorial-schedule-runs.show', $result['run_id'])->with('success', 'Editorial run created successfully.');
+        return to_route('editor.editorial-schedule-runs.show', $run)->with('success', 'Editorial run created successfully.');
     }
 
     public function recalculateNextRun(EditorialSchedule $editorialSchedule): RedirectResponse

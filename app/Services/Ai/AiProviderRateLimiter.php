@@ -69,16 +69,28 @@ class AiProviderRateLimiter
 
     public function markRequestStarted(AiProvider $provider): void
     {
+        if (! $provider->exists) {
+            return;
+        }
+
         $provider->forceFill(['last_request_at' => now()])->save();
     }
 
     public function markRequestFinished(AiProvider $provider): void
     {
+        if (! $provider->exists) {
+            return;
+        }
+
         $provider->forceFill(['last_request_at' => now()])->save();
     }
 
     public function markRateLimited(AiProvider $provider, ?int $retryAfterSeconds = null, array $metadata = []): void
     {
+        if (! $provider->exists) {
+            return;
+        }
+
         $wait = max(1, $retryAfterSeconds ?? $provider->initial_retry_delay_seconds ?? 5);
         $provider->forceFill([
             'rate_limited_until' => now()->addSeconds($wait),

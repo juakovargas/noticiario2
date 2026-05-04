@@ -27,6 +27,52 @@ Internal prompt runs still exist because they store generated prompts, AI respon
 
 Audio generation, video generation and publishing are future stages. They must stay visible as roadmap/placeholder concepts, but should not be implemented inside Editor prompt/script readiness branches unless the branch explicitly targets those stages.
 
+## PRODUCT SIMPLIFICATION (feature/product-simplification-bulletins-runs-scripts)
+
+### Primary Editor Navigation (7 pages)
+1. Dashboard - Today timeline and summary cards
+2. Informativos - Operational center with ON/OFF status, country, category, language, AI provider, next/last execution
+3. Automatización - Clear ON/OFF table with schedule state, timing, next/last runs, provider, attention reasons
+4. Ejecuciones - Pipeline tracking with status, informativo, provider, pipeline steps
+5. Guiones - Editorial control with script status, origin, source verification, production readiness
+6. Mapa - Country/location overview
+7. Configuración editorial - Editorial configuration (locations, categories, templates)
+
+### Hidden/Demoted Pages (Technical/Advanced)
+- Workbench, Prompt runs, Prompt templates, Editorial desk, Editions, News items, News sources, Source references, Schedules, Editorial templates
+
+### Future Pages (Roadmap placeholders)
+- Audio, Video, Publishing, Media renders, Social channels
+
+### Core Flow Focus
+- Informativo -> Programación -> Ejecución -> Guion
+- Automation ON/OFF clearly displayed
+- Scale ready: 500 informativos, 13 countries, multiple languages/categories
+- Enhanced filters for location, language, category, provider, health status, execution timing
+
+### Dashboard Simplification
+- Today timeline with upcoming runs and latest executions
+- Summary cards (active informativos, scheduled today, scripts generated, failures)
+- Map/country overview
+- Incidents and latest scripts/executions
+- Removed excessive work queues and internal debug states
+
+### Automation Clarity
+- ON = Automatic execution enabled
+- OFF = Manual control only
+- Clear table with Informativo, País/Zona, Categoría, Idioma, Horario local, Periodicidad, Zona horaria, ON/OFF, IA/modelo, Próxima ejecución, Última ejecución, Último resultado, Acción principal
+
+### Scale Preparation
+- Enhanced filtering for location, language, category, provider, health status
+- Support for 500+ informativos across 13 countries
+- Compact operational tables with key information visible
+- Grouped summaries and status indicators
+
+### Translations Updated
+- All touched pages updated with en/es/fr translations
+- No raw English or translation keys remaining
+- Help text updated for simplified scope
+
 Architecture:
 - Laravel 13
 - Inertia

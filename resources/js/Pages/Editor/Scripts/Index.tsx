@@ -32,6 +32,15 @@ export default function Index({ scripts, filters, filterOptions, summary }: any)
     <Head title={t('Scripts control center')} />
     <AdminPageHeader helpKey="editor.scripts.index" title={t('Scripts')} description={t('Scripts control center')} actionLabel={t('Create script')} actionHref={route('editor.scripts.create')} />
 
+    <Card className='mb-4'><CardContent className='pt-6'>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <div>
+          <p className='text-sm font-semibold text-slate-950 dark:text-white'>{t('scripts.editorialFlow')}</p>
+          <p className='mt-1 text-sm text-slate-500 dark:text-slate-400'>{t('scripts.editorialFlowDescription')}</p>
+        </div>
+      </div>
+    </CardContent></Card>
+
     <div className='grid gap-3 md:grid-cols-5 mb-4'>
       <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Total scripts')}</div><div className='text-xl font-semibold'>{summary.total}</div></CardContent></Card>
       <Card><CardContent className='pt-4'><div className='text-xs text-slate-500'>{t('Generated today')}</div><div className='text-xl font-semibold'>{summary.generated_today}</div></CardContent></Card>

@@ -17,7 +17,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { AlertTriangle, Bot, CalendarClock, Filter, RadioTower, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-export default function Index({ bulletinTypes, filters = {}, locations = [], providerOptions = [] }: any): JSX.Element {
+export default function Index({ bulletinTypes, filters = {}, locations = [], providerOptions = [], languages = [], categories = [] }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
     const rows = bulletinTypes.data ?? [];
@@ -52,6 +52,7 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                     <div>
                         <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-300">{t('bulletinTypes.flow.title')}</p>
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('bulletinTypes.flow.description')}</p>
+                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('bulletinTypes.coreFlow')}</p>
                     </div>
                     <Button asChild>
                         <Link href={route('editor.bulletin-types.create')}>{t('bulletinTypes.action.create')}</Link>
@@ -71,22 +72,30 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                             <option key={location.id} value={location.id}>{location.name}</option>
                         ))}
                     </Select>
+                    <Select value={filters.active ?? ''} onChange={(value) => updateFilter('active', value)}>
+                        <option value="">{t('bulletinTypes.filter.allStatuses')}</option>
+                        <option value="active">{t('bulletinTypes.filter.active')}</option>
+                        <option value="inactive">{t('bulletinTypes.filter.inactive')}</option>
+                    </Select>
                     <Select value={filters.provider ?? ''} onChange={(value) => updateFilter('provider', value)}>
                         <option value="">{t('bulletinTypes.filter.allProviders')}</option>
-                        <option value="missing">{t('bulletinTypes.provider.missing')}</option>
-                        {providerOptions.map((provider: any) => (
-                            <option key={provider.id} value={provider.id}>{provider.name}</option>
-                        ))}
+                        {providerOptions.map((provider: any) => <option key={provider.id} value={provider.id}>{provider.name}</option>)}
                     </Select>
-                    <Select value={filters.active ?? ''} onChange={(value) => updateFilter('active', value)}>
-                        <option value="">{t('bulletinTypes.filter.allStates')}</option>
-                        <option value="1">{t('dashboard.state.on')}</option>
-                        <option value="0">{t('dashboard.state.off')}</option>
+                    <Select value={filters.language_id ?? ''} onChange={(value) => updateFilter('language_id', value)}>
+                        <option value="">{t('bulletinTypes.filter.allLanguages')}</option>
+                        {languages.map((language: any) => <option key={language.id} value={language.id}>{language.name}</option>)}
+                    </Select>
+                    <Select value={filters.category_id ?? ''} onChange={(value) => updateFilter('category_id', value)}>
+                        <option value="">{t('bulletinTypes.filter.allCategories')}</option>
+                        {categories.map((category: any) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </Select>
                     <Select value={filters.health ?? ''} onChange={(value) => updateFilter('health', value)}>
                         <option value="">{t('bulletinTypes.filter.allHealth')}</option>
+                        <option value="ok">{t('bulletinTypes.health.ok')}</option>
                         <option value="missing_provider">{t('bulletinTypes.health.missingProvider')}</option>
                         <option value="missing_schedule">{t('bulletinTypes.health.missingSchedule')}</option>
+                        <option value="next_run_today">{t('bulletinTypes.health.nextRunToday')}</option>
+                        <option value="last_execution_failed">{t('bulletinTypes.health.lastExecutionFailed')}</option>
                     </Select>
                 </div>
             </DashboardPanel>
@@ -95,13 +104,16 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                 <OperationalTable minWidth="0">
                     <thead>
                         <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800">
+                            <th className="px-5 py-4">{t('bulletinTypes.table.onOff')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.name')}</th>
                             <th className="hidden px-5 py-4 lg:table-cell">{t('bulletinTypes.table.location')}</th>
+                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.category')}</th>
+                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.language')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.schedule')}</th>
                             <th className="px-5 py-4">{t('bulletinTypes.table.provider')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.latestRun')}</th>
+                            <th className="px-5 py-4">{t('bulletinTypes.table.nextRun')}</th>
                             <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.latestScript')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.health')}</th>
+                            <th className="px-5 py-4">{t('bulletinTypes.table.status')}</th>
                             <th className="px-5 py-4 text-right">{t('bulletinTypes.table.actions')}</th>
                         </tr>
                     </thead>
@@ -109,20 +121,25 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                         {rows.length ? rows.map((item: any) => (
                             <tr key={item.id} className="border-b border-slate-100 align-top transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/70">
                                 <td className="px-5 py-4">
+                                    <StatusBadge tone={item.is_active ? 'success' : 'neutral'}>{item.is_active ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
+                                </td>
+                                <td className="px-5 py-4">
                                     <Link className="font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300" href={item.urls?.show ?? route('editor.bulletin-types.show', item.id)}>
                                         {item.name}
                                     </Link>
                                     <div className="mt-2 flex flex-wrap gap-2">
-                                        <StatusBadge tone={item.is_active ? 'success' : 'neutral'}>{item.is_active ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
                                         {item.target_duration_seconds && <StatusBadge tone="info">{item.target_duration_seconds}s</StatusBadge>}
-                                        <StatusBadge tone="neutral">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</StatusBadge>
                                     </div>
-                                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 lg:hidden">{[item.location?.name, item.news_category?.name].filter(Boolean).join(' · ') || t('bulletinTypes.empty.notAssigned')}</p>
                                     <p className="mt-2 line-clamp-2 max-w-sm text-xs text-slate-500 dark:text-slate-400">{item.description || t('bulletinTypes.empty.noDescription')}</p>
                                 </td>
                                 <td className="hidden px-5 py-4 lg:table-cell">
                                     <p className="font-medium text-slate-900 dark:text-slate-100">{item.location?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
+                                </td>
+                                <td className="hidden px-5 py-4 xl:table-cell">
+                                    <p className="font-medium text-slate-900 dark:text-slate-100">{item.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
+                                </td>
+                                <td className="hidden px-5 py-4 xl:table-cell">
+                                    <p className="font-medium text-slate-900 dark:text-slate-100">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
                                 </td>
                                 <td className="px-5 py-4">
                                     {item.primary_schedule ? (
@@ -190,7 +207,7 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={8} className="px-5 py-14 text-center text-slate-500">
+                                <td colSpan={11} className="px-5 py-14 text-center text-slate-500">
                                     <Settings2 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
                                     {t('bulletinTypes.empty.none')}
                                 </td>

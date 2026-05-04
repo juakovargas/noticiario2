@@ -37,6 +37,15 @@ export default function Index({ runs, filters, statuses, schedules }: any): JSX.
                 description={t('editorialRuns.index.description')}
             />
 
+            <DashboardPanel accent="cyan" className="mb-6 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{t('editorialRuns.executionFlow')}</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('editorialRuns.executionFlowDescription')}</p>
+                    </div>
+                </div>
+            </DashboardPanel>
+
             <DashboardPanel className="mb-6 p-5">
                 <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
                     <Filter className="h-4 w-4 text-slate-500" />

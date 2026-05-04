@@ -25,6 +25,7 @@ export default function Index({ bulletins }: { bulletins: any[] }): JSX.Element 
                     <div>
                         <p className="text-sm font-semibold text-slate-950 dark:text-white">{t('automation.index.flow')}</p>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('automation.index.flowDescription')}</p>
+                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('automation.onOffMeaning')}</p>
                     </div>
                     <Button type="button" onClick={() => router.post(route('editor.automation.sync-schedules'))}>
                         {t('automation.action.syncAll')}

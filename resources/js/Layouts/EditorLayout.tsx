@@ -60,29 +60,12 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                 { label: t('editorNav.automation'), routeName: 'editor.automation.index', icon: <CalendarClock className="h-4 w-4" /> },
                 { label: t('editorNav.executions'), routeName: 'editor.editorial-schedule-runs.index', icon: <TableProperties className="h-4 w-4" /> },
                 { label: t('editorNav.scripts'), routeName: 'editor.scripts.index', icon: <FileText className="h-4 w-4" /> },
-                { label: t('editorNav.sources'), routeName: 'editor.source-references.index', icon: <BadgeCheck className="h-4 w-4" /> },
+                { label: t('editorNav.map'), routeName: 'editor.world-map.index', icon: <MapPin className="h-4 w-4" /> },
+                { label: t('editorNav.editorialConfig'), routeName: 'editor.locations.index', icon: <Settings2 className="h-4 w-4" /> },
             ],
         },
         {
-            title: t('editorNav.production'),
-            items: [
-                { label: t('editorNav.productionPrep'), routeName: 'editor.scripts.index', icon: <Layers3 className="h-4 w-4" /> },
-                { label: t('editorNav.audioFuture'), routeName: 'editor.audio', icon: <Headphones className="h-4 w-4" /> },
-                { label: t('editorNav.videoFuture'), routeName: 'editor.video', icon: <Clapperboard className="h-4 w-4" /> },
-                { label: t('editorNav.publishingFuture'), routeName: 'editor.publications', icon: <Share2 className="h-4 w-4" /> },
-            ],
-        },
-        {
-            title: t('editorNav.editorialConfig'),
-            items: [
-                { label: t('editorNav.schedules'), routeName: 'editor.editorial-schedules.index', icon: <CalendarClock className="h-4 w-4" /> },
-                { label: t('editorNav.categories'), routeName: 'editor.news-categories.index', icon: <Tags className="h-4 w-4" /> },
-                { label: t('editorNav.locations'), routeName: 'editor.locations.index', icon: <MapPin className="h-4 w-4" /> },
-                { label: t('editorNav.editorialTemplates'), routeName: 'editor.editorial-templates.index', icon: <SlidersHorizontal className="h-4 w-4" /> },
-            ],
-        },
-        {
-            title: t('editorNav.secondaryDebug'),
+            title: t('editorNav.technical'),
             items: [
                 { label: t('editorNav.workbench'), routeName: 'editor.workbench', icon: <Sparkles className="h-4 w-4" /> },
                 { label: t('editorNav.promptRuns'), routeName: 'editor.bulletin-prompt-runs.index', icon: <ShieldQuestion className="h-4 w-4" /> },
@@ -91,6 +74,21 @@ export default function EditorLayout({ children }: PropsWithChildren): JSX.Eleme
                 { label: t('editorNav.editions'), routeName: 'editor.editions.index', icon: <Newspaper className="h-4 w-4" /> },
                 { label: t('editorNav.newsItems'), routeName: 'editor.news-items.index', icon: <Newspaper className="h-4 w-4" /> },
                 { label: t('editorNav.newsSources'), routeName: 'editor.news-sources.index', icon: <Settings2 className="h-4 w-4" /> },
+                { label: t('editorNav.sources'), routeName: 'editor.source-references.index', icon: <BadgeCheck className="h-4 w-4" /> },
+                { label: t('editorNav.schedules'), routeName: 'editor.editorial-schedules.index', icon: <CalendarClock className="h-4 w-4" /> },
+                { label: t('editorNav.categories'), routeName: 'editor.news-categories.index', icon: <Tags className="h-4 w-4" /> },
+                { label: t('editorNav.locations'), routeName: 'editor.locations.index', icon: <MapPin className="h-4 w-4" /> },
+                { label: t('editorNav.editorialTemplates'), routeName: 'editor.editorial-templates.index', icon: <SlidersHorizontal className="h-4 w-4" /> },
+            ],
+        },
+        {
+            title: t('editorNav.future'),
+            items: [
+                { label: t('editorNav.audioFuture'), routeName: 'editor.audio', icon: <Headphones className="h-4 w-4" /> },
+                { label: t('editorNav.videoFuture'), routeName: 'editor.video', icon: <Clapperboard className="h-4 w-4" /> },
+                { label: t('editorNav.publishingFuture'), routeName: 'editor.publications', icon: <Share2 className="h-4 w-4" /> },
+                { label: t('editorNav.mediaRendersFuture'), routeName: 'editor.media-renders', icon: <Clapperboard className="h-4 w-4" /> },
+                { label: t('editorNav.socialChannelsFuture'), routeName: 'editor.social-channels', icon: <Share2 className="h-4 w-4" /> },
             ],
         },
     ];

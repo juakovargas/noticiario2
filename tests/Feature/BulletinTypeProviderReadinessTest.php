@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\AiProvider;
 use App\Models\BulletinType;
+use App\Models\EditorialSchedule;
+use App\Models\Language;
+use App\Models\Location;
+use App\Models\NewsCategory;
 use Database\Seeders\SpainProductionBulletinsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InteractsWithPermissions;
@@ -45,6 +49,85 @@ class BulletinTypeProviderReadinessTest extends TestCase
                 ->where('bulletinTypes.data.0.preferred_ai_provider.name', 'Gemini Grounded')
                 ->where('bulletinTypes.data.0.preferred_ai_provider.default_model', 'gemini-3-flash-preview')
             );
+    }
+
+    public function test_bulletin_type_index_separates_active_and_inactive_sections(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+
+        BulletinType::factory()->create(['name' => 'Active Morning', 'is_active' => true]);
+        BulletinType::factory()->create(['name' => 'Inactive Morning', 'is_active' => false]);
+
+        $this->actingAs($editor)
+            ->get(route('editor.bulletin-types.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Editor/BulletinTypes/Index')
+                ->has('activeBulletins', 1)
+                ->where('activeBulletins.0.name', 'Active Morning')
+                ->has('inactiveBulletins', 1)
+                ->where('inactiveBulletins.0.name', 'Inactive Morning')
+            );
+    }
+
+    public function test_incomplete_bulletin_type_cannot_be_activated(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $bulletin = BulletinType::factory()->create(['is_active' => false, 'preferred_ai_provider_id' => null]);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-types.toggle-active', $bulletin))
+            ->assertRedirect()
+            ->assertSessionHas('error', 'flash.bulletinCannotActivate');
+
+        $this->assertFalse((bool) $bulletin->refresh()->is_active);
+    }
+
+    public function test_complete_bulletin_type_can_be_activated_and_deactivated(): void
+    {
+        $editor = $this->createUserWithPermissions(['editor.access']);
+        $provider = AiProvider::factory()->create(['is_active' => true]);
+        $location = Location::factory()->create();
+        $category = NewsCategory::factory()->create();
+        $language = Language::factory()->create();
+        $bulletin = BulletinType::factory()->create([
+            'is_active' => false,
+            'location_id' => $location->id,
+            'news_category_id' => $category->id,
+            'language_id' => $language->id,
+            'target_duration_seconds' => 90,
+            'preferred_ai_provider_id' => $provider->id,
+        ]);
+        $schedule = EditorialSchedule::factory()->create([
+            'bulletin_type_id' => $bulletin->id,
+            'location_id' => $location->id,
+            'news_category_id' => $category->id,
+            'language_id' => $language->id,
+            'is_primary' => true,
+            'is_active' => false,
+            'run_frequency' => 'daily',
+            'run_time' => '08:00:00',
+            'timezone' => 'UTC',
+            'next_run_at' => null,
+        ]);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-types.toggle-active', $bulletin))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'flash.bulletinTurnedOn');
+
+        $this->assertTrue((bool) $bulletin->refresh()->is_active);
+        $this->assertTrue((bool) $schedule->refresh()->is_active);
+        $this->assertNotNull($schedule->next_run_at);
+
+        $this->actingAs($editor)
+            ->post(route('editor.bulletin-types.toggle-active', $bulletin))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'flash.bulletinTurnedOff');
+
+        $this->assertFalse((bool) $bulletin->refresh()->is_active);
+        $this->assertFalse((bool) $schedule->refresh()->is_active);
+        $this->assertNull($schedule->next_run_at);
     }
 
     public function test_spain_production_bulletins_seeder_is_idempotent_and_assigns_gemini_grounded(): void

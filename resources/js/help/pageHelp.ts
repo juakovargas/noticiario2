@@ -19,6 +19,8 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.dashboard.what' },
             { titleKey: 'dashboard.timeline.title', contentKey: 'help.editor.dashboard.timeline' },
+            { titleKey: 'dashboard.map.title', contentKey: 'help.editor.dashboard.map' },
+            { titleKey: 'help.editor.dashboard.accordions.title', contentKey: 'help.editor.dashboard.accordions' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.dashboard.actions' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.dashboard.pipeline' },
         ],
@@ -65,6 +67,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.actions' },
+            { titleKey: 'bulletinTypes.table.onOff', contentKey: 'help.editor.bulletinTypes.onOff' },
             { titleKey: 'bulletinTypes.table.provider', contentKey: 'help.editor.bulletinTypes.provider' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.bulletinTypes.pipeline' },
         ],

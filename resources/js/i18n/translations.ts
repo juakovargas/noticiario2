@@ -3321,6 +3321,184 @@ Object.assign(translations.en, {
 });
 
 Object.assign(translations.en, {
+    'dashboard.timeline.title': 'Today timeline',
+    'dashboard.timeline.description': 'Today from 00:00 to 23:59, with active scheduled executions, current time, provider/model and the next useful action.',
+    'dashboard.timeline.empty': 'No scheduled executions today.',
+    'dashboard.scheduledBulletins.title': 'Active scheduled bulletins',
+    'dashboard.scheduledBulletins.description': 'Only active scheduled bulletins are shown. Inactive bulletins are hidden from the dashboard.',
+    'dashboard.map.title': 'Editorial map',
+    'dashboard.map.description': 'Editorial coverage by active bulletin location, with missing-provider signals and a link to the full map.',
+    'dashboard.accordion.expand': 'Expand section',
+    'dashboard.accordion.collapse': 'Collapse section',
+    'dashboard.queue.type.bulletin': 'Informativo',
+    'status.missingConfiguration': 'Missing configuration',
+    'bulletinTypes.section.active': 'Active bulletins',
+    'bulletinTypes.section.inactive': 'Inactive bulletins',
+    'bulletinTypes.section.items': 'items',
+    'bulletinTypes.action.turnOn': 'Turn on',
+    'bulletinTypes.action.turnOff': 'Turn off',
+    'bulletinTypes.health.ok': 'Operational',
+    'bulletinTypes.health.providerInactive': 'AI provider inactive',
+    'bulletinTypes.health.missingLocation': 'Missing location',
+    'bulletinTypes.health.missingCategory': 'Missing category',
+    'bulletinTypes.health.missingLanguage': 'Missing language',
+    'bulletinTypes.health.missingDuration': 'Missing duration',
+    'bulletinTypes.health.nextRunToday': 'Runs today',
+    'bulletinTypes.health.lastExecutionFailed': 'Last execution failed',
+    'flash.bulletinCannotActivate': 'Cannot activate this informativo because required configuration is missing.',
+    'flash.bulletinTurnedOn': 'Informativo turned on.',
+    'flash.bulletinTurnedOff': 'Informativo turned off. Its schedules are ignored by cron.',
+    'flash.bulletinCannotRunOff': 'This informativo is OFF and cannot be run from the dashboard.',
+    'flash.bulletinCannotRunIncomplete': 'This informativo cannot run because required configuration is missing.',
+    'help.editor.dashboard.summary': 'Focused operations dashboard for today timeline, active scheduled informativos, editorial map, incidents, latest executions, scripts and source review.',
+    'help.editor.dashboard.what': 'The dashboard shows only active scheduled informativos. OFF informativos are ignored by cron and hidden from scheduled dashboard rows.',
+    'help.editor.dashboard.timeline': 'The timeline uses real schedule runs and active upcoming schedules for today only. It spans 00:00 to 23:59, shows current time, provider/model, execution status and the next useful action.',
+    'help.editor.dashboard.actions': 'Use scheduled rows to run or turn OFF complete active informativos. Turn ON incomplete informativos from Informativos after fixing the visible missing-configuration pills.',
+    'help.editor.dashboard.pipeline': 'Compact pills show prompt, AI, script, source, review and production state without hover-only status.',
+    'help.editor.dashboard.tip1': 'OFF informativos are ignored by cron.',
+    'help.editor.dashboard.tip2': 'ON requires provider, schedule, location, category, language, duration and valid schedule time/timezone.',
+    'help.editor.dashboard.tip3': 'Dashboard accordions remember their open or closed state locally in this browser.',
+    'help.editor.bulletinTypes.summary': 'Operational list of informativos split into ON and OFF sections.',
+    'help.editor.bulletinTypes.what': 'Use this page to see active and inactive informativos separately, fix missing configuration, and control the visible ON/OFF state.',
+    'help.editor.bulletinTypes.actions': 'Turning OFF disables the informativo and its schedules for cron. Turning ON is blocked until required configuration is complete.',
+    'help.editor.bulletinTypes.provider': 'Every runnable informativo needs an assigned active AI provider/model.',
+    'help.editor.bulletinTypes.pipeline': 'Compact pills show missing provider, schedule, location, category, language or duration before activation.',
+});
+
+Object.assign(translations.es, {
+    'dashboard.timeline.title': 'Linea temporal de hoy',
+    'dashboard.timeline.description': 'Hoy de 00:00 a 23:59, con ejecuciones programadas activas, hora actual, proveedor/modelo y siguiente accion util.',
+    'dashboard.timeline.empty': 'No hay ejecuciones programadas hoy.',
+    'dashboard.scheduledBulletins.title': 'Informativos programados activos',
+    'dashboard.scheduledBulletins.description': 'Solo se muestran informativos programados activos. Los informativos apagados no se muestran en el dashboard.',
+    'dashboard.map.title': 'Mapa editorial',
+    'dashboard.map.description': 'Cobertura editorial por ubicacion activa, con avisos de proveedor pendiente y acceso al mapa completo.',
+    'dashboard.accordion.expand': 'Expandir seccion',
+    'dashboard.accordion.collapse': 'Contraer seccion',
+    'dashboard.queue.type.bulletin': 'Informativo',
+    'status.missingConfiguration': 'Falta configuracion',
+    'bulletinTypes.section.active': 'Informativos encendidos',
+    'bulletinTypes.section.inactive': 'Informativos apagados',
+    'bulletinTypes.section.items': 'elementos',
+    'bulletinTypes.action.turnOn': 'Encender',
+    'bulletinTypes.action.turnOff': 'Apagar',
+    'bulletinTypes.health.ok': 'Operativo',
+    'bulletinTypes.health.providerInactive': 'Proveedor IA inactivo',
+    'bulletinTypes.health.missingLocation': 'Falta ubicacion',
+    'bulletinTypes.health.missingCategory': 'Falta categoria',
+    'bulletinTypes.health.missingLanguage': 'Falta idioma',
+    'bulletinTypes.health.missingDuration': 'Falta duracion',
+    'bulletinTypes.health.nextRunToday': 'Se ejecuta hoy',
+    'bulletinTypes.health.lastExecutionFailed': 'Ultima ejecucion fallida',
+    'flash.bulletinCannotActivate': 'No se puede encender este informativo porque falta configuracion obligatoria.',
+    'flash.bulletinTurnedOn': 'Informativo encendido.',
+    'flash.bulletinTurnedOff': 'Informativo apagado. Sus programaciones quedan ignoradas por cron.',
+    'flash.bulletinCannotRunOff': 'Este informativo esta apagado y no se puede ejecutar desde el dashboard.',
+    'flash.bulletinCannotRunIncomplete': 'Este informativo no se puede ejecutar porque falta configuracion obligatoria.',
+    'help.editor.dashboard.summary': 'Panel operativo centrado en linea temporal de hoy, informativos programados activos, mapa editorial, incidencias, ultimas ejecuciones, guiones y revision de fuentes.',
+    'help.editor.dashboard.what': 'El dashboard muestra solo informativos programados activos. Los informativos OFF quedan ignorados por cron y ocultos en las filas programadas del dashboard.',
+    'help.editor.dashboard.timeline': 'La linea temporal usa ejecuciones reales y proximas programaciones activas solo para hoy. Va de 00:00 a 23:59 y muestra hora actual, proveedor/modelo, estado y siguiente accion util.',
+    'help.editor.dashboard.actions': 'Usa las filas programadas para ejecutar o apagar informativos activos completos. Enciende informativos incompletos desde Informativos despues de corregir las pildoras de configuracion pendiente.',
+    'help.editor.dashboard.pipeline': 'Las pildoras compactas muestran prompt, IA, guion, fuentes, revision y produccion sin depender del hover.',
+    'help.editor.dashboard.tip1': 'Los informativos OFF quedan ignorados por cron.',
+    'help.editor.dashboard.tip2': 'ON requiere proveedor, horario, ubicacion, categoria, idioma, duracion y hora/zona horaria validas.',
+    'help.editor.dashboard.tip3': 'Los acordeones del dashboard recuerdan su estado abierto o cerrado en este navegador.',
+    'help.editor.bulletinTypes.summary': 'Listado operativo de informativos separado en secciones ON y OFF.',
+    'help.editor.bulletinTypes.what': 'Usa esta pagina para ver informativos activos e inactivos por separado, corregir configuracion pendiente y controlar el estado visible ON/OFF.',
+    'help.editor.bulletinTypes.actions': 'Apagar desactiva el informativo y sus programaciones para cron. Encender queda bloqueado hasta completar la configuracion obligatoria.',
+    'help.editor.bulletinTypes.provider': 'Cada informativo ejecutable necesita un proveedor/modelo IA activo asignado.',
+    'help.editor.bulletinTypes.pipeline': 'Las pildoras compactas muestran si falta proveedor, horario, ubicacion, categoria, idioma o duracion antes de activar.',
+});
+
+Object.assign(translations.fr, {
+    'dashboard.timeline.title': 'Chronologie du jour',
+    'dashboard.timeline.description': "Aujourd'hui de 00:00 a 23:59, avec executions planifiees actives, heure actuelle, fournisseur/modele et prochaine action utile.",
+    'dashboard.timeline.empty': "Aucune execution planifiee aujourd'hui.",
+    'dashboard.scheduledBulletins.title': 'Bulletins planifies actifs',
+    'dashboard.scheduledBulletins.description': 'Seuls les bulletins planifies actifs sont affiches. Les bulletins eteints sont masques du tableau de bord.',
+    'dashboard.map.title': 'Carte editoriale',
+    'dashboard.map.description': 'Couverture editoriale par lieu actif, avec alertes fournisseur manquant et acces a la carte complete.',
+    'dashboard.accordion.expand': 'Deplier la section',
+    'dashboard.accordion.collapse': 'Replier la section',
+    'dashboard.queue.type.bulletin': 'Bulletin',
+    'status.missingConfiguration': 'Configuration manquante',
+    'bulletinTypes.section.active': 'Bulletins allumes',
+    'bulletinTypes.section.inactive': 'Bulletins eteints',
+    'bulletinTypes.section.items': 'elements',
+    'bulletinTypes.action.turnOn': 'Activer',
+    'bulletinTypes.action.turnOff': 'Desactiver',
+    'bulletinTypes.health.ok': 'Operationnel',
+    'bulletinTypes.health.providerInactive': 'Fournisseur IA inactif',
+    'bulletinTypes.health.missingLocation': 'Lieu manquant',
+    'bulletinTypes.health.missingCategory': 'Categorie manquante',
+    'bulletinTypes.health.missingLanguage': 'Langue manquante',
+    'bulletinTypes.health.missingDuration': 'Duree manquante',
+    'bulletinTypes.health.nextRunToday': "S'execute aujourd'hui",
+    'bulletinTypes.health.lastExecutionFailed': 'Derniere execution echouee',
+    'flash.bulletinCannotActivate': 'Impossible d activer ce bulletin car une configuration obligatoire manque.',
+    'flash.bulletinTurnedOn': 'Bulletin active.',
+    'flash.bulletinTurnedOff': 'Bulletin desactive. Ses plannings sont ignores par cron.',
+    'flash.bulletinCannotRunOff': 'Ce bulletin est OFF et ne peut pas etre execute depuis le tableau de bord.',
+    'flash.bulletinCannotRunIncomplete': 'Ce bulletin ne peut pas etre execute car une configuration obligatoire manque.',
+    'help.editor.dashboard.summary': 'Tableau de bord centre sur la chronologie du jour, les bulletins planifies actifs, la carte editoriale, les incidents, dernieres executions, scripts et sources.',
+    'help.editor.dashboard.what': 'Le tableau de bord affiche seulement les bulletins planifies actifs. Les bulletins OFF sont ignores par cron et masques des lignes planifiees.',
+    'help.editor.dashboard.timeline': 'La chronologie utilise les executions reelles et prochains plannings actifs du jour uniquement. Elle va de 00:00 a 23:59 et montre heure actuelle, fournisseur/modele, statut et action utile.',
+    'help.editor.dashboard.actions': 'Utilisez les lignes planifiees pour executer ou desactiver des bulletins actifs complets. Activez les bulletins incomplets depuis Bulletins apres correction des pastilles de configuration.',
+    'help.editor.dashboard.pipeline': 'Les pastilles compactes montrent prompt, IA, script, sources, revue et production sans dependance au survol.',
+    'help.editor.dashboard.tip1': 'Les bulletins OFF sont ignores par cron.',
+    'help.editor.dashboard.tip2': 'ON requiert fournisseur, planning, lieu, categorie, langue, duree et heure/fuseau valides.',
+    'help.editor.dashboard.tip3': 'Les accordions du tableau de bord memorisent leur etat localement dans ce navigateur.',
+    'help.editor.bulletinTypes.summary': 'Liste operationnelle des bulletins separee entre ON et OFF.',
+    'help.editor.bulletinTypes.what': 'Utilisez cette page pour voir les bulletins actifs et inactifs separement, corriger la configuration et controler l etat ON/OFF visible.',
+    'help.editor.bulletinTypes.actions': 'Desactiver coupe le bulletin et ses plannings pour cron. Activer est bloque tant que la configuration obligatoire n est pas complete.',
+    'help.editor.bulletinTypes.provider': 'Chaque bulletin executable a besoin d un fournisseur/modele IA actif assigne.',
+    'help.editor.bulletinTypes.pipeline': 'Les pastilles compactes indiquent fournisseur, planning, lieu, categorie, langue ou duree manquants avant activation.',
+});
+
+Object.assign(translations.en, {
+    'help.editor.dashboard.summary': 'Focused operations dashboard for today timeline, active scheduled informativos, editorial map, incidents, latest executions, scripts and source review.',
+    'help.editor.dashboard.what': 'The dashboard shows only active scheduled informativos. OFF informativos are ignored by cron and hidden from scheduled dashboard rows.',
+    'help.editor.dashboard.actions': 'Use scheduled rows to run or turn OFF complete active informativos. Turn ON incomplete informativos from Informativos after fixing the visible missing-configuration pills.',
+    'help.editor.dashboard.tip3': 'Dashboard accordions remember their open or closed state locally in this browser.',
+});
+
+Object.assign(translations.es, {
+    'dashboard.scheduledBulletins.description': 'Solo se muestran informativos programados activos. Los informativos apagados no se muestran en el panel.',
+    'help.editor.dashboard.summary': 'Panel operativo centrado en linea temporal de hoy, informativos programados activos, mapa editorial, incidencias, ultimas ejecuciones, guiones y revision de fuentes.',
+    'help.editor.dashboard.what': 'El panel muestra solo informativos programados activos. Los informativos OFF quedan ignorados por cron y ocultos en las filas programadas.',
+    'help.editor.dashboard.actions': 'Usa las filas programadas para ejecutar o apagar informativos activos completos. Enciende informativos incompletos desde Informativos despues de corregir las pildoras de configuracion pendiente.',
+    'help.editor.dashboard.tip3': 'Los acordeones del panel recuerdan su estado abierto o cerrado en este navegador.',
+});
+
+Object.assign(translations.fr, {
+    'help.editor.dashboard.summary': 'Tableau de bord centre sur la chronologie du jour, les bulletins planifies actifs, la carte editoriale, les incidents, dernieres executions, scripts et sources.',
+    'help.editor.dashboard.what': 'Le tableau de bord affiche seulement les bulletins planifies actifs. Les bulletins OFF sont ignores par cron et masques des lignes planifiees.',
+    'help.editor.dashboard.actions': 'Utilisez les lignes planifiees pour executer ou desactiver des bulletins actifs complets. Activez les bulletins incomplets depuis Bulletins apres correction des pastilles de configuration.',
+    'help.editor.dashboard.tip3': 'Les accordions du tableau de bord memorisent leur etat localement dans ce navigateur.',
+});
+
+Object.assign(translations.en, {
+    'help.editor.dashboard.map': 'The editorial map embeds the existing active-location coverage view and links to the full map for deeper inspection.',
+    'help.editor.dashboard.accordions.title': 'Accordions',
+    'help.editor.dashboard.accordions': 'Dashboard sections can be opened or closed; the state is remembered in localStorage for this browser.',
+    'help.editor.bulletinTypes.onOff': 'ON is the bulletin-level active state. OFF disables the informativo and prevents its schedules from running automatically.',
+});
+
+Object.assign(translations.es, {
+    'help.editor.dashboard.map': 'El mapa editorial incrusta la vista existente de cobertura por ubicaciones activas y enlaza al mapa completo.',
+    'help.editor.dashboard.accordions.title': 'Acordeones',
+    'help.editor.dashboard.accordions': 'Las secciones del dashboard se pueden abrir o cerrar; el estado se recuerda en localStorage para este navegador.',
+    'help.editor.bulletinTypes.onOff': 'ON es el estado activo del informativo. OFF desactiva el informativo e impide que sus programaciones corran automaticamente.',
+});
+
+Object.assign(translations.fr, {
+    'help.editor.dashboard.map': 'La carte editoriale integre la vue existante de couverture par lieux actifs et ouvre la carte complete.',
+    'help.editor.dashboard.accordions.title': 'Accordions',
+    'help.editor.dashboard.accordions': 'Les sections du tableau de bord peuvent etre ouvertes ou fermees; l etat est memorise dans localStorage pour ce navigateur.',
+    'help.editor.bulletinTypes.onOff': 'ON est l etat actif du bulletin. OFF desactive le bulletin et empeche ses plannings de s executer automatiquement.',
+});
+
+Object.assign(translations.en, {
     'help.editor.dashboard.timeline': 'The timeline is built from real schedule and execution data for today. It shows current time, past/upcoming work, failed runs, manual AI approval, provider/model and the next useful action.',
     'help.editor.bulletinTypes.pipeline': 'Visible pills summarize operational state without hover: schedule/provider readiness, prompt, AI, script, source review and production readiness.',
     'help.editor.scheduleRuns.sources': 'Source pills show whether an execution has no sources, pending sources, verified sources, rejected sources or a mixed state. This is visibility only; no live URL checking is performed.',
@@ -4687,4 +4865,103 @@ Object.assign(translations.fr, {
     'help.editor.scheduleRunShow.pipeline': "Si l'IA automatique est désactivée, la page indique l'approbation manuelle requise tout en proposant une action explicite pour exécuter le fournisseur configuré.",
     'help.editor.scheduleRunShow.tip1': "Gemini Grounded est le fournisseur normal d'actualité; fournisseur ou clé API manquants doivent arrêter le flux avec une erreur claire et sûre.",
     'help.editor.scheduleRunShow.tip2': 'Coller une réponse manuelle est une alternative. Le chemin préféré est le pipeline du fournisseur configuré.',
+});
+
+Object.assign(translations.en, {
+    'dashboard.timeline.description': 'Today from 00:00 to 23:59, with active scheduled executions, current time, provider/model and the next useful action.',
+    'dashboard.timeline.empty': 'No scheduled executions today.',
+    'dashboard.scheduledBulletins.title': 'Active scheduled bulletins',
+    'dashboard.scheduledBulletins.description': 'Only active scheduled bulletins are shown. Inactive bulletins are hidden from the dashboard.',
+    'dashboard.map.description': 'Editorial coverage by active bulletin location, with missing-provider signals and a link to the full map.',
+    'help.editor.dashboard.timeline': 'The timeline uses real schedule runs and active upcoming schedules for today only. It spans 00:00 to 23:59, shows current time, provider/model, execution status and the next useful action.',
+    'help.editor.dashboard.pipeline': 'Compact pills show prompt, AI, script, source, review and production state without hover-only status.',
+    'help.editor.bulletinTypes.pipeline': 'Compact pills show missing provider, schedule, location, category, language or duration before activation.',
+});
+
+Object.assign(translations.es, {
+    'dashboard.timeline.description': 'Hoy de 00:00 a 23:59, con ejecuciones programadas activas, hora actual, proveedor/modelo y siguiente accion util.',
+    'dashboard.timeline.empty': 'No hay ejecuciones programadas hoy.',
+    'dashboard.scheduledBulletins.title': 'Informativos programados activos',
+    'dashboard.scheduledBulletins.description': 'Solo se muestran informativos programados activos. Los informativos apagados no se muestran en el dashboard.',
+    'dashboard.map.description': 'Cobertura editorial por ubicacion activa, con avisos de proveedor pendiente y acceso al mapa completo.',
+    'help.editor.dashboard.timeline': 'La linea temporal usa ejecuciones reales y proximas programaciones activas solo para hoy. Va de 00:00 a 23:59 y muestra hora actual, proveedor/modelo, estado y siguiente accion util.',
+    'help.editor.dashboard.pipeline': 'Las pildoras compactas muestran prompt, IA, guion, fuentes, revision y produccion sin depender del hover.',
+    'help.editor.bulletinTypes.pipeline': 'Las pildoras compactas muestran si falta proveedor, horario, ubicacion, categoria, idioma o duracion antes de activar.',
+});
+
+Object.assign(translations.fr, {
+    'dashboard.timeline.description': "Aujourd'hui de 00:00 a 23:59, avec executions planifiees actives, heure actuelle, fournisseur/modele et prochaine action utile.",
+    'dashboard.timeline.empty': "Aucune execution planifiee aujourd'hui.",
+    'dashboard.scheduledBulletins.title': 'Bulletins planifies actifs',
+    'dashboard.scheduledBulletins.description': 'Seuls les bulletins planifies actifs sont affiches. Les bulletins eteints sont masques du tableau de bord.',
+    'dashboard.map.description': 'Couverture editoriale par lieu actif, avec alertes fournisseur manquant et acces a la carte complete.',
+    'help.editor.dashboard.timeline': 'La chronologie utilise les executions reelles et prochains plannings actifs du jour uniquement. Elle va de 00:00 a 23:59 et montre heure actuelle, fournisseur/modele, statut et action utile.',
+    'help.editor.dashboard.pipeline': 'Les pastilles compactes montrent prompt, IA, script, sources, revue et production sans dependance au survol.',
+    'help.editor.bulletinTypes.pipeline': 'Les pastilles compactes indiquent fournisseur, planning, lieu, categorie, langue ou duree manquants avant activation.',
+});
+
+Object.assign(translations.en, {
+    'dashboard.scheduledBulletins.description': 'Only active scheduled bulletins are shown. Inactive bulletins are hidden from the dashboard.',
+    'help.editor.dashboard.summary': 'Focused operations dashboard for today timeline, active scheduled informativos, editorial map, incidents, latest executions, scripts and source review.',
+    'help.editor.dashboard.what': 'The dashboard shows only active scheduled informativos. OFF informativos are ignored by cron and hidden from scheduled dashboard rows.',
+    'help.editor.dashboard.actions': 'Use scheduled rows to run or turn OFF complete active informativos. Turn ON incomplete informativos from Informativos after fixing the visible missing-configuration pills.',
+    'help.editor.dashboard.tip3': 'Dashboard accordions remember their open or closed state locally in this browser.',
+    'help.editor.bulletinTypes.summary': 'Operational list of informativos split into ON and OFF sections.',
+    'help.editor.bulletinTypes.what': 'Use this page to see active and inactive informativos separately, fix missing configuration, and control the visible ON/OFF state.',
+    'help.editor.bulletinTypes.actions': 'Turning OFF disables the informativo and its schedules for cron. Turning ON is blocked until required configuration is complete.',
+    'help.editor.bulletinTypes.provider': 'Every runnable informativo needs an assigned active AI provider/model.',
+    'help.editor.bulletinTypes.onOff': 'ON is the bulletin-level active state. OFF disables the informativo and prevents its schedules from running automatically.',
+});
+
+Object.assign(translations.es, {
+    'dashboard.scheduledBulletins.description': 'Solo se muestran informativos programados activos. Los informativos apagados no se muestran en el panel.',
+    'help.editor.dashboard.summary': 'Panel operativo centrado en linea temporal de hoy, informativos programados activos, mapa editorial, incidencias, ultimas ejecuciones, guiones y revision de fuentes.',
+    'help.editor.dashboard.what': 'El panel muestra solo informativos programados activos. Los informativos OFF quedan ignorados por cron y ocultos en las filas programadas.',
+    'help.editor.dashboard.actions': 'Usa las filas programadas para ejecutar o apagar informativos activos completos. Enciende informativos incompletos desde Informativos despues de corregir las pildoras de configuracion pendiente.',
+    'help.editor.dashboard.tip3': 'Los acordeones del panel recuerdan su estado abierto o cerrado en este navegador.',
+    'help.editor.bulletinTypes.summary': 'Listado operativo de informativos separado en secciones ON y OFF.',
+    'help.editor.bulletinTypes.what': 'Usa esta pagina para ver informativos activos e inactivos por separado, corregir configuracion pendiente y controlar el estado visible ON/OFF.',
+    'help.editor.bulletinTypes.actions': 'Apagar desactiva el informativo y sus programaciones para cron. Encender queda bloqueado hasta completar la configuracion obligatoria.',
+    'help.editor.bulletinTypes.provider': 'Cada informativo ejecutable necesita un proveedor/modelo IA activo asignado.',
+    'help.editor.bulletinTypes.onOff': 'ON es el estado activo del informativo. OFF desactiva el informativo e impide que sus programaciones corran automaticamente.',
+});
+
+Object.assign(translations.fr, {
+    'dashboard.scheduledBulletins.description': 'Seuls les bulletins planifies actifs sont affiches. Les bulletins eteints sont masques du tableau de bord.',
+    'help.editor.dashboard.summary': 'Tableau de bord centre sur la chronologie du jour, les bulletins planifies actifs, la carte editoriale, les incidents, dernieres executions, scripts et sources.',
+    'help.editor.dashboard.what': 'Le tableau de bord affiche seulement les bulletins planifies actifs. Les bulletins OFF sont ignores par cron et masques des lignes planifiees.',
+    'help.editor.dashboard.actions': 'Utilisez les lignes planifiees pour executer ou desactiver des bulletins actifs complets. Activez les bulletins incomplets depuis Bulletins apres correction des pastilles de configuration.',
+    'help.editor.dashboard.tip3': 'Les accordions du tableau de bord memorisent leur etat localement dans ce navigateur.',
+    'help.editor.bulletinTypes.summary': 'Liste operationnelle des bulletins separee entre ON et OFF.',
+    'help.editor.bulletinTypes.what': 'Utilisez cette page pour voir les bulletins actifs et inactifs separement, corriger la configuration et controler l etat ON/OFF visible.',
+    'help.editor.bulletinTypes.actions': 'Desactiver coupe le bulletin et ses plannings pour cron. Activer est bloque tant que la configuration obligatoire n est pas complete.',
+    'help.editor.bulletinTypes.provider': 'Chaque bulletin executable a besoin d un fournisseur/modele IA actif assigne.',
+    'help.editor.bulletinTypes.onOff': 'ON est l etat actif du bulletin. OFF desactive le bulletin et empeche ses plannings de s executer automatiquement.',
+});
+
+Object.assign(translations.en, {
+    'help.editor.dashboard.map': 'The editorial map embeds active location coverage from the existing map data and links to the full map for deeper inspection.',
+    'help.editor.dashboard.accordions.title': 'Accordions',
+    'help.editor.dashboard.accordions': 'Dashboard sections can be opened or closed; the state is remembered in localStorage for this browser.',
+    'help.editor.dashboard.tip1': 'OFF informativos are ignored by cron and do not appear in active scheduled dashboard rows.',
+    'help.editor.dashboard.tip2': 'ON requires provider, schedule, location, category, language, duration and valid schedule time/timezone.',
+    'help.editor.bulletinTypes.pipeline': 'Compact pills show missing provider, schedule, location, category, language or duration before activation.',
+});
+
+Object.assign(translations.es, {
+    'help.editor.dashboard.map': 'El mapa editorial incrusta la cobertura por ubicaciones activas desde los datos existentes del mapa y enlaza con el mapa completo.',
+    'help.editor.dashboard.accordions.title': 'Acordeones',
+    'help.editor.dashboard.accordions': 'Las secciones del panel se pueden abrir o cerrar; el estado se recuerda en el almacenamiento local de este navegador.',
+    'help.editor.dashboard.tip1': 'Los informativos OFF quedan ignorados por cron y no aparecen en las filas programadas activas del panel.',
+    'help.editor.dashboard.tip2': 'ON requiere proveedor, horario, ubicacion, categoria, idioma, duracion y hora/zona horaria validas.',
+    'help.editor.bulletinTypes.pipeline': 'Las pildoras compactas muestran si falta proveedor, horario, ubicacion, categoria, idioma o duracion antes de activar.',
+});
+
+Object.assign(translations.fr, {
+    'help.editor.dashboard.map': 'La carte editoriale integre la couverture des lieux actifs depuis les donnees de carte existantes et ouvre la carte complete.',
+    'help.editor.dashboard.accordions.title': 'Accordeons',
+    'help.editor.dashboard.accordions': 'Les sections du tableau de bord peuvent etre ouvertes ou fermees; l etat est memorise localement dans ce navigateur.',
+    'help.editor.dashboard.tip1': 'Les bulletins OFF sont ignores par cron et n apparaissent pas dans les lignes planifiees actives.',
+    'help.editor.dashboard.tip2': 'ON requiert fournisseur, planning, lieu, categorie, langue, duree et heure/fuseau valides.',
+    'help.editor.bulletinTypes.pipeline': 'Les pastilles compactes indiquent fournisseur, planning, lieu, categorie, langue ou duree manquants avant activation.',
 });

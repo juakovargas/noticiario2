@@ -288,6 +288,7 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::get('/editorial-desk', [EditorialDeskController::class, 'index'])->name('editorial-desk.index');
         Route::resource('editorial-schedules', EditorialScheduleController::class);
         Route::resource('bulletin-types', BulletinTypeController::class);
+        Route::post('/bulletin-types/{bulletinType}/toggle-active', [BulletinTypeController::class, 'toggleActive'])->name('bulletin-types.toggle-active');
         Route::resource('bulletin-prompt-runs', BulletinPromptRunController::class)->only(['index', 'show']);
         Route::post('/bulletin-types/{bulletinType}/prompt-runs', [BulletinPromptRunController::class, 'store'])->name('bulletin-types.prompt-runs.store');
         Route::put('/bulletin-prompt-runs/{bulletinPromptRun}/schedule', [BulletinPromptRunController::class, 'updateSchedule'])->name('bulletin-prompt-runs.update-schedule');

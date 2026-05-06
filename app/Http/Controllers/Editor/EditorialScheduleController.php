@@ -10,6 +10,7 @@ use App\Services\Scheduling\EditorialScheduleRunner;
 use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
+use App\Services\Editor\BulletinTypeActivationService;
 use App\Services\EditorialScheduling\EditorialScheduleRunService;
 use App\Services\Pipelines\BulletinPromptRunPipeline;
 use App\Support\GeneratesUniqueSlug;
@@ -23,7 +24,12 @@ class EditorialScheduleController extends Controller
 {
     use GeneratesUniqueSlug;
 
-    public function __construct(private readonly EditorialScheduleRunService $runService, private readonly EditorialScheduleRunner $scheduleRunner, private readonly BulletinPromptRunPipeline $pipelineService)
+    public function __construct(
+        private readonly EditorialScheduleRunService $runService,
+        private readonly EditorialScheduleRunner $scheduleRunner,
+        private readonly BulletinPromptRunPipeline $pipelineService,
+        private readonly BulletinTypeActivationService $activationService,
+    )
     {
     }
 
@@ -131,7 +137,17 @@ class EditorialScheduleController extends Controller
 
     public function runNow(EditorialSchedule $editorialSchedule): RedirectResponse
     {
-        $run = $this->scheduleRunner->createRunForSchedule($editorialSchedule->load('bulletinType'), now()->utc()->startOfMinute(), ['generate_prompts' => true]);
+        $editorialSchedule->load(['bulletinType.preferredAiProvider', 'bulletinType.location', 'bulletinType.newsCategory', 'bulletinType.language', 'bulletinType.schedules']);
+
+        if (! $editorialSchedule->is_active || ! $editorialSchedule->bulletinType?->is_active) {
+            return back()->with('error', 'flash.bulletinCannotRunOff');
+        }
+
+        if (! $editorialSchedule->bulletinType || ! $this->activationService->isComplete($editorialSchedule->bulletinType)) {
+            return back()->with('error', 'flash.bulletinCannotRunIncomplete');
+        }
+
+        $run = $this->scheduleRunner->createRunForSchedule($editorialSchedule, now()->utc()->startOfMinute(), ['generate_prompts' => true]);
 
         if (! $run->wasRecentlyCreated) {
             return to_route('editor.editorial-schedule-runs.show', $run)->with('warning', __('Execution already exists for this scheduled time.'));

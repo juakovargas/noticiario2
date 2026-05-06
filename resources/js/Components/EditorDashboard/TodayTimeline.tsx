@@ -50,43 +50,65 @@ export default function TodayTimeline({
     const sortedItems = items
         .filter((item) => item.scheduled_for)
         .sort((a, b) => new Date(a.scheduled_for as string).getTime() - new Date(b.scheduled_for as string).getTime());
-    const markerIndex = sortedItems.findIndex((item) => new Date(item.scheduled_for as string).getTime() >= now.getTime());
-    const insertMarkerAt = markerIndex === -1 ? sortedItems.length : markerIndex;
+    const groupedByHour = sortedItems.reduce<Record<number, TodayTimelineItem[]>>((groups, item) => {
+        const hour = new Date(item.scheduled_for as string).getHours();
+        groups[hour] = groups[hour] ?? [];
+        groups[hour].push(item);
+        return groups;
+    }, {});
+    const currentPercent = ((now.getHours() * 60 + now.getMinutes()) / 1439) * 100;
 
     if (!sortedItems.length) {
         return <p className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{emptyLabel}</p>;
     }
 
     return (
-        <div className="relative">
-            <div className="absolute bottom-0 left-[4.25rem] top-0 hidden w-px bg-slate-200 dark:bg-slate-800 sm:block" />
-            <div className="space-y-3">
-                {sortedItems.map((item, index) => (
-                    <div key={`${item.type ?? 'item'}-${item.id}`}>
-                        {index === insertMarkerAt && <CurrentTimeMarker label={currentTimeLabel} />}
-                        <TimelineCard
-                            item={item}
-                            isPast={new Date(item.scheduled_for as string).getTime() < now.getTime()}
-                            pastLabel={pastLabel}
-                            upcomingLabel={upcomingLabel}
-                            manualApprovalLabel={manualApprovalLabel}
-                            viewLabel={viewLabel}
-                            runNowLabel={runNowLabel}
-                            formatTime={formatTime}
-                        />
+        <div className="overflow-x-auto pb-2">
+            <div className="relative min-w-[980px] rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="relative mb-5 h-14">
+                    <div className="absolute left-0 right-0 top-7 h-px bg-slate-300 dark:bg-slate-700" />
+                    <CurrentTimeMarker label={currentTimeLabel} left={currentPercent} />
+                    <div className="grid grid-cols-8 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        {['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '23:59'].map((label) => (
+                            <div key={label} className="relative pt-9">
+                                <span className="absolute left-0 top-5 h-3 w-px bg-slate-300 dark:bg-slate-700" />
+                                {label}
+                            </div>
+                        ))}
                     </div>
-                ))}
-                {insertMarkerAt === sortedItems.length && <CurrentTimeMarker label={currentTimeLabel} />}
+                </div>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(24, minmax(8rem, 1fr))' }}>
+                    {Array.from({ length: 24 }).map((_, hour) => (
+                        <div key={hour} className="min-h-[3rem] border-l border-slate-200 pl-2 dark:border-slate-800">
+                            <p className="mb-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500">{String(hour).padStart(2, '0')}</p>
+                            <div className="space-y-2">
+                                {(groupedByHour[hour] ?? []).map((item) => (
+                                    <TimelineCard
+                                        key={`${item.type ?? 'item'}-${item.id}`}
+                                        item={item}
+                                        isPast={new Date(item.scheduled_for as string).getTime() < now.getTime()}
+                                        pastLabel={pastLabel}
+                                        upcomingLabel={upcomingLabel}
+                                        manualApprovalLabel={manualApprovalLabel}
+                                        viewLabel={viewLabel}
+                                        runNowLabel={runNowLabel}
+                                        formatTime={formatTime}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
 }
 
-function CurrentTimeMarker({ label }: { label: string }): JSX.Element {
+function CurrentTimeMarker({ label, left }: { label: string; left: number }): JSX.Element {
     return (
-        <div className="relative flex items-center gap-3 py-1 sm:pl-[5.5rem]">
-            <span className="absolute left-[3.85rem] hidden h-3 w-3 rounded-full border-2 border-white bg-cyan-500 ring-4 ring-cyan-100 dark:border-slate-950 dark:ring-cyan-950 sm:block" />
-            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950 dark:text-cyan-200">
+        <div className="absolute top-0 z-10 -translate-x-1/2" style={{ left: `${left}%` }}>
+            <span className="mx-auto block h-8 w-px bg-cyan-500" />
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700 shadow-sm dark:border-cyan-900 dark:bg-cyan-950 dark:text-cyan-200">
                 <Clock3 className="h-3.5 w-3.5" />
                 {label}
             </span>
@@ -121,12 +143,9 @@ function TimelineCard({
     ];
 
     return (
-        <article className="relative grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto] sm:pl-0">
-            <div className="flex items-center gap-2 sm:justify-center">
-                <span className="hidden h-3 w-3 rounded-full border-2 border-white bg-slate-400 ring-4 ring-slate-100 dark:border-slate-950 dark:ring-slate-800 sm:absolute sm:left-[3.85rem] sm:block" />
-                <span className="text-sm font-bold text-slate-950 dark:text-white">{formatTime(item.scheduled_for)}</span>
-            </div>
+        <article className="min-w-40 rounded-lg border border-slate-200 bg-white p-2.5 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <div className="min-w-0">
+                <p className="mb-1 font-bold text-slate-950 dark:text-white">{formatTime(item.scheduled_for)}</p>
                 {item.view_url ? (
                     <Link href={item.view_url} className="font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300">
                         {item.bulletin || '-'}
@@ -144,7 +163,7 @@ function TimelineCard({
                     {item.source_label && <StatusBadge tone={item.source_tone ?? 'neutral'}>{item.source_label}</StatusBadge>}
                 </div>
             </div>
-            <div className="sm:justify-self-end">
+            <div className="mt-3">
                 <ActionButtonGroup actions={actions} />
             </div>
         </article>

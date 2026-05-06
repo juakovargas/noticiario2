@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\Schema;
 
 class EditorDashboardOverviewService
 {
-    public function __construct(private readonly BulletinMapService $mapService) {}
+    public function __construct(
+        private readonly BulletinMapService $mapService,
+        private readonly BulletinTypeActivationService $activationService,
+    ) {}
 
     public function build(): array
     {
@@ -25,10 +28,11 @@ class EditorDashboardOverviewService
 
         $schedules = EditorialSchedule::query()
             ->with([
-                'bulletinType:id,name,is_active,location_id,news_category_id,preferred_ai_provider_id',
+                'bulletinType:id,name,is_active,location_id,news_category_id,language_id,target_duration_seconds,preferred_ai_provider_id',
                 'bulletinType.preferredAiProvider:id,name,default_model,supports_grounding,is_active,provider_category,rate_limited_until',
                 'location:id,name',
                 'newsCategory:id,name',
+                'language:id,name,code',
                 'runs' => fn ($q) => $q->latest('scheduled_for')->limit(1),
             ])
             ->get();
@@ -37,8 +41,10 @@ class EditorDashboardOverviewService
             ->with([
                 'preferredAiProvider:id,name,default_model,supports_grounding,is_active,provider_category,rate_limited_until',
                 'primarySchedule:id,bulletin_type_id,is_active,run_frequency,run_time,scheduled_time,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
+                'schedules:id,bulletin_type_id,is_primary,is_active,run_frequency,run_time,scheduled_time,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
                 'location:id,name',
                 'newsCategory:id,name',
+                'language:id,name,code',
             ])
             ->get();
         $summary = $this->buildSummary($schedules, $now);
@@ -69,8 +75,9 @@ class EditorDashboardOverviewService
                 'locations' => $this->locationOverview($bulletins),
             ],
             'nextScheduledRuns' => $this->nextScheduledRuns($schedules, $now)->values(),
-            'scheduledBulletins' => $this->scheduledBulletins($schedules, $bulletins),
-            'actionableQueue' => $this->buildActionableQueue($schedules, $now)->values(),
+            'todayTimelineItems' => $this->todayTimeline($schedules, $now)->values(),
+            'scheduledBulletins' => $this->scheduledBulletins($schedules),
+            'actionableQueue' => $this->buildActionableQueue($schedules, $bulletins, $now)->values(),
             'aiEngines' => $this->buildAiEngines($now, $bulletins)->values(),
             'coverageByLocationTopic' => $this->buildCoverageOverview($bulletins),
             'latestExecutions' => $this->buildLatestExecutions()->values(),
@@ -113,12 +120,15 @@ class EditorDashboardOverviewService
     {
         return [
             'next24h' => $schedules
-                ->filter(fn ($schedule) => $this->isOperational($schedule) && $schedule->next_run_at && $schedule->next_run_at->betweenIncluded($now, $now->copy()->addDay()))
+                ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule) && $schedule->next_run_at && $schedule->next_run_at->betweenIncluded($now, $now->copy()->addDay()))
                 ->count(),
             'overdue' => $schedules
-                ->filter(fn ($schedule) => $this->isOperational($schedule) && $schedule->next_run_at && $schedule->next_run_at->isPast())
+                ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule) && $schedule->next_run_at && $schedule->next_run_at->isPast())
                 ->count(),
             'failedToday' => EditorialScheduleRun::query()
+                ->whereHas('schedule', fn ($query) => $query
+                    ->where('is_active', true)
+                    ->whereHas('bulletinType', fn ($bulletinQuery) => $bulletinQuery->where('is_active', true)))
                 ->whereDate('scheduled_for', $now->toDateString())
                 ->where('status', 'failed')
                 ->count(),
@@ -140,18 +150,66 @@ class EditorDashboardOverviewService
     private function nextScheduledRuns(Collection $schedules, Carbon $now): Collection
     {
         return $schedules
-            ->filter(fn ($schedule) => $this->isOperational($schedule) && $schedule->next_run_at && $schedule->next_run_at->betweenIncluded($now, $now->copy()->addDay()))
+            ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule) && $schedule->next_run_at && $schedule->next_run_at->betweenIncluded($now, $now->copy()->addDay()))
             ->sortBy('next_run_at')
             ->take(12)
             ->map(fn ($schedule) => $this->scheduleRunRow($schedule));
     }
 
-    private function scheduledBulletins(Collection $schedules, Collection $bulletins): array
+    private function todayTimeline(Collection $schedules, Carbon $now): Collection
     {
-        $scheduledRows = $schedules
+        $start = $now->copy()->startOfDay();
+        $end = $now->copy()->endOfDay();
+
+        $runs = EditorialScheduleRun::query()
+            ->with([
+                'schedule.bulletinType.preferredAiProvider:id,name,default_model',
+                'schedule.bulletinType:id,name,is_active,preferred_ai_provider_id',
+                'bulletinPromptRun:id,title,status,generated_prompt,script_id',
+                'script:id,title,production_status',
+                'sourceReferences:id,editorial_schedule_run_id,verification_status',
+            ])
+            ->whereBetween('scheduled_for', [$start, $end])
+            ->whereHas('schedule', fn ($query) => $query
+                ->where('is_active', true)
+                ->whereHas('bulletinType', fn ($bulletinQuery) => $bulletinQuery->where('is_active', true)))
+            ->orderBy('scheduled_for')
+            ->get()
+            ->map(fn (EditorialScheduleRun $run) => $this->executionRow($run));
+
+        $existing = $runs
+            ->map(fn (array $run) => ($run['schedule_id'] ?? '').'|'.($run['scheduled_for'] ?? ''))
+            ->filter()
+            ->flip();
+
+        $scheduled = $schedules
+            ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule) && $schedule->next_run_at && $schedule->next_run_at->betweenIncluded($start, $end))
+            ->reject(function ($schedule) use ($existing) {
+                $nextRun = optional($schedule->next_run_at)->toIso8601String();
+
+                return $existing->has($schedule->id.'|'.$nextRun);
+            })
+            ->sortBy('next_run_at')
+            ->map(fn ($schedule) => [
+                ...$this->scheduleRunRow($schedule),
+                'type' => 'schedule',
+                'status' => 'scheduled',
+            ]);
+
+        return $runs
+            ->concat($scheduled)
+            ->sortBy('scheduled_for')
+            ->values();
+    }
+
+    private function scheduledBulletins(Collection $schedules): array
+    {
+        return $schedules
+            ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule))
             ->map(function ($schedule) {
                 $lastRun = $schedule->runs->first();
                 $provider = $schedule->bulletinType?->preferredAiProvider;
+                $missing = $this->missingConfiguration($schedule);
 
                 return [
                     'row_id' => 'schedule-'.$schedule->id,
@@ -172,59 +230,22 @@ class EditorDashboardOverviewService
                     'last_run' => optional($schedule->last_run_at ?: $lastRun?->scheduled_for)?->toIso8601String(),
                     'last_result' => $lastRun?->status,
                     'is_on' => $this->isOperational($schedule),
-                    'is_incomplete' => $this->needsAttention($schedule),
+                    'is_incomplete' => $missing !== [],
+                    'missing_configuration' => $missing,
                     'ai_manual_approval_required' => ! (bool) $schedule->auto_generate_ai_response,
                     'pipeline' => $this->schedulePipeline($schedule, $lastRun),
                     'view_url' => $schedule->bulletinType ? $this->safeRoute('editor.bulletin-types.show', $schedule->bulletinType) : '#',
                     'schedule_url' => $this->safeRoute('editor.editorial-schedules.show', $schedule),
                     'runs_url' => $this->safeRoute('editor.editorial-schedule-runs.index'),
                     'run_now_url' => $this->safeRoute('editor.editorial-schedules.run-now', $schedule),
+                    'toggle_url' => $schedule->bulletinType ? $this->safeRoute('editor.bulletin-types.toggle-active', $schedule->bulletinType) : '#',
                 ];
-            });
-
-        $scheduledBulletinIds = $schedules->pluck('bulletin_type_id')->filter()->unique();
-
-        $unscheduledRows = $bulletins
-            ->reject(fn (BulletinType $bulletin) => $scheduledBulletinIds->contains($bulletin->id))
-            ->map(function (BulletinType $bulletin) {
-                $provider = $bulletin->preferredAiProvider;
-
-                return [
-                    'row_id' => 'bulletin-'.$bulletin->id,
-                    'id' => 'bulletin-'.$bulletin->id,
-                    'schedule_id' => null,
-                    'bulletin_id' => $bulletin->id,
-                    'bulletin' => $bulletin->name,
-                    'bulletin_url' => $this->safeRoute('editor.bulletin-types.show', $bulletin),
-                    'location' => $bulletin->location?->name,
-                    'category' => $bulletin->newsCategory?->name,
-                    'provider' => $provider?->name,
-                    'model' => $provider?->default_model,
-                    'grounded' => (bool) $provider?->supports_grounding,
-                    'frequency' => null,
-                    'time' => null,
-                    'timezone' => null,
-                    'next_run' => null,
-                    'last_run' => null,
-                    'last_result' => null,
-                    'is_on' => false,
-                    'is_incomplete' => true,
-                    'ai_manual_approval_required' => true,
-                    'pipeline' => ['dashboard.pipeline.missingSchedule'],
-                    'view_url' => $this->safeRoute('editor.bulletin-types.show', $bulletin),
-                    'schedule_url' => '#',
-                    'runs_url' => $this->safeRoute('editor.editorial-schedule-runs.index'),
-                    'run_now_url' => '#',
-                ];
-            });
-
-        return $scheduledRows
-            ->concat($unscheduledRows)
+            })
             ->values()
             ->all();
     }
 
-    private function buildActionableQueue(Collection $schedules, Carbon $now): Collection
+    private function buildActionableQueue(Collection $schedules, Collection $bulletins, Carbon $now): Collection
     {
         $scheduleItems = $schedules
             ->filter(function ($schedule) use ($now) {
@@ -237,6 +258,31 @@ class EditorDashboardOverviewService
                     || $this->hasFailedRunToday((int) $schedule->bulletin_type_id, $now);
             })
             ->map(fn ($schedule) => $this->queueScheduleItem($schedule));
+
+        $configuredScheduleBulletinIds = $schedules
+            ->filter(fn ($schedule) => (bool) $schedule->bulletin_type_id)
+            ->pluck('bulletin_type_id')
+            ->unique();
+
+        $bulletinItems = $bulletins
+            ->filter(fn (BulletinType $bulletin) => $bulletin->is_active
+                && ! $this->activationService->isRunnable($bulletin)
+                && (! $configuredScheduleBulletinIds->contains($bulletin->id) || ! $bulletin->primarySchedule?->is_active))
+            ->map(fn (BulletinType $bulletin) => [
+                'type' => 'bulletin',
+                'type_label' => 'dashboard.queue.type.bulletin',
+                'id' => 'bulletin-'.$bulletin->id,
+                'bulletin' => $bulletin->name,
+                'bulletin_id' => $bulletin->id,
+                'provider' => $bulletin->preferredAiProvider?->name,
+                'model' => $bulletin->preferredAiProvider?->default_model,
+                'status' => 'missing_configuration',
+                'next_action' => 'dashboard.action.configure',
+                'scheduled_for' => optional($bulletin->updated_at)?->toIso8601String(),
+                'view_url' => $this->safeRoute('editor.bulletin-types.show', $bulletin),
+                'action_url' => $this->safeRoute('editor.bulletin-types.edit', $bulletin),
+                'action_method' => null,
+            ]);
 
         $promptWaiting = BulletinPromptRun::query()
             ->with('bulletinType:id,name,preferred_ai_provider_id', 'bulletinType.preferredAiProvider:id,name,default_model')
@@ -310,6 +356,7 @@ class EditorDashboardOverviewService
             ]);
 
         return $scheduleItems
+            ->concat($bulletinItems)
             ->concat($promptWaiting)
             ->concat($scriptsPending)
             ->concat($sourcesPending)
@@ -368,8 +415,8 @@ class EditorDashboardOverviewService
                     return [
                         'location' => $location,
                         'category' => $category,
-                        'active' => $rows->filter(fn (BulletinType $bulletin) => $bulletin->is_active && $bulletin->primarySchedule?->is_active)->count(),
-                        'paused' => $rows->filter(fn (BulletinType $bulletin) => ! $bulletin->is_active || ! $bulletin->primarySchedule?->is_active)->count(),
+                        'active' => $rows->filter(fn (BulletinType $bulletin) => $this->activationService->isRunnable($bulletin))->count(),
+                        'paused' => $rows->filter(fn (BulletinType $bulletin) => ! $this->activationService->isRunnable($bulletin))->count(),
                         'missing_provider' => $rows->filter(fn (BulletinType $bulletin) => ! $bulletin->preferred_ai_provider_id)->count(),
                         'missing_schedule' => $rows->filter(fn (BulletinType $bulletin) => ! $bulletin->primarySchedule)->count(),
                         'failed' => $rows->filter(fn (BulletinType $bulletin) => $this->hasFailedRunToday((int) $bulletin->id, now()))->count(),
@@ -485,10 +532,10 @@ class EditorDashboardOverviewService
             ->groupBy(fn (BulletinType $bulletin) => $bulletin->location?->name ?: 'dashboard.coverage.noLocation')
             ->map(fn ($rows, $location) => [
                 'location' => $location,
-                'active_bulletins' => $rows->filter(fn (BulletinType $bulletin) => $bulletin->is_active && $bulletin->primarySchedule?->is_active)->count(),
+                'active_bulletins' => $rows->filter(fn (BulletinType $bulletin) => $this->activationService->isRunnable($bulletin))->count(),
                 'next_run' => $rows->map(fn (BulletinType $bulletin) => $bulletin->primarySchedule?->next_run_at)->filter()->sort()->first()?->toIso8601String(),
                 'missing_provider' => $rows->filter(fn (BulletinType $bulletin) => ! $bulletin->preferred_ai_provider_id)->count(),
-                'issues' => $rows->filter(fn (BulletinType $bulletin) => ! $bulletin->primarySchedule || ! $bulletin->preferred_ai_provider_id || ! $bulletin->is_active)->count(),
+                'issues' => $rows->filter(fn (BulletinType $bulletin) => ! $this->activationService->isRunnable($bulletin))->count(),
             ])
             ->values()
             ->all();
@@ -500,6 +547,7 @@ class EditorDashboardOverviewService
 
         return [
             'id' => $schedule->id,
+            'schedule_id' => $schedule->id,
             'bulletin' => $schedule->bulletinType?->name ?? $schedule->name,
             'bulletin_id' => $schedule->bulletinType?->id,
             'location' => $schedule->location?->name,
@@ -546,13 +594,7 @@ class EditorDashboardOverviewService
             $pipeline[] = 'dashboard.pipeline.missingBulletin';
         }
 
-        if (! $schedule->bulletinType?->preferred_ai_provider_id) {
-            $pipeline[] = 'dashboard.pipeline.missingProvider';
-        }
-
-        if (! $schedule->run_frequency || ! ($schedule->run_time ?: $schedule->scheduled_time)) {
-            $pipeline[] = 'dashboard.pipeline.missingSchedule';
-        }
+        $pipeline = array_merge($pipeline, $this->missingConfiguration($schedule));
 
         if (! $schedule->auto_generate_ai_response) {
             $pipeline[] = 'dashboard.pipeline.manualAiApproval';
@@ -626,12 +668,18 @@ class EditorDashboardOverviewService
             return 'missing_bulletin_type';
         }
 
-        if (! $schedule->bulletinType?->preferred_ai_provider_id) {
+        $missing = $this->missingConfiguration($schedule);
+
+        if (in_array('bulletinTypes.health.missingProvider', $missing, true)) {
             return 'missing_ai_provider';
         }
 
-        if (! $schedule->run_frequency || ! ($schedule->run_time ?: $schedule->scheduled_time)) {
+        if (in_array('bulletinTypes.health.missingSchedule', $missing, true)) {
             return 'missing_schedule';
+        }
+
+        if ($missing !== []) {
+            return 'missing_configuration';
         }
 
         if ($schedule->next_run_at && $schedule->next_run_at->isPast()) {
@@ -677,15 +725,60 @@ class EditorDashboardOverviewService
 
     private function needsAttention(EditorialSchedule $schedule): bool
     {
-        return ! $schedule->bulletinType
-            || ! $schedule->bulletinType?->preferred_ai_provider_id
-            || ! $schedule->run_frequency
-            || ! ($schedule->run_time ?: $schedule->scheduled_time);
+        return ! $schedule->bulletinType || $this->missingConfiguration($schedule) !== [];
     }
 
     private function isOperational(EditorialSchedule $schedule): bool
     {
         return (bool) ($schedule->is_active && $schedule->bulletinType?->is_active);
+    }
+
+    private function isEligibleForScheduling(EditorialSchedule $schedule): bool
+    {
+        return $this->isOperational($schedule) && ! $this->needsAttention($schedule);
+    }
+
+    private function missingConfiguration(EditorialSchedule $schedule): array
+    {
+        if (! $schedule->bulletinType) {
+            return ['dashboard.pipeline.missingBulletin'];
+        }
+
+        return $this->activationService->missingConfiguration($schedule->bulletinType);
+    }
+
+    private function executionRow(EditorialScheduleRun $run): array
+    {
+        $provider = $run->schedule?->bulletinType?->preferredAiProvider;
+        $sourcesTotal = $run->sourceReferences->count();
+        $sourcesPending = $run->sourceReferences->where('verification_status', 'pending')->count();
+        $sourcesVerified = $run->sourceReferences->where('verification_status', 'verified')->count();
+        $sourcesRejected = $run->sourceReferences
+            ->whereIn('verification_status', ['rejected', 'broken', 'missing'])
+            ->count();
+
+        return [
+            'type' => 'execution',
+            'id' => $run->id,
+            'schedule_id' => $run->editorial_schedule_id,
+            'scheduled_for' => optional($run->scheduled_for)?->toIso8601String(),
+            'bulletin' => $run->schedule?->bulletinType?->name ?? $run->schedule?->name,
+            'status' => $run->status,
+            'provider' => $provider?->name,
+            'model' => $provider?->default_model,
+            'sources_total' => $sourcesTotal,
+            'sources_pending' => $sourcesPending,
+            'sources_verified' => $sourcesVerified,
+            'sources_rejected' => $sourcesRejected,
+            'next_action' => $this->latestExecutionAction($run, $sourcesPending),
+            'pipeline' => $this->runPipeline($run, $sourcesPending),
+            'run_url' => $this->safeRoute('editor.editorial-schedule-runs.show', $run),
+            'prompt_run_url' => $run->bulletinPromptRun ? $this->safeRoute('editor.bulletin-prompt-runs.show', $run->bulletinPromptRun) : null,
+            'script_url' => $run->script ? $this->safeRoute('editor.scripts.show', $run->script) : null,
+            'sources_url' => $sourcesPending > 0 ? $this->safeRoute('editor.source-references.index') : null,
+            'action_url' => $this->latestExecutionActionUrl($run),
+            'action_method' => $this->latestExecutionActionUrl($run) ? 'post' : null,
+        ];
     }
 
     private function safeRoute(string $name, mixed $parameters = []): string

@@ -22,6 +22,7 @@ class EditorialScheduleRunner
         $dueSchedules = EditorialSchedule::query()
             ->with('bulletinType')
             ->where('is_active', true)
+            ->whereHas('bulletinType', fn ($query) => $query->where('is_active', true))
             ->when(isset($options['schedule_id']), fn ($q) => $q->whereKey((int) $options['schedule_id']))
             ->whereNotNull('next_run_at')
             ->where('next_run_at', '<=', $now)
@@ -153,7 +154,12 @@ class EditorialScheduleRunner
     {
         $now ??= now();
 
-        return (bool) $schedule->is_active && $schedule->next_run_at !== null && Carbon::parse($schedule->next_run_at)->lessThanOrEqualTo($now);
+        return (bool) (
+            $schedule->is_active
+            && $schedule->bulletinType?->is_active
+            && $schedule->next_run_at !== null
+            && Carbon::parse($schedule->next_run_at)->lessThanOrEqualTo($now)
+        );
     }
 
     private function nextDaily(Carbon $fromLocal, string $runTime): Carbon

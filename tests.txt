@@ -153,6 +153,38 @@ Summary:
 Next focus:
 - Repair or recreate the MySQL testing database outside this branch workflow, then re-run the full suite.
 
+[2026-05-06 17:23 Europe/Madrid] branch: NOT-4
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after final dashboard/Informativos help override cleanup.
+Next focus:
+- Run production frontend build after final translation cleanup.
+
+[2026-05-06 17:23 Europe/Madrid] branch: NOT-4
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after final translation cleanup.
+Next focus:
+- Final review of changed files and handoff notes.
+
+[2026-05-06 17:26 Europe/Madrid] branch: NOT-4
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after final dashboard map/accordion help override cleanup.
+Next focus:
+- Run production frontend build after final help translation cleanup.
+
+[2026-05-06 17:26 Europe/Madrid] branch: NOT-4
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after final help translation cleanup.
+Next focus:
+- Final review of changed files and handoff notes.
+
 [2026-05-03 16:08 Europe/Madrid] branch: feature/editor-dashboard-tables-and-timeline-cleanup
 Command: npm run build
 Result: PASS
@@ -184,3 +216,37 @@ Summary:
 - TypeScript compilation and Vite production build completed successfully after the final timeline separator cleanup.
 Next focus:
 - Final review of changed files and handoff notes.
+
+[2026-05-06 17:19 Europe/Madrid] branch: NOT-4
+Command: $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan test --env=testing --filter="EditorDashboardOverviewTest|BulletinTypeProviderReadinessTest"
+Result: PASS
+Summary:
+- 11 tests passed, 123 assertions.
+- Covered dashboard active-only scheduled rows/timeline exclusion, map props, bulletin activation guard, active/inactive Informativos props, complete activation/deactivation, and cron ignoring OFF informativos.
+Next focus:
+- Run required default Laravel test command against configured testing database.
+
+[2026-05-06 17:19 Europe/Madrid] branch: NOT-4
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after dashboard, Informativos, help and flash translation updates.
+Next focus:
+- Run production frontend build.
+
+[2026-05-06 17:19 Europe/Madrid] branch: NOT-4
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after dashboard accordions, horizontal timeline, embedded map and Informativos table changes.
+Next focus:
+- Run required default Laravel test command.
+
+[2026-05-06 17:19 Europe/Madrid] branch: NOT-4
+Command: php artisan test --env=testing
+Result: FAIL
+Summary:
+- Required full Laravel test command timed out after roughly 304 seconds on the configured testing environment.
+- This matches the existing workspace limitation recorded earlier: the default MySQL testing database has been timing out or behaving as partially migrated/out of sync.
+Next focus:
+- Repair or recreate the MySQL testing database outside this branch workflow, then re-run the full suite.

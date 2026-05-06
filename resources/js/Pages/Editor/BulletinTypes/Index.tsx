@@ -8,7 +8,6 @@ import {
     ProviderBadge,
     StatusBadge,
 } from '@/Components/EditorDashboard';
-import Pagination from '@/Components/Pagination';
 import { Button } from '@/Components/ui/button';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
@@ -17,19 +16,19 @@ import { Head, Link, router } from '@inertiajs/react';
 import { AlertTriangle, Bot, CalendarClock, Filter, RadioTower, Settings2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-export default function Index({ bulletinTypes, filters = {}, locations = [], providerOptions = [], languages = [], categories = [] }: any): JSX.Element {
+export default function Index({ bulletinTypes, activeBulletins = [], inactiveBulletins = [], filters = {}, locations = [], providerOptions = [], languages = [], categories = [] }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
-    const rows = bulletinTypes.data ?? [];
+    const rows = [...(activeBulletins.length || inactiveBulletins.length ? [...activeBulletins, ...inactiveBulletins] : (bulletinTypes?.data ?? []))];
 
     const updateFilter = (key: string, value: string): void => {
         router.get(route('editor.bulletin-types.index'), { ...filters, [key]: value }, { preserveScroll: true, preserveState: true, replace: true });
     };
 
-    const activeCount = rows.filter((item: any) => item.is_active).length;
+    const activeCount = activeBulletins.length;
     const missingProviderCount = rows.filter((item: any) => !item.preferred_ai_provider).length;
     const missingScheduleCount = rows.filter((item: any) => !item.primary_schedule).length;
-    const readyCount = rows.filter((item: any) => item.health?.status === 'ready').length;
+    const readyCount = rows.filter((item: any) => item.is_on).length;
 
     return (
         <EditorLayout>
@@ -73,9 +72,9 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                         ))}
                     </Select>
                     <Select value={filters.active ?? ''} onChange={(value) => updateFilter('active', value)}>
-                        <option value="">{t('bulletinTypes.filter.allStatuses')}</option>
-                        <option value="active">{t('bulletinTypes.filter.active')}</option>
-                        <option value="inactive">{t('bulletinTypes.filter.inactive')}</option>
+                        <option value="">{t('bulletinTypes.filter.allStates')}</option>
+                        <option value="active">{t('common.active')}</option>
+                        <option value="inactive">{t('common.inactive')}</option>
                     </Select>
                     <Select value={filters.provider ?? ''} onChange={(value) => updateFilter('provider', value)}>
                         <option value="">{t('bulletinTypes.filter.allProviders')}</option>
@@ -100,125 +99,27 @@ export default function Index({ bulletinTypes, filters = {}, locations = [], pro
                 </div>
             </DashboardPanel>
 
-            <DashboardPanel>
-                <OperationalTable minWidth="0">
-                    <thead>
-                        <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800">
-                            <th className="px-5 py-4">{t('bulletinTypes.table.onOff')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.name')}</th>
-                            <th className="hidden px-5 py-4 lg:table-cell">{t('bulletinTypes.table.location')}</th>
-                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.category')}</th>
-                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.language')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.schedule')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.provider')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.nextRun')}</th>
-                            <th className="hidden px-5 py-4 xl:table-cell">{t('bulletinTypes.table.latestScript')}</th>
-                            <th className="px-5 py-4">{t('bulletinTypes.table.status')}</th>
-                            <th className="px-5 py-4 text-right">{t('bulletinTypes.table.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.length ? rows.map((item: any) => (
-                            <tr key={item.id} className="border-b border-slate-100 align-top transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/70">
-                                <td className="px-5 py-4">
-                                    <StatusBadge tone={item.is_active ? 'success' : 'neutral'}>{item.is_active ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
-                                </td>
-                                <td className="px-5 py-4">
-                                    <Link className="font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300" href={item.urls?.show ?? route('editor.bulletin-types.show', item.id)}>
-                                        {item.name}
-                                    </Link>
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {item.target_duration_seconds && <StatusBadge tone="info">{item.target_duration_seconds}s</StatusBadge>}
-                                    </div>
-                                    <p className="mt-2 line-clamp-2 max-w-sm text-xs text-slate-500 dark:text-slate-400">{item.description || t('bulletinTypes.empty.noDescription')}</p>
-                                </td>
-                                <td className="hidden px-5 py-4 lg:table-cell">
-                                    <p className="font-medium text-slate-900 dark:text-slate-100">{item.location?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
-                                </td>
-                                <td className="hidden px-5 py-4 xl:table-cell">
-                                    <p className="font-medium text-slate-900 dark:text-slate-100">{item.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
-                                </td>
-                                <td className="hidden px-5 py-4 xl:table-cell">
-                                    <p className="font-medium text-slate-900 dark:text-slate-100">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
-                                </td>
-                                <td className="px-5 py-4">
-                                    {item.primary_schedule ? (
-                                        <div className="space-y-2">
-                                            <p className="font-medium text-slate-900 dark:text-slate-100">{scheduleLabel(item.primary_schedule, t)}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(item.primary_schedule.next_run_at)}</p>
-                                            <StatusBadge tone={item.primary_schedule.auto_generate_ai_response ? 'success' : 'warning'}>
-                                                {item.primary_schedule.auto_generate_ai_response ? t('bulletinTypes.automation.autoAi') : t('bulletinTypes.automation.aiManualApproval')}
-                                            </StatusBadge>
-                                        </div>
-                                    ) : (
-                                        <StatusBadge tone="danger">{t('bulletinTypes.schedule.missing')}</StatusBadge>
-                                    )}
-                                </td>
-                                <td className="px-5 py-4">
-                                    <ProviderBadge provider={item.preferred_ai_provider} missingLabel={t('bulletinTypes.provider.missing')} groundedLabel={t('bulletinTypes.provider.grounded')} />
-                                </td>
-                                <td className="px-5 py-4">
-                                    {item.latest_execution ? (
-                                        <div className="space-y-2">
-                                            <StatusBadge tone={statusTone(item.latest_execution.status)}>{t(`status.${item.latest_execution.status}`)}</StatusBadge>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(item.latest_execution.scheduled_for)}</p>
-                                        </div>
-                                    ) : (
-                                        <span className="text-sm text-slate-500">{t('bulletinTypes.empty.noRuns')}</span>
-                                    )}
-                                </td>
-                                <td className="hidden px-5 py-4 xl:table-cell">
-                                    {item.latest_script ? (
-                                        <Link className="font-medium text-cyan-700 hover:underline dark:text-cyan-300" href={item.latest_script.url}>
-                                            {item.latest_script.title || t('bulletinTypes.table.latestScript')}
-                                        </Link>
-                                    ) : (
-                                        <span className="text-sm text-slate-500">{t('bulletinTypes.empty.noScripts')}</span>
-                                    )}
-                                </td>
-                                <td className="px-5 py-4">
-                                    <div className="space-y-3">
-                                        <PipelineStepBar steps={[
-                                            { key: 'provider', label: t('bulletinTypes.table.provider'), complete: Boolean(item.preferred_ai_provider) },
-                                            { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(item.primary_schedule) },
-                                            { key: 'run', label: t('bulletinTypes.table.latestRun'), complete: Boolean(item.latest_execution) },
-                                            { key: 'script', label: t('bulletinTypes.table.latestScript'), complete: Boolean(item.latest_script) },
-                                        ]} />
-                                        {item.health?.warnings?.length ? (
-                                            <div className="flex max-w-xs flex-wrap gap-1.5">
-                                                {item.health.warnings.map((warning: string) => <StatusBadge key={warning} tone="warning">{t(warning)}</StatusBadge>)}
-                                            </div>
-                                        ) : (
-                                            <StatusBadge tone="success">{t('bulletinTypes.health.ready')}</StatusBadge>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-5 py-4">
-                                    <div className="flex justify-end">
-                                        <ActionButtonGroup actions={[
-                                            { key: 'run', label: t('bulletinTypes.action.runNow'), href: item.urls?.run_now, method: 'post', variant: 'default' },
-                                            { key: 'show', label: t('bulletinTypes.action.open'), href: item.urls?.show, variant: 'outline' },
-                                            { key: 'executions', label: t('bulletinTypes.action.executions'), href: item.urls?.executions, variant: 'outline' },
-                                            { key: 'scripts', label: t('bulletinTypes.action.scripts'), href: item.urls?.scripts, variant: 'outline' },
-                                            { key: 'edit', label: t('bulletinTypes.action.edit'), href: item.urls?.edit, variant: 'ghost' },
-                                        ]} />
-                                    </div>
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan={11} className="px-5 py-14 text-center text-slate-500">
-                                    <Settings2 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-                                    {t('bulletinTypes.empty.none')}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </OperationalTable>
-                <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
-                    <Pagination links={bulletinTypes.links} />
+            {rows.length ? (
+                <div className="space-y-6">
+                    <BulletinTableSection
+                        formatDateTime={formatDateTime}
+                        rows={activeBulletins}
+                        t={t}
+                        title={t('bulletinTypes.section.active')}
+                    />
+                    <BulletinTableSection
+                        formatDateTime={formatDateTime}
+                        rows={inactiveBulletins}
+                        t={t}
+                        title={t('bulletinTypes.section.inactive')}
+                    />
                 </div>
-            </DashboardPanel>
+            ) : (
+                <DashboardPanel className="px-5 py-14 text-center text-slate-500">
+                    <Settings2 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+                    {t('bulletinTypes.empty.none')}
+                </DashboardPanel>
+            )}
         </EditorLayout>
     );
 }
@@ -235,15 +136,140 @@ function Select({ value, onChange, children }: { value: string; onChange: (value
     );
 }
 
+function BulletinTableSection({
+    rows,
+    title,
+    t,
+    formatDateTime,
+}: {
+    rows: any[];
+    title: string;
+    t: (key: string) => string;
+    formatDateTime: (value?: string | null) => string;
+}): JSX.Element {
+    return (
+        <DashboardPanel>
+            <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                <h2 className="text-base font-semibold text-slate-950 dark:text-white">{title}</h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{rows.length} {t('bulletinTypes.section.items')}</p>
+            </div>
+            <OperationalTable minWidth="0">
+                <thead>
+                    <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800">
+                        <th className="px-4 py-3">{t('bulletinTypes.table.onOff')}</th>
+                        <th className="px-4 py-3">{t('bulletinTypes.table.name')}</th>
+                        <th className="hidden px-4 py-3 lg:table-cell">{t('bulletinTypes.table.location')}</th>
+                        <th className="hidden px-4 py-3 xl:table-cell">{t('bulletinTypes.table.category')}</th>
+                        <th className="hidden px-4 py-3 xl:table-cell">{t('bulletinTypes.table.language')}</th>
+                        <th className="px-4 py-3">{t('bulletinTypes.table.schedule')}</th>
+                        <th className="px-4 py-3">{t('bulletinTypes.table.provider')}</th>
+                        <th className="px-4 py-3">{t('bulletinTypes.table.status')}</th>
+                        <th className="px-4 py-3 text-right">{t('bulletinTypes.table.actions')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.length ? rows.map((item: any) => (
+                        <BulletinRow key={item.id} item={item} t={t} formatDateTime={formatDateTime} />
+                    )) : (
+                        <tr>
+                            <td colSpan={9} className="px-5 py-10 text-center text-sm text-slate-500">
+                                {t('bulletinTypes.empty.none')}
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </OperationalTable>
+        </DashboardPanel>
+    );
+}
+
+function BulletinRow({ item, t, formatDateTime }: { item: any; t: (key: string) => string; formatDateTime: (value?: string | null) => string }): JSX.Element {
+    const missing = item.health?.warnings ?? item.missing_configuration ?? [];
+    const isOn = Boolean(item.is_on);
+    const toggleLabel = isOn ? t('bulletinTypes.action.turnOff') : t('bulletinTypes.action.turnOn');
+    const actions = [
+        item.is_runnable ? { key: 'run', label: t('bulletinTypes.action.runNow'), href: item.urls?.run_now, method: 'post' as const, variant: 'default' as const } : null,
+        { key: 'show', label: t('dashboard.action.view'), href: item.urls?.show, variant: 'outline' as const },
+        { key: 'edit', label: t('bulletinTypes.action.edit'), href: item.urls?.edit, variant: 'outline' as const },
+        { key: 'toggle', label: toggleLabel, href: item.urls?.toggle_active, method: 'post' as const, variant: isOn ? 'outline' as const : 'default' as const },
+        { key: 'executions', label: t('bulletinTypes.action.executions'), href: item.urls?.executions, variant: 'outline' as const },
+        { key: 'scripts', label: t('bulletinTypes.action.scripts'), href: item.urls?.scripts, variant: 'outline' as const },
+    ].filter(Boolean) as any[];
+
+    return (
+        <tr className="border-b border-slate-100 align-top transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/70">
+            <td className="px-4 py-3">
+                <Button asChild size="sm" variant={isOn ? 'outline' : 'default'} className="h-8 px-2.5 text-xs">
+                    <Link
+                        href={item.urls?.toggle_active ?? '#'}
+                        method="post"
+                        as="button"
+                        preserveScroll
+                        aria-label={`${toggleLabel}: ${item.name}`}
+                    >
+                        {isOn ? t('dashboard.state.on') : t('dashboard.state.off')}
+                    </Link>
+                </Button>
+            </td>
+            <td className="px-4 py-3">
+                <Link className="font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300" href={item.urls?.show ?? route('editor.bulletin-types.show', item.id)}>
+                    {item.name}
+                </Link>
+                <p className="mt-1 line-clamp-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">{item.description || t('bulletinTypes.empty.noDescription')}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {item.target_duration_seconds ? <StatusBadge tone="info">{item.target_duration_seconds}s</StatusBadge> : null}
+                    {item.primary_schedule?.auto_generate_ai_response === false ? <StatusBadge tone="warning">{t('dashboard.ai.manualApproval')}</StatusBadge> : null}
+                </div>
+            </td>
+            <td className="hidden px-4 py-3 lg:table-cell">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{item.location?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
+            </td>
+            <td className="hidden px-4 py-3 xl:table-cell">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{item.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
+            </td>
+            <td className="hidden px-4 py-3 xl:table-cell">
+                <p className="font-medium text-slate-900 dark:text-slate-100">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
+            </td>
+            <td className="px-4 py-3">
+                {item.primary_schedule ? (
+                    <div>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{scheduleLabel(item.primary_schedule, t)}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDateTime(item.primary_schedule.next_run_at)}</p>
+                    </div>
+                ) : (
+                    <StatusBadge tone="danger">{t('bulletinTypes.health.missingSchedule')}</StatusBadge>
+                )}
+            </td>
+            <td className="px-4 py-3">
+                <ProviderBadge provider={item.preferred_ai_provider} missingLabel={t('bulletinTypes.health.missingProvider')} groundedLabel={t('bulletinTypes.provider.grounded')} />
+            </td>
+            <td className="px-4 py-3">
+                <div className="space-y-2">
+                    <PipelineStepBar steps={[
+                        { key: 'provider', label: t('bulletinTypes.table.provider'), complete: Boolean(item.preferred_ai_provider) },
+                        { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(item.primary_schedule) },
+                        { key: 'run', label: t('bulletinTypes.table.latestRun'), complete: Boolean(item.latest_execution) },
+                        { key: 'script', label: t('bulletinTypes.table.latestScript'), complete: Boolean(item.latest_script) },
+                    ]} />
+                    <div className="flex max-w-xs flex-wrap gap-1.5">
+                        {missing.length ? (
+                            missing.slice(0, 6).map((warning: string) => <StatusBadge key={warning} tone="warning">{t(warning)}</StatusBadge>)
+                        ) : (
+                            <StatusBadge tone="success">{t('bulletinTypes.health.ready')}</StatusBadge>
+                        )}
+                    </div>
+                </div>
+            </td>
+            <td className="px-4 py-3">
+                <div className="flex justify-end">
+                    <ActionButtonGroup actions={actions} />
+                </div>
+            </td>
+        </tr>
+    );
+}
+
 function scheduleLabel(schedule: any, t: (key: string) => string): string {
     const time = String(schedule.run_time ?? schedule.scheduled_time ?? '').slice(0, 5);
     return [t(`frequency.${schedule.run_frequency ?? 'daily'}`), time || null, schedule.timezone].filter(Boolean).join(' · ');
-}
-
-function statusTone(status?: string | null): 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'violet' {
-    if (!status) return 'neutral';
-    if (['script_created', 'completed', 'success'].includes(status)) return 'success';
-    if (['failed', 'error'].includes(status)) return 'danger';
-    if (['prompt_generated', 'prompt_run_created', 'response_received', 'pending'].includes(status)) return 'warning';
-    return 'info';
 }

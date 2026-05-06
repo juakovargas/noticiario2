@@ -12,6 +12,7 @@ use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\PromptProfile;
 use App\Models\Script;
+use App\Services\Editor\BulletinTypeActivationService;
 use App\Services\PromptGeneration\BulletinPromptGenerator;
 use App\Services\Scheduling\BulletinTypeScheduleSyncService;
 use App\Support\GeneratesUniqueSlug;
@@ -24,7 +25,11 @@ use Inertia\Response;
 
 class BulletinTypeController extends Controller
 {
-    public function __construct(private readonly BulletinTypeScheduleSyncService $scheduleSyncService, private readonly BulletinPromptGenerator $promptGenerator)
+    public function __construct(
+        private readonly BulletinTypeScheduleSyncService $scheduleSyncService,
+        private readonly BulletinPromptGenerator $promptGenerator,
+        private readonly BulletinTypeActivationService $activationService,
+    )
     {
     }
 
@@ -37,38 +42,56 @@ class BulletinTypeController extends Controller
             'provider' => (string) $request->query('provider', ''),
             'active' => (string) $request->query('active', ''),
             'health' => (string) $request->query('health', ''),
+            'language_id' => (string) $request->query('language_id', ''),
+            'category_id' => (string) $request->query('category_id', ''),
         ];
 
         $providerOptions = $this->scriptProviderQuery()
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'default_model', 'supports_grounding']);
 
+        $rows = BulletinType::query()
+            ->with([
+                'location:id,name',
+                'newsCategory:id,name',
+                'language:id,name,code',
+                'promptProfile:id,name',
+                'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category,is_active',
+                'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
+                'schedules:id,bulletin_type_id,is_primary,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
+            ])
+            ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
+            ->when($filters['language_id'] !== '', fn ($query) => $query->where('language_id', $filters['language_id']))
+            ->when($filters['category_id'] !== '', fn ($query) => $query->where('news_category_id', $filters['category_id']))
+            ->when($filters['provider'] === 'missing', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
+            ->when(is_numeric($filters['provider']), fn ($query) => $query->where('preferred_ai_provider_id', (int) $filters['provider']))
+            ->when($filters['health'] === 'missing_schedule', fn ($query) => $query->whereDoesntHave('primarySchedule'))
+            ->when($filters['health'] === 'missing_provider', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
+            ->orderByDesc('is_active')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (BulletinType $bulletinType) => $this->presentBulletinIndexRow($bulletinType))
+            ->values();
+
+        if (in_array($filters['active'], ['active', '1'], true)) {
+            $rows = $rows->filter(fn (array $row) => (bool) $row['is_on'])->values();
+        } elseif (in_array($filters['active'], ['inactive', '0'], true)) {
+            $rows = $rows->filter(fn (array $row) => ! (bool) $row['is_on'])->values();
+        }
+
         return Inertia::render('Editor/BulletinTypes/Index', [
-            'bulletinTypes' => BulletinType::query()
-                ->with([
-                    'location:id,name',
-                    'newsCategory:id,name',
-                    'language:id,name,code',
-                    'promptProfile:id,name',
-                    'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category',
-                    'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
-                ])
-                ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
-                ->when($filters['active'] === '1', fn ($query) => $query->where('is_active', true))
-                ->when($filters['active'] === '0', fn ($query) => $query->where('is_active', false))
-                ->when($filters['provider'] === 'missing', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
-                ->when(is_numeric($filters['provider']), fn ($query) => $query->where('preferred_ai_provider_id', (int) $filters['provider']))
-                ->when($filters['health'] === 'missing_schedule', fn ($query) => $query->whereDoesntHave('primarySchedule'))
-                ->when($filters['health'] === 'missing_provider', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
-                ->orderByDesc('is_active')
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->paginate(20)
-                ->through(fn (BulletinType $bulletinType) => $this->presentBulletinIndexRow($bulletinType))
-                ->withQueryString(),
+            'bulletinTypes' => [
+                'data' => $rows,
+                'links' => [],
+            ],
+            'activeBulletins' => $rows->where('is_on', true)->values(),
+            'inactiveBulletins' => $rows->where('is_on', false)->values(),
             'filters' => $filters,
             'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
             'providerOptions' => $providerOptions,
+            'languages' => Language::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'categories' => NewsCategory::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -84,6 +107,16 @@ class BulletinTypeController extends Controller
 
         $type = BulletinType::query()->create($data);
         $this->scheduleSyncService->syncPrimarySchedule($type);
+
+        if (! $type->refresh()->is_active) {
+            $this->activationService->deactivate($type);
+        }
+
+        if ($type->refresh()->is_active && ! $this->activationService->isComplete($type)) {
+            $this->activationService->deactivate($type);
+
+            return to_route('editor.bulletin-types.show', $type)->with('error', 'flash.bulletinCannotActivate');
+        }
 
         return to_route('editor.bulletin-types.show', $type)->with('success', 'Bulletin type created successfully. Primary schedule synchronized.');
     }
@@ -126,7 +159,45 @@ class BulletinTypeController extends Controller
         $bulletinType->update($data);
         $this->scheduleSyncService->syncPrimarySchedule($bulletinType->refresh());
 
+        if (! $bulletinType->refresh()->is_active) {
+            $this->activationService->deactivate($bulletinType);
+        }
+
+        if ($bulletinType->refresh()->is_active && ! $this->activationService->isComplete($bulletinType)) {
+            $this->activationService->deactivate($bulletinType);
+
+            return to_route('editor.bulletin-types.show', $bulletinType)->with('error', 'flash.bulletinCannotActivate');
+        }
+
         return to_route('editor.bulletin-types.show', $bulletinType)->with('success', 'Bulletin type updated successfully. Primary schedule synchronized.');
+    }
+
+    public function toggleActive(BulletinType $bulletinType): RedirectResponse
+    {
+        $bulletinType->load(['preferredAiProvider', 'location', 'newsCategory', 'language', 'primarySchedule', 'schedules']);
+
+        if ($this->activationService->isRunnable($bulletinType)) {
+            $this->activationService->deactivate($bulletinType);
+
+            return back()->with('success', 'flash.bulletinTurnedOff');
+        }
+
+        if (! $bulletinType->primarySchedule && $this->scheduleSyncService->shouldHavePrimarySchedule($bulletinType)) {
+            $this->scheduleSyncService->syncPrimarySchedule($bulletinType);
+            $bulletinType->refresh()->load(['preferredAiProvider', 'location', 'newsCategory', 'language', 'schedules']);
+        }
+
+        $missing = $this->activationService->missingConfiguration($bulletinType);
+
+        if ($missing !== []) {
+            $this->activationService->deactivate($bulletinType);
+
+            return back()->with('error', 'flash.bulletinCannotActivate');
+        }
+
+        $this->activationService->activate($bulletinType);
+
+        return back()->with('success', 'flash.bulletinTurnedOn');
     }
 
     public function destroy(BulletinType $bulletinType): RedirectResponse
@@ -238,6 +309,8 @@ class BulletinTypeController extends Controller
     {
         $data = $bulletinType->toArray();
         $schedule = $bulletinType->primarySchedule;
+        $missing = $this->activationService->missingConfiguration($bulletinType);
+        $isRunnable = $this->activationService->isRunnable($bulletinType);
         $latestExecution = EditorialScheduleRun::query()
             ->whereHas('schedule', fn ($query) => $query->where('bulletin_type_id', $bulletinType->id))
             ->latest('scheduled_for')
@@ -264,10 +337,15 @@ class BulletinTypeController extends Controller
                 'url' => $this->safeRoute('editor.scripts.show', $latestScript),
             ] : null,
             'health' => $this->bulletinHealth($bulletinType),
+            'missing_configuration' => $missing,
+            'is_on' => $isRunnable,
+            'is_runnable' => $isRunnable,
+            'can_activate' => $missing === [],
             'urls' => [
                 'show' => $this->safeRoute('editor.bulletin-types.show', $bulletinType),
                 'edit' => $this->safeRoute('editor.bulletin-types.edit', $bulletinType),
                 'run_now' => $schedule ? $this->safeRoute('editor.editorial-schedules.run-now', $schedule) : null,
+                'toggle_active' => $this->safeRoute('editor.bulletin-types.toggle-active', $bulletinType),
                 'toggle_schedule' => $schedule ? $this->safeRoute('editor.automation.schedules.toggle', $schedule) : null,
                 'executions' => $this->safeRoute('editor.editorial-schedule-runs.index', ['schedule_id' => $schedule?->id]),
                 'scripts' => $this->safeRoute('editor.scripts.index', ['bulletin_type_id' => $bulletinType->id]),
@@ -351,28 +429,19 @@ class BulletinTypeController extends Controller
     private function bulletinHealth(BulletinType $bulletinType): array
     {
         $schedule = $bulletinType->primarySchedule;
-        $provider = $bulletinType->preferredAiProvider;
-        $warnings = [];
-
-        if (! $provider) {
-            $warnings[] = 'bulletinTypes.health.missingProvider';
-        } elseif (! $provider->is_active || ! $provider->hasConfiguredApiKey()) {
-            $warnings[] = 'bulletinTypes.health.providerMisconfigured';
-        }
-
-        if (! $schedule) {
-            $warnings[] = 'bulletinTypes.health.missingSchedule';
-        } elseif (! $schedule->is_active) {
-            $warnings[] = 'bulletinTypes.health.scheduleOff';
-        }
+        $missing = $this->activationService->missingConfiguration($bulletinType);
+        $warnings = $missing;
+        $isRunnable = $this->activationService->isRunnable($bulletinType);
 
         if (! $bulletinType->is_active) {
             $warnings[] = 'bulletinTypes.health.bulletinOff';
+        } elseif ($schedule && ! $schedule->is_active) {
+            $warnings[] = 'bulletinTypes.health.scheduleOff';
         }
 
         return [
-            'status' => count($warnings) === 0 ? 'ready' : 'attention',
-            'warnings' => $warnings,
+            'status' => $isRunnable ? 'ready' : 'attention',
+            'warnings' => array_values(array_unique($warnings)),
         ];
     }
 

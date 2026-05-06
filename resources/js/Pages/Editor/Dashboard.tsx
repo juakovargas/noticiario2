@@ -3,28 +3,32 @@ import {
     ActionButtonGroup,
     DashboardMetricCard,
     DashboardPanel,
-    DashboardSectionHeader,
     EmptyStateCard,
     PipelineStepBar,
     ProviderBadge,
     StatusBadge,
     TodayTimeline,
 } from '@/Components/EditorDashboard';
+import WorldBulletinMap from '@/Components/Maps/WorldBulletinMap';
 import { useTranslations } from '@/i18n/useTranslations';
 import EditorLayout from '@/Layouts/EditorLayout';
 import { useDateFormatter } from '@/lib/useDateFormatter';
+import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import {
     AlertTriangle,
     CalendarClock,
     CheckCircle2,
+    ChevronDown,
     Clock3,
     FileText,
     Gauge,
+    MapPin,
     RadioTower,
     ShieldCheck,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const pipelineSteps = [
     'dashboard.pipeline.prompt',
@@ -39,7 +43,9 @@ export default function Dashboard({
     headerActions = [],
     summaryCards = [],
     nextScheduledRuns = [],
+    todayTimelineItems = [],
     scheduledBulletins = [],
+    mapOverview = null,
     actionableQueue = [],
     latestExecutions = [],
     scriptsNeedingReview = [],
@@ -48,10 +54,18 @@ export default function Dashboard({
     const { formatDateTime, formatTime } = useDateFormatter();
     const incidents = actionableQueue.filter((item: any) => item.type !== 'source');
     const sourceTasks = actionableQueue.filter((item: any) => item.type === 'source');
-    const timelineItems = useMemo(
-        () => buildTimelineItems(nextScheduledRuns, latestExecutions, t),
-        [latestExecutions, nextScheduledRuns, t],
-    );
+    const timelineItems = useMemo(() => buildTimelineItems(todayTimelineItems, t), [todayTimelineItems, t]);
+    const [accordions, setAccordions] = useDashboardAccordions({
+        timeline: true,
+        scheduledBulletins: true,
+        map: true,
+        incidents: incidents.length > 0,
+        review: false,
+        latest: false,
+    });
+    const toggleAccordion = (key: keyof DashboardAccordionState): void => {
+        setAccordions((state) => ({ ...state, [key]: !state[key] }));
+    };
 
     return (
         <EditorLayout>
@@ -92,13 +106,17 @@ export default function Dashboard({
                 ))}
             </section>
 
-            <DashboardPanel accent="violet" className="mt-6">
-                <DashboardSectionHeader
-                    icon={<Clock3 className="h-4 w-4" />}
-                    title={t('dashboard.timeline.title')}
-                    description={t('dashboard.timeline.description')}
-                />
-                <div className="p-5">
+            <DashboardAccordionPanel
+                accent="violet"
+                className="mt-6"
+                description={t('dashboard.timeline.description')}
+                icon={<Clock3 className="h-4 w-4" />}
+                isOpen={accordions.timeline}
+                onToggle={() => toggleAccordion('timeline')}
+                title={t('dashboard.timeline.title')}
+                t={t}
+            >
+                <div className="p-4 sm:p-5">
                     <TodayTimeline
                         items={timelineItems}
                         emptyLabel={t('dashboard.timeline.empty')}
@@ -111,20 +129,24 @@ export default function Dashboard({
                         formatTime={formatTime}
                     />
                 </div>
-            </DashboardPanel>
+            </DashboardAccordionPanel>
 
-            <DashboardPanel accent="cyan" className="mt-6">
-                <DashboardSectionHeader
-                    icon={<RadioTower className="h-4 w-4" />}
-                    title={t('dashboard.scheduledBulletins.title')}
-                    description={t('dashboard.scheduledBulletins.description')}
-                />
-                <div className="grid gap-3 p-5">
+            <DashboardAccordionPanel
+                accent="cyan"
+                className="mt-6"
+                description={t('dashboard.scheduledBulletins.description')}
+                icon={<RadioTower className="h-4 w-4" />}
+                isOpen={accordions.scheduledBulletins}
+                onToggle={() => toggleAccordion('scheduledBulletins')}
+                title={t('dashboard.scheduledBulletins.title')}
+                t={t}
+            >
+                <div className="grid gap-3 p-4 sm:p-5">
                     {scheduledBulletins.length === 0 && <EmptyStateCard title={t('dashboard.scheduledBulletins.empty')} />}
                     {scheduledBulletins.map((row: any) => (
                         <article
                             key={row.row_id}
-                            className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.35fr)_minmax(0,1.4fr)_auto]"
+                            className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1.25fr)_auto]"
                         >
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
@@ -162,15 +184,50 @@ export default function Dashboard({
                         </article>
                     ))}
                 </div>
-            </DashboardPanel>
+            </DashboardAccordionPanel>
+
+            <DashboardAccordionPanel
+                accent="emerald"
+                className="mt-6"
+                description={t('dashboard.map.description')}
+                icon={<MapPin className="h-4 w-4" />}
+                isOpen={accordions.map}
+                onToggle={() => toggleAccordion('map')}
+                title={t('dashboard.map.title')}
+                t={t}
+            >
+                <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_18rem] sm:p-5">
+                    <div className="min-h-[320px] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+                        <WorldBulletinMap panel="editor" markers={mapOverview?.markers ?? []} initialZoom={2} />
+                    </div>
+                    <div className="grid content-start gap-3">
+                        {(mapOverview?.locations ?? []).slice(0, 6).map((location: any) => (
+                            <article key={location.location} className="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-950">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate font-semibold text-slate-950 dark:text-white">{location.location}</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDateTime(location.next_run)}</p>
+                                    </div>
+                                    <StatusBadge tone={location.issues ? 'warning' : 'success'}>{location.active_bulletins ?? 0} {t('dashboard.map.activeBulletins')}</StatusBadge>
+                                </div>
+                                {location.missing_provider > 0 && <div className="mt-2"><StatusBadge tone="warning">{t('bulletinTypes.health.missingProvider')}</StatusBadge></div>}
+                            </article>
+                        ))}
+                        <ActionButtonGroup align="start" actions={[{ key: 'map', label: t('dashboard.action.viewFullMap'), href: mapOverview?.mapRoute, variant: 'outline' }]} />
+                    </div>
+                </div>
+            </DashboardAccordionPanel>
 
             <section className="mt-6 grid gap-5 xl:grid-cols-2">
-                <DashboardPanel accent="amber">
-                    <DashboardSectionHeader
-                        icon={<AlertTriangle className="h-4 w-4" />}
-                        title={t('dashboard.incidents.title')}
-                        description={t('dashboard.incidents.description')}
-                    />
+                <DashboardAccordionPanel
+                    accent="amber"
+                    description={t('dashboard.incidents.description')}
+                    icon={<AlertTriangle className="h-4 w-4" />}
+                    isOpen={accordions.incidents}
+                    onToggle={() => toggleAccordion('incidents')}
+                    title={t('dashboard.incidents.title')}
+                    t={t}
+                >
                     <div className="space-y-3 p-5">
                         {incidents.length === 0 && <EmptyStateCard title={t('dashboard.incidents.empty')} />}
                         {incidents.slice(0, 8).map((item: any) => (
@@ -182,14 +239,17 @@ export default function Dashboard({
                             />
                         ))}
                     </div>
-                </DashboardPanel>
+                </DashboardAccordionPanel>
 
-                <DashboardPanel accent="violet">
-                    <DashboardSectionHeader
-                        icon={<ShieldCheck className="h-4 w-4" />}
-                        title={t('dashboard.review.title')}
-                        description={t('dashboard.review.description')}
-                    />
+                <DashboardAccordionPanel
+                    accent="violet"
+                    description={t('dashboard.review.description')}
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    isOpen={accordions.review}
+                    onToggle={() => toggleAccordion('review')}
+                    title={t('dashboard.review.title')}
+                    t={t}
+                >
                     <div className="space-y-3 p-5">
                         {scriptsNeedingReview.length === 0 && sourceTasks.length === 0 && <EmptyStateCard title={t('dashboard.review.empty')} />}
                         {scriptsNeedingReview.slice(0, 5).map((script: any) => (
@@ -210,15 +270,19 @@ export default function Dashboard({
                             <CompactWorkItem key={item.id} item={item} t={t} formatDateTime={formatDateTime} />
                         ))}
                     </div>
-                </DashboardPanel>
+                </DashboardAccordionPanel>
             </section>
 
-            <DashboardPanel accent="cyan" className="mt-6">
-                <DashboardSectionHeader
-                    icon={<FileText className="h-4 w-4" />}
-                    title={t('dashboard.latest.title')}
-                    description={t('dashboard.latest.description')}
-                />
+            <DashboardAccordionPanel
+                accent="cyan"
+                className="mt-6"
+                description={t('dashboard.latest.description')}
+                icon={<FileText className="h-4 w-4" />}
+                isOpen={accordions.latest}
+                onToggle={() => toggleAccordion('latest')}
+                title={t('dashboard.latest.title')}
+                t={t}
+            >
                 <div className="grid gap-3 p-5">
                     {latestExecutions.length === 0 && <EmptyStateCard title={t('dashboard.latest.empty')} />}
                     {latestExecutions.map((run: any) => {
@@ -251,7 +315,7 @@ export default function Dashboard({
                         );
                     })}
                 </div>
-            </DashboardPanel>
+            </DashboardAccordionPanel>
         </EditorLayout>
     );
 }
@@ -303,8 +367,92 @@ function summaryTone(key: string): 'neutral' | 'info' | 'success' | 'warning' | 
     return 'info';
 }
 
-function buildTimelineItems(nextScheduledRuns: any[], latestExecutions: any[], t: (key: string) => string): any[] {
-    const executionItems = latestExecutions.map((run) => {
+type DashboardAccordionState = {
+    timeline: boolean;
+    scheduledBulletins: boolean;
+    map: boolean;
+    incidents: boolean;
+    review: boolean;
+    latest: boolean;
+};
+
+const dashboardAccordionStorageKey = 'noticiario.editor.dashboard.accordions';
+
+function useDashboardAccordions(defaultState: DashboardAccordionState): [DashboardAccordionState, Dispatch<SetStateAction<DashboardAccordionState>>] {
+    const [state, setState] = useState<DashboardAccordionState>(() => {
+        if (typeof window === 'undefined') {
+            return defaultState;
+        }
+
+        try {
+            const saved = window.localStorage.getItem(dashboardAccordionStorageKey);
+            return saved ? { ...defaultState, ...JSON.parse(saved) } : defaultState;
+        } catch {
+            return defaultState;
+        }
+    });
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(dashboardAccordionStorageKey, JSON.stringify(state));
+        } catch {
+            // Local storage can be disabled in private browsing; accordions still work for the page view.
+        }
+    }, [state]);
+
+    return [state, setState];
+}
+
+function DashboardAccordionPanel({
+    accent = 'none',
+    children,
+    className,
+    description,
+    icon,
+    isOpen,
+    onToggle,
+    t,
+    title,
+}: {
+    accent?: 'none' | 'cyan' | 'emerald' | 'amber' | 'rose' | 'violet';
+    children: ReactNode;
+    className?: string;
+    description: string;
+    icon: JSX.Element;
+    isOpen: boolean;
+    onToggle: () => void;
+    t: (key: string) => string;
+    title: string;
+}): JSX.Element {
+    return (
+        <DashboardPanel accent={accent} className={className}>
+            <button
+                type="button"
+                className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left"
+                aria-expanded={isOpen}
+                aria-label={isOpen ? t('dashboard.accordion.collapse') : t('dashboard.accordion.expand')}
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onToggle();
+                }}
+            >
+                <span className="flex min-w-0 items-start gap-3">
+                    <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">{icon}</span>
+                    <span className="min-w-0">
+                        <span className="block text-base font-semibold text-slate-950 dark:text-white">{title}</span>
+                        <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">{description}</span>
+                    </span>
+                </span>
+                <ChevronDown className={cn('pointer-events-none mt-1 h-5 w-5 shrink-0 text-slate-400 transition-transform', isOpen && 'rotate-180')} />
+            </button>
+            {isOpen && <div className="border-t border-slate-100 dark:border-slate-800">{children}</div>}
+        </DashboardPanel>
+    );
+}
+
+function buildTimelineItems(todayTimelineItems: any[], t: (key: string) => string): any[] {
+    const executionItems = todayTimelineItems.filter((item) => item.type === 'execution').map((run) => {
         const source = sourceStatus(run, t);
 
         return {
@@ -326,9 +474,8 @@ function buildTimelineItems(nextScheduledRuns: any[], latestExecutions: any[], t
         };
     });
 
-    const executionTimes = new Set(executionItems.map((item) => `${item.bulletin}|${item.scheduled_for}`));
-    const scheduledItems = nextScheduledRuns
-        .filter((run) => !executionTimes.has(`${run.bulletin}|${run.scheduled_for}`))
+    const scheduledItems = todayTimelineItems
+        .filter((run) => run.type !== 'execution')
         .map((run) => ({
             id: `schedule-${run.id}`,
             type: 'schedule',
@@ -337,7 +484,7 @@ function buildTimelineItems(nextScheduledRuns: any[], latestExecutions: any[], t
             model: run.model,
             scheduled_for: run.scheduled_for,
             status: 'scheduled',
-            status_label: t('status.scheduled'),
+            status_label: t('dashboard.timeline.upcoming'),
             status_tone: 'info',
             ai_manual_approval_required: run.ai_manual_approval_required,
             view_url: run.view_url,
@@ -351,6 +498,7 @@ function scheduleActions(row: any, t: (key: string) => string): any[] {
     return [
         { key: 'run', label: t('dashboard.action.runNow'), href: row.run_now_url, method: 'post', variant: 'default' },
         { key: 'open', label: t('dashboard.action.view'), href: row.view_url, variant: 'outline' },
+        { key: 'toggle', label: t('bulletinTypes.action.turnOff'), href: row.toggle_url, method: 'post', variant: 'outline' },
         { key: 'runs', label: t('bulletinTypes.action.executions'), href: row.runs_url, variant: 'outline' },
         { key: 'schedule', label: t('dashboard.action.viewSchedule'), href: row.schedule_url, variant: 'outline' },
     ];
@@ -404,6 +552,7 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
     if (['completed', 'script_created', 'prompt_generated', 'ready_for_production', 'sources_verified', 'scheduled'].includes(status)) return 'success';
     if (['failed', 'failed_today', 'missing_ai_provider', 'missing_schedule', 'missing_bulletin_type'].includes(status)) return 'danger';
     if (['schedule_overdue', 'waiting_ai_response', 'sources_pending_verification'].includes(status)) return 'warning';
+    if (['missing_configuration'].includes(status)) return 'warning';
     return 'neutral';
 }
 
@@ -423,6 +572,7 @@ function statusKey(status: string): string {
         scheduled: 'status.scheduled',
         missing_ai_provider: 'status.missingAiProvider',
         missing_schedule: 'status.missingSchedule',
+        missing_configuration: 'status.missingConfiguration',
         missing_bulletin_type: 'status.missingBulletinType',
         script_pending_review: 'status.scriptPendingReview',
         sources_pending_verification: 'status.sourcesPendingVerification',

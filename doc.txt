@@ -1043,6 +1043,31 @@ Dashboard/table cleanup:
 - Editor row actions should follow the shared action pattern: one visible primary action plus a compact secondary-actions menu. Automation, Informativos and Ejecuciones should avoid mixing raw text links, check-style buttons and unrelated button styles in the same action cell.
 - Source verification visibility is surfaced as pills: no sources, pending, verified, rejected or mixed. This is visibility only; no scraping, live URL checking or external fact-checking was added.
 
+## 21. EDITOR HOME TIMELINE AND BULLETIN ON/OFF FOCUS (May 2026)
+
+- Bulletin-level ON/OFF is now the visible operational switch for Informativos:
+  - Effective ON = `bulletin_types.is_active = true`, a valid active usable/primary schedule, and complete activation configuration, so the informativo may be scheduled and run.
+  - Raw `bulletin_types.is_active = true` alone is not enough for the Editor list or Dashboard to show the informativo as ON/runnable.
+  - OFF = `bulletin_types.is_active = false`; its schedules are also turned off and ignored by cron.
+- Activation is guarded. An informativo cannot be turned ON until it has:
+  - assigned active AI provider,
+  - valid primary/usable schedule with frequency, time and timezone,
+  - location,
+  - category,
+  - language,
+  - target duration.
+- Turning an informativo OFF updates the bulletin and disables its schedules in one action. Turning it ON only reactivates a valid schedule; invalid or incomplete schedules are not blindly enabled.
+- The automatic schedule runner now requires both `editorial_schedules.is_active = true` and `bulletin_types.is_active = true`, so OFF informativos are not eligible for automatic due-run creation.
+- Editor > Informativos now separates rows into:
+  - Informativos encendidos / Active bulletins,
+  - Informativos apagados / Inactive bulletins.
+- Missing configuration is shown with compact pills such as missing provider, schedule, location, category, language or duration.
+- The Editor Dashboard `Informativos programados` section now shows only active, complete, scheduled informativos. OFF/inactive informativos are hidden from this dashboard section.
+- The dashboard timeline is a horizontal daily diagram for the current day, spanning 00:00 to 23:59. It is built from real schedule runs for today plus active upcoming scheduled runs for today; inactive/OFF informativos are excluded.
+- If there are no scheduled executions today, the dashboard shows a clean empty state.
+- The existing editorial world map is embedded again on the dashboard using the existing map service/markers, with a direct action to the full Editor map.
+- Main dashboard sections are collapsible accordions. Open/closed state is stored locally in `localStorage` under `noticiario.editor.dashboard.accordions`; no database preference migration was added.
+
 ## CURRENT ROADMAP
 1. Run `SpainProductionBulletinsSeeder` in the target environment and verify Gemini Grounded is active with `GEMINI_API_KEY` configured.
 2. Run the one-day Spain cron test with the safe manual-AI default, then inspect schedule runs, prompt runs, scripts, source references and review tasks.

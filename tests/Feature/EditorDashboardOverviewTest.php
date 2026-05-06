@@ -6,9 +6,11 @@ use App\Models\AiProvider;
 use App\Models\BulletinType;
 use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
+use App\Models\Language;
 use App\Models\Location;
 use App\Models\NewsCategory;
 use App\Models\Script;
+use App\Services\Scheduling\EditorialScheduleRunner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
@@ -25,12 +27,13 @@ class EditorDashboardOverviewTest extends TestCase
         $provider = AiProvider::factory()->create(['name' => 'Gemini Grounded', 'default_model' => 'gemini-3-flash-preview', 'supports_grounding' => true]);
         $location = Location::factory()->create();
         $category = NewsCategory::factory()->create();
-        $bulletin = BulletinType::factory()->create(['is_active' => true, 'location_id' => $location->id, 'news_category_id' => $category->id, 'preferred_ai_provider_id' => $provider->id]);
-        $schedule = EditorialSchedule::factory()->create(['bulletin_type_id' => $bulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'is_primary' => true, 'is_active' => true, 'run_frequency' => 'daily', 'run_time' => '08:00:00', 'next_run_at' => now()->addHour()]);
+        $language = Language::factory()->create();
+        $bulletin = BulletinType::factory()->create(['is_active' => true, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'target_duration_seconds' => 90, 'preferred_ai_provider_id' => $provider->id]);
+        $schedule = EditorialSchedule::factory()->create(['bulletin_type_id' => $bulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'is_primary' => true, 'is_active' => true, 'run_frequency' => 'daily', 'run_time' => '08:00:00', 'next_run_at' => now()->addHour()]);
         EditorialScheduleRun::factory()->create(['editorial_schedule_id' => $schedule->id, 'status' => 'completed', 'scheduled_for' => now()->subHour()]);
 
         $this->actingAs($user)->get(route('editor.dashboard'))->assertOk()->assertInertia(fn ($page) => $page
-            ->component('Editor/Dashboard')->has('headerActions')->has('summaryCards')->has('mapOverview.markers')->has('actionableQueue')->has('scheduledBulletins')->has('coverageByLocationTopic.groups')->has('aiEngines')->has('latestExecutions')
+            ->component('Editor/Dashboard')->has('headerActions')->has('summaryCards')->has('mapOverview.markers')->has('todayTimelineItems')->has('actionableQueue')->has('scheduledBulletins')->has('coverageByLocationTopic.groups')->has('aiEngines')->has('latestExecutions')
         );
     }
 
@@ -56,12 +59,13 @@ class EditorDashboardOverviewTest extends TestCase
         $provider = AiProvider::factory()->create(['name' => 'Gemini Grounded', 'default_model' => 'gemini-2.5-pro']);
         $location = Location::factory()->create();
         $category = NewsCategory::factory()->create();
+        $language = Language::factory()->create();
 
-        $activeBulletin = BulletinType::factory()->create(['is_active' => true, 'location_id' => $location->id, 'news_category_id' => $category->id, 'preferred_ai_provider_id' => $provider->id]);
-        EditorialSchedule::factory()->create(['bulletin_type_id' => $activeBulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'is_primary' => true, 'is_active' => true, 'run_frequency' => 'daily', 'run_time' => '08:00:00', 'next_run_at' => now()->subHour()]);
+        $activeBulletin = BulletinType::factory()->create(['is_active' => true, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'target_duration_seconds' => 90, 'preferred_ai_provider_id' => $provider->id]);
+        EditorialSchedule::factory()->create(['bulletin_type_id' => $activeBulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'is_primary' => true, 'is_active' => true, 'run_frequency' => 'daily', 'run_time' => '08:00:00', 'next_run_at' => now()->subHour()]);
 
-        $disabledBulletin = BulletinType::factory()->create(['is_active' => false, 'location_id' => $location->id, 'news_category_id' => $category->id, 'preferred_ai_provider_id' => $provider->id]);
-        EditorialSchedule::factory()->create(['bulletin_type_id' => $disabledBulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'is_primary' => true, 'is_active' => false, 'run_frequency' => 'daily', 'run_time' => '10:00:00', 'next_run_at' => now()->addDay()]);
+        $disabledBulletin = BulletinType::factory()->create(['is_active' => false, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'target_duration_seconds' => 90, 'preferred_ai_provider_id' => $provider->id]);
+        EditorialSchedule::factory()->create(['bulletin_type_id' => $disabledBulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'is_primary' => true, 'is_active' => false, 'run_frequency' => 'daily', 'run_time' => '10:00:00', 'next_run_at' => now()->addDay()]);
 
         $props = $this->actingAs($user)->get(route('editor.dashboard'))->viewData('page')['props'];
 
@@ -74,6 +78,8 @@ class EditorDashboardOverviewTest extends TestCase
         $this->assertTrue((bool) $scheduledOn['is_on']);
         $this->assertSame('Gemini Grounded', $scheduledOn['provider']);
         $this->assertSame('gemini-2.5-pro', $scheduledOn['model']);
+        $this->assertNull(collect($props['scheduledBulletins'])->firstWhere('bulletin', $disabledBulletin->name));
+        $this->assertNull(collect($props['todayTimelineItems'])->firstWhere('bulletin', $disabledBulletin->name));
 
         $engine = collect($props['aiEngines'])->firstWhere('name', 'Gemini Grounded');
         $this->assertNotNull($engine);
@@ -85,8 +91,11 @@ class EditorDashboardOverviewTest extends TestCase
         $user = $this->createUserWithPermissions(['editor.access', 'editor.dashboard.view']);
 
         $provider = AiProvider::factory()->create(['name' => 'Gemini Grounded', 'default_model' => 'gemini-3-flash-preview', 'supports_grounding' => true]);
-        $bulletin = BulletinType::factory()->create(['is_active' => true, 'preferred_ai_provider_id' => $provider->id]);
-        $schedule = EditorialSchedule::factory()->create(['bulletin_type_id' => $bulletin->id, 'is_primary' => true, 'is_active' => true, 'next_run_at' => now()->addHour()]);
+        $location = Location::factory()->create();
+        $category = NewsCategory::factory()->create();
+        $language = Language::factory()->create();
+        $bulletin = BulletinType::factory()->create(['is_active' => true, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'target_duration_seconds' => 90, 'preferred_ai_provider_id' => $provider->id]);
+        $schedule = EditorialSchedule::factory()->create(['bulletin_type_id' => $bulletin->id, 'location_id' => $location->id, 'news_category_id' => $category->id, 'language_id' => $language->id, 'is_primary' => true, 'is_active' => true, 'next_run_at' => now()->addHour()]);
 
         $props = $this->actingAs($user)->get(route('editor.dashboard'))->viewData('page')['props'];
         $row = collect($props['scheduledBulletins'])->firstWhere('schedule_id', $schedule->id);
@@ -98,5 +107,32 @@ class EditorDashboardOverviewTest extends TestCase
         $this->actingAs($user)->post($row['run_now_url'])->assertRedirect();
         $this->assertDatabaseHas('editorial_schedule_runs', ['editorial_schedule_id' => $schedule->id, 'status' => 'prompt_generated']);
         $this->assertDatabaseHas('bulletin_prompt_runs', ['editorial_schedule_id' => $schedule->id, 'status' => 'prompt_ready']);
+    }
+
+    public function test_schedule_runner_ignores_active_schedules_when_bulletin_is_off(): void
+    {
+        $provider = AiProvider::factory()->create();
+        $location = Location::factory()->create();
+        $category = NewsCategory::factory()->create();
+        $language = Language::factory()->create();
+        $bulletin = BulletinType::factory()->create([
+            'is_active' => false,
+            'location_id' => $location->id,
+            'news_category_id' => $category->id,
+            'language_id' => $language->id,
+            'target_duration_seconds' => 90,
+            'preferred_ai_provider_id' => $provider->id,
+        ]);
+        $schedule = EditorialSchedule::factory()->create([
+            'bulletin_type_id' => $bulletin->id,
+            'is_primary' => true,
+            'is_active' => true,
+            'next_run_at' => now()->subMinute(),
+        ]);
+
+        $summary = app(EditorialScheduleRunner::class)->createDueRuns(now(), ['generate_prompts' => true]);
+
+        $this->assertSame(0, $summary['due_schedules']);
+        $this->assertDatabaseMissing('editorial_schedule_runs', ['editorial_schedule_id' => $schedule->id]);
     }
 }

@@ -35,7 +35,11 @@ const colorMap: Record<string, string> = { green: '#16a34a', amber: '#d97706', y
 
 export default function WorldBulletinMap({ markers, initialCenter = [20, 0], initialZoom = 2 }: Props): JSX.Element {
     const { t } = useTranslations();
-    const mapRef = useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const mapInstanceRef = useRef<any | null>(null);
+    const markerLayerRef = useRef<any | null>(null);
+    const initIdRef = useRef(0);
+    const center = useMemo<[number, number]>(() => [initialCenter[0], initialCenter[1]], [initialCenter[0], initialCenter[1]]);
 
     const popupHtml = useMemo(() => (marker: MapMarker) => {
         const bulletins = marker.bulletins.map((b) => `<li>${b.name}</li>`).join('');
@@ -43,32 +47,74 @@ export default function WorldBulletinMap({ markers, initialCenter = [20, 0], ini
     }, [t]);
 
     useEffect(() => {
-        if (!mapRef.current || !markers.length) {
+        if (!containerRef.current || !markers.length) {
             return;
         }
 
+        let cancelled = false;
+        const initId = initIdRef.current + 1;
+        initIdRef.current = initId;
+
+        const renderMarkers = (leaflet: any, map: any): void => {
+            if (!markerLayerRef.current) {
+                markerLayerRef.current = leaflet.layerGroup().addTo(map);
+            } else {
+                markerLayerRef.current.clearLayers();
+            }
+
+            markers.forEach((marker) => {
+                leaflet.circleMarker([marker.latitude, marker.longitude], {
+                    radius: 8,
+                    color: colorMap[marker.marker_color] ?? colorMap.blue,
+                    fillOpacity: 0.9,
+                }).addTo(markerLayerRef.current).bindPopup(popupHtml(marker));
+            });
+
+            window.setTimeout(() => {
+                if (mapInstanceRef.current === map) {
+                    map.invalidateSize();
+                }
+            }, 0);
+        };
+
         const init = () => {
-            if (!window.L || !mapRef.current) {
+            if (cancelled || initId !== initIdRef.current || !window.L || !containerRef.current) {
                 return;
             }
 
-            const map = window.L.map(mapRef.current).setView(initialCenter, initialZoom);
+            const container = containerRef.current as HTMLDivElement & {
+                _leaflet_id?: number;
+                __noticiarioLeafletMap?: any;
+            };
+            const existingMap = mapInstanceRef.current ?? container.__noticiarioLeafletMap;
+
+            if (existingMap) {
+                mapInstanceRef.current = existingMap;
+                existingMap.setView(center, initialZoom);
+                renderMarkers(window.L, existingMap);
+
+                return;
+            }
+
+            if (container._leaflet_id) {
+                delete container._leaflet_id;
+            }
+
+            const map = window.L.map(container).setView(center, initialZoom);
+            container.__noticiarioLeafletMap = map;
+            mapInstanceRef.current = map;
+
             window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
             }).addTo(map);
 
-            markers.forEach((marker) => {
-                window.L.circleMarker([marker.latitude, marker.longitude], {
-                    radius: 8,
-                    color: colorMap[marker.marker_color] ?? colorMap.blue,
-                    fillOpacity: 0.9,
-                }).addTo(map).bindPopup(popupHtml(marker));
-            });
-
-            return () => map.remove();
+            renderMarkers(window.L, map);
         };
 
+        let pendingScript: HTMLScriptElement | null = null;
+        const onLeafletLoad = (): void => init();
         const leafletStyles = document.querySelector('link[data-leaflet="1"]');
+
         if (!leafletStyles) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -78,20 +124,46 @@ export default function WorldBulletinMap({ markers, initialCenter = [20, 0], ini
         }
 
         if (!window.L) {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            script.async = true;
-            script.onload = () => init();
-            document.body.appendChild(script);
-            return;
+            pendingScript = document.querySelector('script[data-leaflet="1"]') as HTMLScriptElement | null;
+
+            if (!pendingScript) {
+                pendingScript = document.createElement('script');
+                pendingScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                pendingScript.async = true;
+                pendingScript.dataset.leaflet = '1';
+                document.body.appendChild(pendingScript);
+            }
+
+            pendingScript.addEventListener('load', onLeafletLoad, { once: true });
+        } else {
+            init();
         }
 
-        return init();
-    }, [initialCenter, initialZoom, markers, popupHtml]);
+        return () => {
+            cancelled = true;
+            pendingScript?.removeEventListener('load', onLeafletLoad);
+
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+                markerLayerRef.current = null;
+            }
+
+            if (containerRef.current) {
+                const container = containerRef.current as HTMLDivElement & {
+                    _leaflet_id?: number;
+                    __noticiarioLeafletMap?: any;
+                };
+
+                delete container.__noticiarioLeafletMap;
+                delete container._leaflet_id;
+            }
+        };
+    }, [center, initialZoom, markers, popupHtml]);
 
     if (!markers.length) {
         return <div className="rounded-lg border border-dashed p-8 text-center text-sm text-slate-500">{t('No bulletin locations configured yet')}</div>;
     }
 
-    return <div ref={mapRef} className="h-[460px] w-full rounded-lg" />;
+    return <div ref={containerRef} className="h-[460px] w-full rounded-lg" />;
 }

@@ -14,11 +14,13 @@ import { useDateFormatter } from '@/lib/useDateFormatter';
 import { Head, Link } from '@inertiajs/react';
 import { Bot, CalendarClock, CheckCircle2, ClipboardList, FileText, PlayCircle, RadioTower } from 'lucide-react';
 
-export default function Show({ bulletinType, primarySchedule = null, recentExecutions = [], recentScripts = [], promptPreview = null, health = null }: any): JSX.Element {
+export default function Show({ bulletinType, primarySchedule = null, schedules = [], scheduleSummary = null, recentExecutions = [], recentScripts = [], promptPreview = null, health = null }: any): JSX.Element {
     const { t } = useTranslations();
     const { formatDateTime } = useDateFormatter();
     const provider = bulletinType.preferred_ai_provider;
-    const runNowUrl = primarySchedule ? route('editor.editorial-schedules.run-now', primarySchedule.id) : null;
+    const firstRunnableSchedule = schedules.find((schedule: any) => schedule.is_active) ?? schedules[0] ?? null;
+    const runNowUrl = firstRunnableSchedule?.run_now_url ?? (primarySchedule ? route('editor.editorial-schedules.run-now', primarySchedule.id) : null);
+    const isRunnable = Boolean(bulletinType.is_active && scheduleSummary?.active > 0 && health?.status === 'ready');
 
     return (
         <EditorLayout>
@@ -32,22 +34,23 @@ export default function Show({ bulletinType, primarySchedule = null, recentExecu
                         <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{bulletinType.name}</h2>
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{bulletinType.description || t('bulletinTypes.empty.noDescription')}</p>
                         <div className="mt-4 flex flex-wrap gap-2">
-                            <StatusBadge tone={bulletinType.is_active ? 'success' : 'neutral'}>{bulletinType.is_active ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
+                            <StatusBadge tone={isRunnable ? 'success' : 'neutral'}>{isRunnable ? t('bulletinTypes.state.active') : t('bulletinTypes.state.inactive')}</StatusBadge>
+                            <StatusBadge tone={scheduleSummary?.active ? 'info' : 'warning'}>{activeScheduleCount(scheduleSummary, t)}</StatusBadge>
                             <StatusBadge tone="neutral">{bulletinType.location?.name ?? t('bulletinTypes.empty.notAssigned')}</StatusBadge>
                             <StatusBadge tone="neutral">{bulletinType.news_category?.name ?? t('bulletinTypes.empty.notAssigned')}</StatusBadge>
                             <StatusBadge tone="info">{bulletinType.language?.name ?? t('bulletinTypes.empty.notAssigned')}</StatusBadge>
                         </div>
                     </div>
                     <ActionButtonGroup actions={[
-                        { key: 'run', label: t('bulletinTypes.action.runNow'), href: runNowUrl, method: 'post', variant: 'default' },
+                        isRunnable ? { key: 'run', label: t('bulletinTypes.action.runNow'), href: runNowUrl, method: 'post', variant: 'default' } : null,
                         { key: 'edit', label: t('bulletinTypes.action.edit'), href: route('editor.bulletin-types.edit', bulletinType.id), variant: 'outline' },
-                        { key: 'executions', label: t('bulletinTypes.action.executions'), href: route('editor.editorial-schedule-runs.index', { schedule_id: primarySchedule?.id }), variant: 'outline' },
-                    ]} />
+                        { key: 'executions', label: t('bulletinTypes.action.executions'), href: route('editor.editorial-schedule-runs.index', { schedule_id: firstRunnableSchedule?.id ?? primarySchedule?.id }), variant: 'outline' },
+                    ].filter(Boolean) as any[]} />
                 </div>
             </DashboardPanel>
 
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <DashboardMetricCard label={t('bulletinTypes.show.nextRun')} value={primarySchedule?.next_run_at ? formatDateTime(primarySchedule.next_run_at) : t('bulletinTypes.schedule.missing')} icon={<CalendarClock className="h-5 w-5" />} tone={primarySchedule ? 'info' : 'warning'} />
+                <DashboardMetricCard label={t('bulletinTypes.show.nextRun')} value={scheduleSummary?.next_run ? formatDateTime(scheduleSummary.next_run) : t('bulletinTypes.schedule.missing')} icon={<CalendarClock className="h-5 w-5" />} tone={scheduleSummary?.active ? 'info' : 'warning'} />
                 <DashboardMetricCard label={t('bulletinTypes.show.provider')} value={provider?.name ?? t('bulletinTypes.provider.missing')} icon={<Bot className="h-5 w-5" />} tone={provider ? 'success' : 'danger'} helper={provider?.default_model} />
                 <DashboardMetricCard label={t('bulletinTypes.show.recentExecutions')} value={recentExecutions.length} icon={<RadioTower className="h-5 w-5" />} tone="violet" />
                 <DashboardMetricCard label={t('bulletinTypes.show.recentScripts')} value={recentScripts.length} icon={<FileText className="h-5 w-5" />} tone="success" />
@@ -68,7 +71,7 @@ export default function Show({ bulletinType, primarySchedule = null, recentExecu
                         <p className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('bulletinTypes.table.health')}</p>
                         <PipelineStepBar steps={[
                             { key: 'provider', label: t('bulletinTypes.table.provider'), complete: Boolean(provider) },
-                            { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(primarySchedule) },
+                            { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(scheduleSummary?.active) },
                             { key: 'execution', label: t('bulletinTypes.show.recentExecutions'), complete: recentExecutions.length > 0 },
                             { key: 'script', label: t('bulletinTypes.show.recentScripts'), complete: recentScripts.length > 0 },
                         ]} />
@@ -92,22 +95,28 @@ export default function Show({ bulletinType, primarySchedule = null, recentExecu
 
             <DashboardPanel className="mt-6 p-5">
                 <SectionTitle icon={<CalendarClock className="h-4 w-4" />} title={t('bulletinTypes.show.schedule')} />
-                {primarySchedule ? (
-                    <div className="grid gap-4 text-sm md:grid-cols-4">
-                        <Info label={t('bulletinTypes.table.status')} value={primarySchedule.is_active ? t('dashboard.state.on') : t('dashboard.state.off')} />
-                        <Info label={t('bulletinTypes.form.frequency')} value={t(`frequency.${primarySchedule.run_frequency ?? 'daily'}`)} />
-                        <Info label={t('bulletinTypes.form.runTime')} value={(primarySchedule.run_time ?? primarySchedule.scheduled_time ?? '').slice(0, 5)} fallback={t('bulletinTypes.empty.notAssigned')} />
-                        <Info label={t('bulletinTypes.form.timezone')} value={primarySchedule.timezone} fallback={t('bulletinTypes.empty.notAssigned')} />
-                        <Info label={t('bulletinTypes.show.nextRun')} value={formatDateTime(primarySchedule.next_run_at)} />
-                        <Info label={t('bulletinTypes.show.lastRun')} value={formatDateTime(primarySchedule.last_run_at)} />
-                        <Info label={t('bulletinTypes.automation.aiManualApproval')} value={primarySchedule.auto_generate_ai_response ? t('common.no') : t('common.yes')} />
-                        <Info label={t('bulletinTypes.automation.pipeline')} value={primarySchedule.auto_run_pipeline ? t('common.yes') : t('common.no')} />
-                        <div className="md:col-span-4">
-                            <ActionButtonGroup actions={[
-                                { key: 'run', label: t('bulletinTypes.action.runNow'), href: runNowUrl, method: 'post', variant: 'default' },
-                                { key: 'toggle', label: primarySchedule.is_active ? t('bulletinTypes.action.disableSchedule') : t('bulletinTypes.action.enableSchedule'), href: route('editor.automation.schedules.toggle', primarySchedule.id), method: 'post', variant: 'outline' },
-                            ]} />
-                        </div>
+                {schedules.length ? (
+                    <div className="space-y-3">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{scheduleDescription(scheduleSummary, t)}</p>
+                        {schedules.map((schedule: any) => (
+                            <article key={schedule.id} className="grid gap-3 rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                                <div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <StatusBadge tone={schedule.is_active ? 'success' : 'neutral'}>{schedule.is_active ? t('bulletinTypes.schedule.active') : t('bulletinTypes.schedule.inactive')}</StatusBadge>
+                                        {schedule.is_primary && <StatusBadge tone="info">{t('bulletinTypes.schedule.primary')}</StatusBadge>}
+                                        {schedule.slot && <StatusBadge tone="neutral">{t(`bulletinTypes.slot.${schedule.slot}`)}</StatusBadge>}
+                                    </div>
+                                    <p className="mt-2 font-semibold text-slate-950 dark:text-white">{scheduleFrequency(schedule, t)}</p>
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{schedule.time} - {schedule.timezone}</p>
+                                </div>
+                                <Info label={t('bulletinTypes.show.nextRun')} value={formatDateTime(schedule.next_run_at)} />
+                                <Info label={t('bulletinTypes.show.lastRun')} value={formatDateTime(schedule.last_run_at)} />
+                                <ActionButtonGroup actions={[
+                                    (bulletinType.is_active && schedule.is_active && health?.status === 'ready') ? { key: 'run', label: t('bulletinTypes.action.runNow'), href: schedule.run_now_url, method: 'post', variant: 'default' } : null,
+                                    { key: 'toggle', label: schedule.is_active ? t('bulletinTypes.action.disableSchedule') : t('bulletinTypes.action.enableSchedule'), href: schedule.toggle_url, method: 'post', variant: 'outline' },
+                                ].filter(Boolean) as any[]} />
+                            </article>
+                        ))}
                     </div>
                 ) : (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
@@ -199,6 +208,51 @@ export default function Show({ bulletinType, primarySchedule = null, recentExecu
 
 function SectionTitle({ icon, title }: { icon: JSX.Element; title: string }): JSX.Element {
     return <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">{icon}{title}</h3>;
+}
+
+function activeScheduleCount(summary: any, t: (key: string) => string): string {
+    if (!summary?.total || !summary.active) {
+        return t('bulletinTypes.schedule.noActiveSchedules');
+    }
+
+    if (summary.active === summary.total) {
+        return `${summary.active} ${t('bulletinTypes.schedule.activeSchedules')}`;
+    }
+
+    return `${summary.active}/${summary.total} ${t('bulletinTypes.schedule.activeSchedules')}`;
+}
+
+function scheduleDescription(summary: any, t: (key: string) => string): string {
+    const times = summary?.active_times?.length ? summary.active_times : summary?.times ?? [];
+
+    if (!summary?.active) {
+        return t('bulletinTypes.schedule.notAutomatic');
+    }
+
+    return `${scheduleFrequency(summary, t)} - ${times.join(' - ')}`;
+}
+
+function scheduleFrequency(schedule: any, t: (key: string) => string): string {
+    const frequency = schedule.frequency ?? 'daily';
+    const parts = [t(`frequency.${frequency}`)];
+
+    if (['selected_days', 'weekly', 'custom'].includes(frequency) && schedule.run_days?.length) {
+        parts.push(schedule.run_days.map((day: string) => t(`weekday.short.${day}`)).join('/'));
+    }
+
+    if (['selected_days', 'weekly', 'custom'].includes(frequency) && schedule.days?.length) {
+        parts.push(schedule.days.map((day: string) => t(`weekday.short.${day}`)).join('/'));
+    }
+
+    if (frequency === 'monthly' && schedule.month_day) {
+        parts.push(`${t('bulletinTypes.schedule.monthDayShort')} ${schedule.month_day}`);
+    }
+
+    if (frequency === 'once' && schedule.scheduled_date) {
+        parts.push(schedule.scheduled_date);
+    }
+
+    return parts.join(' - ');
 }
 
 function Info({ label, value, fallback = '-' }: { label: string; value?: any; fallback?: string }): JSX.Element {

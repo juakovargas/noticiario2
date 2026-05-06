@@ -55,9 +55,9 @@ class BulletinTypeActivationService
 
     public function isRunnable(BulletinType $bulletinType): bool
     {
-        $schedule = $this->activatableSchedule($bulletinType);
+        $schedule = $this->runnableSchedule($bulletinType);
 
-        return (bool) ($bulletinType->is_active && $schedule?->is_active && $this->isComplete($bulletinType));
+        return (bool) ($bulletinType->is_active && $schedule && $this->isComplete($bulletinType));
     }
 
     public function activatableSchedule(BulletinType $bulletinType): ?EditorialSchedule
@@ -65,25 +65,33 @@ class BulletinTypeActivationService
         $bulletinType->loadMissing('schedules');
 
         return $bulletinType->schedules
+            ->filter(fn (EditorialSchedule $schedule) => $schedule->is_active)
+            ->sortByDesc(fn (EditorialSchedule $schedule) => (bool) $schedule->is_primary)
+            ->first(fn (EditorialSchedule $schedule) => $this->isScheduleConfigured($schedule));
+    }
+
+    public function runnableSchedule(BulletinType $bulletinType): ?EditorialSchedule
+    {
+        $bulletinType->loadMissing('schedules');
+
+        return $bulletinType->schedules
+            ->filter(fn (EditorialSchedule $schedule) => $schedule->is_active)
             ->sortByDesc(fn (EditorialSchedule $schedule) => (bool) $schedule->is_primary)
             ->first(fn (EditorialSchedule $schedule) => $this->isScheduleConfigured($schedule));
     }
 
     public function activate(BulletinType $bulletinType): void
     {
-        $schedule = $this->activatableSchedule($bulletinType);
-
         $bulletinType->forceFill([
             'is_active' => true,
             'default_schedule_is_active' => true,
         ])->save();
 
-        if ($schedule) {
-            $schedule->forceFill([
-                'is_active' => true,
+        $bulletinType->schedules
+            ->filter(fn (EditorialSchedule $schedule) => $schedule->is_active && $this->isScheduleConfigured($schedule))
+            ->each(fn (EditorialSchedule $schedule) => $schedule->forceFill([
                 'next_run_at' => $schedule->next_run_at ?: $this->runner->calculateNextRunAt($schedule),
-            ])->save();
-        }
+            ])->save());
     }
 
     public function deactivate(BulletinType $bulletinType): void
@@ -92,11 +100,6 @@ class BulletinTypeActivationService
             'is_active' => false,
             'default_schedule_is_active' => false,
         ])->save();
-
-        $bulletinType->schedules()->update([
-            'is_active' => false,
-            'next_run_at' => null,
-        ]);
     }
 
     private function hasValidSchedule(BulletinType $bulletinType): bool
@@ -106,12 +109,31 @@ class BulletinTypeActivationService
 
     private function isScheduleConfigured(EditorialSchedule $schedule): bool
     {
+        $frequency = $schedule->run_frequency ?: $schedule->frequency_type;
         $time = $schedule->run_time ?: $schedule->scheduled_time;
 
-        if (! $schedule->run_frequency || ! $time || ! $schedule->timezone) {
+        if (! $frequency || ! $time || ! preg_match('/^\d{2}:\d{2}(:\d{2})?$/', (string) $time) || ! $schedule->timezone) {
             return false;
         }
 
-        return in_array($schedule->timezone, timezone_identifiers_list(), true);
+        if (! in_array($schedule->timezone, timezone_identifiers_list(), true)) {
+            return false;
+        }
+
+        if (in_array($frequency, ['selected_days', 'weekly', 'custom'], true) && empty($schedule->run_days)) {
+            return false;
+        }
+
+        if ($frequency === 'monthly') {
+            $monthDay = (int) data_get($schedule->metadata, 'month_day');
+
+            return $monthDay >= 1 && $monthDay <= 31;
+        }
+
+        if ($frequency === 'once') {
+            return filled($schedule->scheduled_date);
+        }
+
+        return true;
     }
 }

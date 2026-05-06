@@ -27,7 +27,7 @@ export default function Index({ bulletinTypes, activeBulletins = [], inactiveBul
 
     const activeCount = activeBulletins.length;
     const missingProviderCount = rows.filter((item: any) => !item.preferred_ai_provider).length;
-    const missingScheduleCount = rows.filter((item: any) => !item.primary_schedule).length;
+    const missingScheduleCount = rows.filter((item: any) => !item.schedule_summary?.active).length;
     const readyCount = rows.filter((item: any) => item.is_on).length;
 
     return (
@@ -207,7 +207,7 @@ function BulletinRow({ item, t, formatDateTime }: { item: any; t: (key: string) 
                         preserveScroll
                         aria-label={`${toggleLabel}: ${item.name}`}
                     >
-                        {isOn ? t('dashboard.state.on') : t('dashboard.state.off')}
+                        {isOn ? t('bulletinTypes.state.active') : t('bulletinTypes.state.inactive')}
                     </Link>
                 </Button>
             </td>
@@ -231,14 +231,7 @@ function BulletinRow({ item, t, formatDateTime }: { item: any; t: (key: string) 
                 <p className="font-medium text-slate-900 dark:text-slate-100">{item.language?.name ?? t('bulletinTypes.empty.notAssigned')}</p>
             </td>
             <td className="px-4 py-3">
-                {item.primary_schedule ? (
-                    <div>
-                        <p className="font-medium text-slate-900 dark:text-slate-100">{scheduleLabel(item.primary_schedule, t)}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDateTime(item.primary_schedule.next_run_at)}</p>
-                    </div>
-                ) : (
-                    <StatusBadge tone="danger">{t('bulletinTypes.health.missingSchedule')}</StatusBadge>
-                )}
+                <ScheduleSummary summary={item.schedule_summary} t={t} formatDateTime={formatDateTime} isOn={isOn} />
             </td>
             <td className="px-4 py-3">
                 <ProviderBadge provider={item.preferred_ai_provider} missingLabel={t('bulletinTypes.health.missingProvider')} groundedLabel={t('bulletinTypes.provider.grounded')} />
@@ -247,7 +240,7 @@ function BulletinRow({ item, t, formatDateTime }: { item: any; t: (key: string) 
                 <div className="space-y-2">
                     <PipelineStepBar steps={[
                         { key: 'provider', label: t('bulletinTypes.table.provider'), complete: Boolean(item.preferred_ai_provider) },
-                        { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(item.primary_schedule) },
+                        { key: 'schedule', label: t('bulletinTypes.table.schedule'), complete: Boolean(item.schedule_summary?.active) },
                         { key: 'run', label: t('bulletinTypes.table.latestRun'), complete: Boolean(item.latest_execution) },
                         { key: 'script', label: t('bulletinTypes.table.latestScript'), complete: Boolean(item.latest_script) },
                     ]} />
@@ -269,7 +262,50 @@ function BulletinRow({ item, t, formatDateTime }: { item: any; t: (key: string) 
     );
 }
 
-function scheduleLabel(schedule: any, t: (key: string) => string): string {
-    const time = String(schedule.run_time ?? schedule.scheduled_time ?? '').slice(0, 5);
-    return [t(`frequency.${schedule.run_frequency ?? 'daily'}`), time || null, schedule.timezone].filter(Boolean).join(' · ');
+function ScheduleSummary({ summary, t, formatDateTime, isOn }: { summary: any; t: (key: string) => string; formatDateTime: (value?: string | null) => string; isOn: boolean }): JSX.Element {
+    if (!summary?.total) {
+        return <StatusBadge tone="danger">{t('bulletinTypes.schedule.noActiveSchedules')}</StatusBadge>;
+    }
+
+    const activeTimes = summary.active_times?.length ? summary.active_times : [];
+    const allTimes = summary.times ?? [];
+    const times = activeTimes.length ? activeTimes : allTimes;
+
+    return (
+        <div className="max-w-xs">
+            <p className="font-medium text-slate-900 dark:text-slate-100">{frequencySummary(summary, t)}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {isOn ? activeScheduleCount(summary, t) : t('bulletinTypes.schedule.notAutomatic')}
+            </p>
+            {times.length > 0 && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{times.join(' - ')}</p>}
+            {summary.next_run && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('bulletinTypes.schedule.nextRun')}: {formatDateTime(summary.next_run)}</p>}
+        </div>
+    );
+}
+
+function activeScheduleCount(summary: any, t: (key: string) => string): string {
+    if (!summary.active) {
+        return t('bulletinTypes.schedule.noActiveSchedules');
+    }
+
+    if (summary.active === summary.total) {
+        return `${summary.active} ${t('bulletinTypes.schedule.activeSchedules')}`;
+    }
+
+    return `${summary.active}/${summary.total} ${t('bulletinTypes.schedule.activeSchedules')}`;
+}
+
+function frequencySummary(summary: any, t: (key: string) => string): string {
+    const frequency = summary.frequency ?? 'daily';
+    const parts = [t(`frequency.${frequency}`)];
+
+    if (['selected_days', 'weekly', 'custom'].includes(frequency) && summary.days?.length) {
+        parts.push(summary.days.map((day: string) => t(`weekday.short.${day}`)).join('/'));
+    }
+
+    if (frequency === 'monthly' && summary.month_day) {
+        parts.push(`${t('bulletinTypes.schedule.monthDayShort')} ${summary.month_day}`);
+    }
+
+    return parts.join(' - ');
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiProvider;
 use App\Models\BulletinPromptRun;
 use App\Models\BulletinType;
+use App\Models\EditorialSchedule;
 use App\Models\EditorialScheduleRun;
 use App\Models\Language;
 use App\Models\Location;
@@ -17,6 +18,7 @@ use App\Services\PromptGeneration\BulletinPromptGenerator;
 use App\Services\Scheduling\BulletinTypeScheduleSyncService;
 use App\Support\GeneratesUniqueSlug;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -57,15 +59,14 @@ class BulletinTypeController extends Controller
                 'language:id,name,code',
                 'promptProfile:id,name',
                 'preferredAiProvider:id,name,slug,default_model,supports_grounding,provider_category,is_active',
-                'primarySchedule:id,bulletin_type_id,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
-                'schedules:id,bulletin_type_id,is_primary,run_frequency,run_time,scheduled_time,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
+                'primarySchedule:id,bulletin_type_id,is_primary,run_frequency,run_time,scheduled_time,scheduled_date,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline,metadata',
+                'schedules:id,bulletin_type_id,is_primary,run_frequency,run_time,scheduled_time,scheduled_date,timezone,is_active,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline,metadata',
             ])
             ->when($filters['location_id'] !== '', fn ($query) => $query->where('location_id', $filters['location_id']))
             ->when($filters['language_id'] !== '', fn ($query) => $query->where('language_id', $filters['language_id']))
             ->when($filters['category_id'] !== '', fn ($query) => $query->where('news_category_id', $filters['category_id']))
             ->when($filters['provider'] === 'missing', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
             ->when(is_numeric($filters['provider']), fn ($query) => $query->where('preferred_ai_provider_id', (int) $filters['provider']))
-            ->when($filters['health'] === 'missing_schedule', fn ($query) => $query->whereDoesntHave('primarySchedule'))
             ->when($filters['health'] === 'missing_provider', fn ($query) => $query->whereNull('preferred_ai_provider_id'))
             ->orderByDesc('is_active')
             ->orderBy('sort_order')
@@ -78,6 +79,10 @@ class BulletinTypeController extends Controller
             $rows = $rows->filter(fn (array $row) => (bool) $row['is_on'])->values();
         } elseif (in_array($filters['active'], ['inactive', '0'], true)) {
             $rows = $rows->filter(fn (array $row) => ! (bool) $row['is_on'])->values();
+        }
+
+        if ($filters['health'] === 'missing_schedule') {
+            $rows = $rows->filter(fn (array $row) => (int) data_get($row, 'schedule_summary.active', 0) === 0)->values();
         }
 
         return Inertia::render('Editor/BulletinTypes/Index', [
@@ -106,7 +111,7 @@ class BulletinTypeController extends Controller
         $data['slug'] = $this->uniqueSlug(BulletinType::class, $data['slug'] ?: $data['name']);
 
         $type = BulletinType::query()->create($data);
-        $this->scheduleSyncService->syncPrimarySchedule($type);
+        $this->scheduleSyncService->syncSchedules($type->refresh());
 
         if (! $type->refresh()->is_active) {
             $this->activationService->deactivate($type);
@@ -118,7 +123,7 @@ class BulletinTypeController extends Controller
             return to_route('editor.bulletin-types.show', $type)->with('error', 'flash.bulletinCannotActivate');
         }
 
-        return to_route('editor.bulletin-types.show', $type)->with('success', 'Bulletin type created successfully. Primary schedule synchronized.');
+        return to_route('editor.bulletin-types.show', $type)->with('success', 'flash.bulletinCreated');
     }
 
     public function show(BulletinType $bulletinType): Response
@@ -136,6 +141,10 @@ class BulletinTypeController extends Controller
         return Inertia::render('Editor/BulletinTypes/Show', [
             'bulletinType' => $bulletinType,
             'primarySchedule' => $bulletinType->primarySchedule,
+            'schedules' => $this->configuredSchedules($bulletinType)
+                ->map(fn (EditorialSchedule $schedule) => $this->presentScheduleRow($schedule))
+                ->values(),
+            'scheduleSummary' => $this->scheduleSummary($bulletinType),
             'recentExecutions' => $this->recentExecutions($bulletinType),
             'recentScripts' => $this->recentScripts($bulletinType),
             'promptPreview' => $this->promptPreview($bulletinType),
@@ -145,8 +154,13 @@ class BulletinTypeController extends Controller
 
     public function edit(BulletinType $bulletinType): Response
     {
+        $bulletinType->load([
+            'schedules' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('run_time')->orderBy('scheduled_time'),
+        ]);
+
         return Inertia::render('Editor/BulletinTypes/Edit', [
             'bulletinType' => $bulletinType,
+            'scheduleConfig' => $this->scheduleConfig($bulletinType),
             ...$this->options(),
         ]);
     }
@@ -157,7 +171,7 @@ class BulletinTypeController extends Controller
         $data['slug'] = $this->uniqueSlug(BulletinType::class, $data['slug'] ?: $data['name'], $bulletinType->id);
 
         $bulletinType->update($data);
-        $this->scheduleSyncService->syncPrimarySchedule($bulletinType->refresh());
+        $this->scheduleSyncService->syncSchedules($bulletinType->refresh());
 
         if (! $bulletinType->refresh()->is_active) {
             $this->activationService->deactivate($bulletinType);
@@ -169,7 +183,7 @@ class BulletinTypeController extends Controller
             return to_route('editor.bulletin-types.show', $bulletinType)->with('error', 'flash.bulletinCannotActivate');
         }
 
-        return to_route('editor.bulletin-types.show', $bulletinType)->with('success', 'Bulletin type updated successfully. Primary schedule synchronized.');
+        return to_route('editor.bulletin-types.show', $bulletinType)->with('success', 'flash.bulletinUpdated');
     }
 
     public function toggleActive(BulletinType $bulletinType): RedirectResponse
@@ -183,7 +197,7 @@ class BulletinTypeController extends Controller
         }
 
         if (! $bulletinType->primarySchedule && $this->scheduleSyncService->shouldHavePrimarySchedule($bulletinType)) {
-            $this->scheduleSyncService->syncPrimarySchedule($bulletinType);
+            $this->scheduleSyncService->syncSchedules($bulletinType);
             $bulletinType->refresh()->load(['preferredAiProvider', 'location', 'newsCategory', 'language', 'schedules']);
         }
 
@@ -204,17 +218,32 @@ class BulletinTypeController extends Controller
     {
         $bulletinType->delete();
 
-        return to_route('editor.bulletin-types.index')->with('success', 'Bulletin type deleted successfully.');
+        return to_route('editor.bulletin-types.index')->with('success', 'flash.bulletinDeleted');
     }
 
     private function enrichValidatedData(Request $request, array $data): array
     {
+        $metadata = $data['metadata'] ?? [];
+        $times = collect($data['default_run_times'] ?? [])
+            ->push($data['default_run_time'] ?? null)
+            ->push($data['default_schedule_time'] ?? null)
+            ->filter()
+            ->map(fn ($time) => substr((string) $time, 0, 5))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
         $data['is_active'] = $request->boolean('is_active', true);
         $data['sort_order'] = $data['sort_order'] ?? 0;
         $data['coverage_mode'] = $data['coverage_mode'] ?? 'previous_period';
         $data['prompt_language'] = $data['prompt_language'] ?? 'es';
         $data['default_run_frequency'] = $data['default_run_frequency'] ?? 'daily';
-        $data['default_run_time'] = $data['default_run_time'] ?? $data['default_schedule_time'] ?? null;
+        $data['default_run_time'] = $times[0] ?? $data['default_run_time'] ?? $data['default_schedule_time'] ?? null;
+        $data['default_schedule_time'] = $data['default_run_time'];
+        $data['default_run_days'] = in_array($data['default_run_frequency'], ['selected_days', 'weekly', 'custom'], true)
+            ? array_values($data['default_run_days'] ?? [])
+            : null;
         $data['default_schedule_is_active'] = $request->boolean('default_schedule_is_active');
         $data['default_auto_run_pipeline'] = $request->boolean('default_auto_run_pipeline');
         $data['default_auto_generate_ai_response'] = $request->boolean('default_auto_generate_ai_response');
@@ -224,6 +253,14 @@ class BulletinTypeController extends Controller
         $data['output_mode'] = $data['output_mode'] ?? 'plain_final_script';
         $data['include_future_agenda'] = $request->boolean('include_future_agenda');
         $data['include_historical_context'] = $request->boolean('include_historical_context');
+        $data['metadata'] = [
+            ...$metadata,
+            'schedule_times' => $times,
+            'month_day' => $data['default_run_frequency'] === 'monthly' ? (int) ($data['default_month_day'] ?? 1) : null,
+            'schedule_date' => $data['default_run_frequency'] === 'once' ? ($data['default_schedule_date'] ?? null) : null,
+        ];
+
+        unset($data['default_run_times'], $data['default_month_day'], $data['default_schedule_date']);
 
         if (isset($data['min_news_items'], $data['max_news_items']) && $data['min_news_items'] > $data['max_news_items']) {
             [$data['min_news_items'], $data['max_news_items']] = [$data['max_news_items'], $data['min_news_items']];
@@ -234,7 +271,7 @@ class BulletinTypeController extends Controller
 
     private function validated(Request $request, ?BulletinType $bulletinType = null): array
     {
-        return $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('bulletin_types', 'slug')->ignore($bulletinType?->id)],
             'description' => ['nullable', 'string'],
@@ -247,10 +284,14 @@ class BulletinTypeController extends Controller
             'target_duration_seconds' => ['nullable', 'integer', 'min:15', 'max:3600'],
             'default_schedule_time' => ['nullable', 'date_format:H:i'],
             'default_timezone' => ['nullable', 'string', 'max:100', 'timezone'],
-            'default_run_frequency' => ['nullable', Rule::in(['daily','weekdays','weekends','selected_days','monthly','custom'])],
+            'default_run_frequency' => ['nullable', Rule::in(['once','daily','weekdays','weekends','selected_days','weekly','monthly','custom'])],
             'default_run_time' => ['nullable', 'date_format:H:i'],
+            'default_run_times' => ['nullable', 'array'],
+            'default_run_times.*' => ['nullable', 'date_format:H:i'],
             'default_run_days' => ['nullable', 'array'],
-            'default_run_days.*' => ['string'],
+            'default_run_days.*' => [Rule::in(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'])],
+            'default_month_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+            'default_schedule_date' => ['nullable', 'date'],
             'default_schedule_is_active' => ['boolean'],
             'default_auto_run_pipeline' => ['boolean'],
             'default_auto_generate_ai_response' => ['boolean'],
@@ -270,6 +311,46 @@ class BulletinTypeController extends Controller
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        $validator->after(function ($validator) use ($request): void {
+            $frequency = (string) $request->input('default_run_frequency', 'daily');
+            $times = collect($request->input('default_run_times', []))
+                ->push($request->input('default_run_time'))
+                ->push($request->input('default_schedule_time'))
+                ->filter()
+                ->values();
+            $schedulingEnabled = $request->boolean('is_active') || $request->boolean('default_schedule_is_active') || $times->isNotEmpty();
+
+            if (! $schedulingEnabled) {
+                return;
+            }
+
+            if (! $request->filled('default_run_frequency')) {
+                $validator->errors()->add('default_run_frequency', 'validation.bulletinScheduleFrequencyRequired');
+            }
+
+            if ($times->isEmpty()) {
+                $validator->errors()->add('default_run_times', 'validation.bulletinScheduleTimesRequired');
+            }
+
+            if (in_array($frequency, ['selected_days', 'weekly', 'custom'], true) && count($request->input('default_run_days', [])) === 0) {
+                $validator->errors()->add('default_run_days', 'validation.bulletinScheduleDaysRequired');
+            }
+
+            if ($frequency === 'monthly' && ! $request->filled('default_month_day')) {
+                $validator->errors()->add('default_month_day', 'validation.bulletinScheduleMonthDayRequired');
+            }
+
+            if ($frequency === 'once' && ! $request->filled('default_schedule_date')) {
+                $validator->errors()->add('default_schedule_date', 'validation.bulletinScheduleDateRequired');
+            }
+
+            if ($frequency === 'custom' && ($times->isEmpty() || count($request->input('default_run_days', [])) === 0)) {
+                $validator->errors()->add('default_run_frequency', 'validation.bulletinCustomScheduleRequired');
+            }
+        });
+
+        return $validator->validate();
     }
 
     private function options(): array
@@ -284,6 +365,8 @@ class BulletinTypeController extends Controller
                 ->orderBy('name')
                 ->get(['id','name','slug','provider_category','default_model','supports_grounding','capabilities']),
             'editionTypes' => ['morning', 'afternoon', 'night', 'special'],
+            'frequencyTypes' => ['once', 'daily', 'weekdays', 'weekends', 'selected_days', 'weekly', 'monthly', 'custom'],
+            'weekdays' => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
             'coverageModes' => ['previous_period', 'today_so_far', 'yesterday', 'last_24_hours', 'next_24_hours', 'custom', 'none'],
             'promptLanguages' => ['es', 'en', 'fr'],
             'outputModes' => ['plain_final_script', 'structured_script'],
@@ -305,10 +388,92 @@ class BulletinTypeController extends Controller
             });
     }
 
+    private function scheduleConfig(BulletinType $bulletinType): array
+    {
+        $schedules = $this->configuredSchedules($bulletinType);
+        $primary = $bulletinType->primarySchedule ?: $schedules->first();
+        $metadataTimes = collect(data_get($bulletinType->metadata, 'schedule_times', []))
+            ->map(fn ($time) => substr((string) $time, 0, 5))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return [
+            'frequency' => $bulletinType->default_run_frequency ?: $primary?->run_frequency ?: 'daily',
+            'times' => ($metadataTimes->isNotEmpty() ? $metadataTimes : $schedules
+                ->map(fn (EditorialSchedule $schedule) => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5))
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values()),
+            'days' => array_values($bulletinType->default_run_days ?? $primary?->run_days ?? []),
+            'timezone' => $bulletinType->default_timezone ?: $primary?->timezone ?: config('app.timezone'),
+            'month_day' => (int) data_get($bulletinType->metadata, 'month_day', data_get($primary?->metadata, 'month_day', 1)),
+            'schedule_date' => data_get($bulletinType->metadata, 'schedule_date', optional($primary?->scheduled_date)?->toDateString()),
+        ];
+    }
+
+    private function scheduleSummary(BulletinType $bulletinType): array
+    {
+        $schedules = $this->configuredSchedules($bulletinType)->sortBy(fn (EditorialSchedule $schedule) => ($schedule->run_time ?: $schedule->scheduled_time ?: '99:99'));
+        $active = $schedules->filter(fn (EditorialSchedule $schedule) => $schedule->is_active);
+        $next = $active->pluck('next_run_at')->filter()->sort()->first();
+        $first = $schedules->first();
+
+        return [
+            'total' => $schedules->count(),
+            'active' => $active->count(),
+            'times' => $schedules
+                ->map(fn (EditorialSchedule $schedule) => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5))
+                ->filter()
+                ->unique()
+                ->values(),
+            'active_times' => $active
+                ->map(fn (EditorialSchedule $schedule) => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5))
+                ->filter()
+                ->unique()
+                ->values(),
+            'frequency' => $first?->run_frequency ?: $bulletinType->default_run_frequency,
+            'days' => array_values($first?->run_days ?? $bulletinType->default_run_days ?? []),
+            'month_day' => data_get($first?->metadata, 'month_day', data_get($bulletinType->metadata, 'month_day')),
+            'next_run' => optional($next)?->toIso8601String(),
+        ];
+    }
+
+    private function configuredSchedules(BulletinType $bulletinType): \Illuminate\Support\Collection
+    {
+        return $bulletinType->schedules
+            ->reject(fn (EditorialSchedule $schedule) => (bool) data_get($schedule->metadata, 'obsolete_from_bulletin_config'))
+            ->values();
+    }
+
+    private function presentScheduleRow(EditorialSchedule $schedule): array
+    {
+        return [
+            'id' => $schedule->id,
+            'is_primary' => (bool) $schedule->is_primary,
+            'is_active' => (bool) $schedule->is_active,
+            'frequency' => $schedule->run_frequency ?: $schedule->frequency_type,
+            'time' => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5),
+            'timezone' => $schedule->timezone,
+            'run_days' => array_values($schedule->run_days ?? []),
+            'month_day' => data_get($schedule->metadata, 'month_day'),
+            'slot' => data_get($schedule->metadata, 'inferred_slot'),
+            'scheduled_date' => optional($schedule->scheduled_date)?->toDateString(),
+            'next_run_at' => optional($schedule->next_run_at)?->toIso8601String(),
+            'last_run_at' => optional($schedule->last_run_at)?->toIso8601String(),
+            'auto_generate_ai_response' => (bool) $schedule->auto_generate_ai_response,
+            'auto_run_pipeline' => (bool) $schedule->auto_run_pipeline,
+            'run_now_url' => $this->safeRoute('editor.editorial-schedules.run-now', $schedule),
+            'toggle_url' => $this->safeRoute('editor.automation.schedules.toggle', $schedule),
+        ];
+    }
+
     private function presentBulletinIndexRow(BulletinType $bulletinType): array
     {
         $data = $bulletinType->toArray();
-        $schedule = $bulletinType->primarySchedule;
+        $schedule = $this->activationService->runnableSchedule($bulletinType) ?? $bulletinType->primarySchedule;
         $missing = $this->activationService->missingConfiguration($bulletinType);
         $isRunnable = $this->activationService->isRunnable($bulletinType);
         $latestExecution = EditorialScheduleRun::query()
@@ -341,6 +506,7 @@ class BulletinTypeController extends Controller
             'is_on' => $isRunnable,
             'is_runnable' => $isRunnable,
             'can_activate' => $missing === [],
+            'schedule_summary' => $this->scheduleSummary($bulletinType),
             'urls' => [
                 'show' => $this->safeRoute('editor.bulletin-types.show', $bulletinType),
                 'edit' => $this->safeRoute('editor.bulletin-types.edit', $bulletinType),

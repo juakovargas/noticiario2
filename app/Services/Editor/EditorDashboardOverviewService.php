@@ -40,8 +40,8 @@ class EditorDashboardOverviewService
         $bulletins = BulletinType::query()
             ->with([
                 'preferredAiProvider:id,name,default_model,supports_grounding,is_active,provider_category,rate_limited_until',
-                'primarySchedule:id,bulletin_type_id,is_active,run_frequency,run_time,scheduled_time,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
-                'schedules:id,bulletin_type_id,is_primary,is_active,run_frequency,run_time,scheduled_time,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline',
+                'primarySchedule:id,bulletin_type_id,is_primary,is_active,run_frequency,run_time,scheduled_time,scheduled_date,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline,metadata',
+                'schedules:id,bulletin_type_id,is_primary,is_active,run_frequency,run_time,scheduled_time,scheduled_date,timezone,next_run_at,last_run_at,auto_generate_ai_response,auto_run_pipeline,metadata',
                 'location:id,name',
                 'newsCategory:id,name',
                 'language:id,name,code',
@@ -206,15 +206,23 @@ class EditorDashboardOverviewService
     {
         return $schedules
             ->filter(fn ($schedule) => $this->isEligibleForScheduling($schedule))
-            ->map(function ($schedule) {
-                $lastRun = $schedule->runs->first();
+            ->groupBy('bulletin_type_id')
+            ->map(function (Collection $bulletinSchedules) {
+                $sortedSchedules = $bulletinSchedules->sortBy(fn ($schedule) => $schedule->next_run_at ?: $schedule->run_time ?: $schedule->scheduled_time);
+                $schedule = $sortedSchedules->first();
+                $lastRun = $sortedSchedules
+                    ->flatMap(fn ($item) => $item->runs)
+                    ->sortByDesc('scheduled_for')
+                    ->first();
                 $provider = $schedule->bulletinType?->preferredAiProvider;
                 $missing = $this->missingConfiguration($schedule);
+                $nextSchedule = $sortedSchedules->first(fn ($item) => filled($item->next_run_at)) ?? $schedule;
+                $activeSchedules = $sortedSchedules->filter(fn ($item) => $item->is_active);
 
                 return [
-                    'row_id' => 'schedule-'.$schedule->id,
+                    'row_id' => 'bulletin-'.$schedule->bulletin_type_id,
                     'id' => $schedule->id,
-                    'schedule_id' => $schedule->id,
+                    'schedule_id' => $nextSchedule->id,
                     'bulletin_id' => $schedule->bulletinType?->id,
                     'bulletin' => $schedule->bulletinType?->name ?? $schedule->name ?? null,
                     'bulletin_url' => $schedule->bulletinType ? $this->safeRoute('editor.bulletin-types.show', $schedule->bulletinType) : '#',
@@ -226,7 +234,11 @@ class EditorDashboardOverviewService
                     'frequency' => $schedule->run_frequency,
                     'time' => $schedule->run_time ?: $schedule->scheduled_time,
                     'timezone' => $schedule->timezone,
-                    'next_run' => optional($schedule->next_run_at)?->toIso8601String(),
+                    'next_run' => optional($nextSchedule->next_run_at)?->toIso8601String(),
+                    'today_times' => $activeSchedules
+                        ->filter(fn ($item) => $item->next_run_at && $item->next_run_at->isToday())
+                        ->map(fn ($item) => substr((string) ($item->run_time ?: $item->scheduled_time), 0, 5))
+                        ->values(),
                     'last_run' => optional($schedule->last_run_at ?: $lastRun?->scheduled_for)?->toIso8601String(),
                     'last_result' => $lastRun?->status,
                     'is_on' => $this->isOperational($schedule),
@@ -234,15 +246,42 @@ class EditorDashboardOverviewService
                     'missing_configuration' => $missing,
                     'ai_manual_approval_required' => ! (bool) $schedule->auto_generate_ai_response,
                     'pipeline' => $this->schedulePipeline($schedule, $lastRun),
+                    'schedule_summary' => $this->scheduleSummary($sortedSchedules),
                     'view_url' => $schedule->bulletinType ? $this->safeRoute('editor.bulletin-types.show', $schedule->bulletinType) : '#',
-                    'schedule_url' => $this->safeRoute('editor.editorial-schedules.show', $schedule),
+                    'schedule_url' => $this->safeRoute('editor.editorial-schedules.show', $nextSchedule),
                     'runs_url' => $this->safeRoute('editor.editorial-schedule-runs.index'),
-                    'run_now_url' => $this->safeRoute('editor.editorial-schedules.run-now', $schedule),
+                    'run_now_url' => $this->safeRoute('editor.editorial-schedules.run-now', $nextSchedule),
                     'toggle_url' => $schedule->bulletinType ? $this->safeRoute('editor.bulletin-types.toggle-active', $schedule->bulletinType) : '#',
                 ];
             })
             ->values()
             ->all();
+    }
+
+    private function scheduleSummary(Collection $schedules): array
+    {
+        $active = $schedules->filter(fn ($schedule) => $schedule->is_active);
+        $first = $schedules->first();
+        $next = $active->pluck('next_run_at')->filter()->sort()->first();
+
+        return [
+            'total' => $schedules->count(),
+            'active' => $active->count(),
+            'times' => $schedules
+                ->map(fn ($schedule) => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5))
+                ->filter()
+                ->unique()
+                ->values(),
+            'active_times' => $active
+                ->map(fn ($schedule) => substr((string) ($schedule->run_time ?: $schedule->scheduled_time), 0, 5))
+                ->filter()
+                ->unique()
+                ->values(),
+            'frequency' => $first?->run_frequency,
+            'days' => array_values($first?->run_days ?? []),
+            'month_day' => data_get($first?->metadata, 'month_day'),
+            'next_run' => optional($next)?->toIso8601String(),
+        ];
     }
 
     private function buildActionableQueue(Collection $schedules, Collection $bulletins, Carbon $now): Collection

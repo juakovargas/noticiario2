@@ -1048,7 +1048,7 @@ Dashboard/table cleanup:
 - Bulletin-level ON/OFF is now the visible operational switch for Informativos:
   - Effective ON = `bulletin_types.is_active = true`, a valid active usable/primary schedule, and complete activation configuration, so the informativo may be scheduled and run.
   - Raw `bulletin_types.is_active = true` alone is not enough for the Editor list or Dashboard to show the informativo as ON/runnable.
-  - OFF = `bulletin_types.is_active = false`; its schedules are also turned off and ignored by cron.
+  - OFF = `bulletin_types.is_active = false`; cron ignores all of its schedules even if individual schedule rows keep their own active flag.
 - Activation is guarded. An informativo cannot be turned ON until it has:
   - assigned active AI provider,
   - valid primary/usable schedule with frequency, time and timezone,
@@ -1056,7 +1056,7 @@ Dashboard/table cleanup:
   - category,
   - language,
   - target duration.
-- Turning an informativo OFF updates the bulletin and disables its schedules in one action. Turning it ON only reactivates a valid schedule; invalid or incomplete schedules are not blindly enabled.
+- Turning an informativo OFF updates the bulletin-level switch and preserves individual schedule ON/OFF choices. Turning it ON requires at least one active valid schedule; invalid or incomplete schedules are not blindly enabled.
 - The automatic schedule runner now requires both `editorial_schedules.is_active = true` and `bulletin_types.is_active = true`, so OFF informativos are not eligible for automatic due-run creation.
 - Editor > Informativos now separates rows into:
   - Informativos encendidos / Active bulletins,
@@ -1067,6 +1067,27 @@ Dashboard/table cleanup:
 - If there are no scheduled executions today, the dashboard shows a clean empty state.
 - The existing editorial world map is embedded again on the dashboard using the existing map service/markers, with a direct action to the full Editor map.
 - Main dashboard sections are collapsible accordions. Open/closed state is stored locally in `localStorage` under `noticiario.editor.dashboard.accordions`; no database preference migration was added.
+
+## 22. BULLETIN TYPES MULTIPLE SCHEDULES AND FIELD HELP (May 2026)
+
+- A `BulletinType` is the shared editorial configuration for an informativo. It can now sync one or multiple `EditorialSchedule` rows from the Bulletin Type create/edit form.
+- Multiple daily times are stored as multiple schedule records. Example: daily 08:00, 15:00 and 20:00 creates three schedule rows for the same informativo, one per time.
+- Schedule sync is idempotent:
+  - existing matching schedules are reused where possible,
+  - missing schedule rows are created,
+  - obsolete rows are marked as removed from the current bulletin configuration, deactivated, and keep their historical `EditorialScheduleRun` records.
+- ON/OFF wording:
+  - Informativo active/inactive is the bulletin-level switch.
+  - Active schedules are counted separately as "3 active schedules" or "2/3 active schedules".
+  - A BulletinType OFF gates all schedules from cron. An individual schedule OFF disables only that specific time.
+- Monthly schedules use `metadata.month_day` with values 1-31. If the selected day does not exist in a shorter month, the runner uses the last valid day of that month.
+- Custom schedule currently supports selected weekdays plus one or multiple times. It does not expose cron expressions or unsupported interval behavior.
+- The emission slot is no longer treated as the main required timing field. If no override is set, schedules infer prompt context from run time, such as morning briefing, midday update, evening recap or night bulletin.
+- Coverage fields:
+  - Coverage start/end are minute offsets relative to the schedule run time.
+  - Minimum/maximum pieces control the requested number of news items or script blocks.
+  - Historical context asks the AI for brief background only when useful.
+  - Future agenda allows upcoming events, deadlines, matches, votes, weather and agenda items.
 
 ## CURRENT ROADMAP
 1. Run `SpainProductionBulletinsSeeder` in the target environment and verify Gemini Grounded is active with `GEMINI_API_KEY` configured.

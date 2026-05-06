@@ -68,6 +68,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.what' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.actions' },
             { titleKey: 'bulletinTypes.table.onOff', contentKey: 'help.editor.bulletinTypes.onOff' },
+            { titleKey: 'bulletinTypes.table.schedule', contentKey: 'help.editor.bulletinTypes.scheduleSummary' },
             { titleKey: 'bulletinTypes.table.provider', contentKey: 'help.editor.bulletinTypes.provider' },
             { titleKey: 'dashboard.table.pipeline', contentKey: 'help.editor.bulletinTypes.pipeline' },
         ],
@@ -77,6 +78,8 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         summaryKey: 'help.editor.bulletinTypes.create.summary',
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.create.what' },
+            { titleKey: 'bulletinTypes.form.scheduleSection', contentKey: 'help.editor.bulletinTypes.scheduleFields' },
+            { titleKey: 'bulletinTypes.form.promptSection', contentKey: 'help.editor.bulletinTypes.coverageFields' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.create.actions' },
         ],
         tipsKeys: ['help.editor.bulletinTypes.create.tip1', 'help.editor.bulletinTypes.create.tip2'],
@@ -86,6 +89,8 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         summaryKey: 'help.editor.bulletinTypes.edit.summary',
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.edit.what' },
+            { titleKey: 'bulletinTypes.form.scheduleSection', contentKey: 'help.editor.bulletinTypes.scheduleFields' },
+            { titleKey: 'bulletinTypes.form.promptSection', contentKey: 'help.editor.bulletinTypes.coverageFields' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.edit.actions' },
         ],
         tipsKeys: ['help.editor.bulletinTypes.edit.tip1', 'help.editor.bulletinTypes.edit.tip2'],
@@ -95,6 +100,7 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         summaryKey: 'help.editor.bulletinTypes.show.summary',
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.bulletinTypes.show.what' },
+            { titleKey: 'bulletinTypes.show.schedule', contentKey: 'help.editor.bulletinTypes.show.schedule' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.bulletinTypes.show.actions' },
         ],
         tipsKeys: ['help.editor.bulletinTypes.show.tip1', 'help.editor.bulletinTypes.show.tip2'],

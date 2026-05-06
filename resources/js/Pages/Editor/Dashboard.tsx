@@ -150,20 +150,19 @@ export default function Dashboard({
                         >
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <StatusBadge tone={row.is_on ? 'success' : 'neutral'}>{row.is_on ? t('dashboard.state.on') : t('dashboard.state.off')}</StatusBadge>
+                                    <StatusBadge tone={row.is_on ? 'success' : 'neutral'}>{row.is_on ? t('bulletinTypes.state.active') : t('bulletinTypes.state.inactive')}</StatusBadge>
                                     {row.is_incomplete && <StatusBadge tone="warning">{t('dashboard.status.requiresAttention')}</StatusBadge>}
                                 </div>
                                 <Link className="mt-2 block truncate font-semibold text-slate-950 hover:text-cyan-700 dark:text-white dark:hover:text-cyan-300" href={row.bulletin_url}>
                                     {row.bulletin || '-'}
                                 </Link>
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[row.location, row.category].filter(Boolean).join(' · ') || '-'}</p>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[row.location, row.category].filter(Boolean).join(' - ') || '-'}</p>
                             </div>
 
                             <div>
                                 <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('dashboard.table.schedule')}</p>
-                                <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
-                                    {[t(`frequency.${row.frequency ?? 'daily'}`), row.time?.slice(0, 5), row.timezone].filter(Boolean).join(' · ') || '-'}
-                                </p>
+                                <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">{dashboardScheduleSummary(row, t)}</p>
+                                {row.today_times?.length ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('bulletinTypes.schedule.today')}: {row.today_times.join(' - ')}</p> : null}
                             </div>
 
                             <div>
@@ -257,7 +256,7 @@ export default function Dashboard({
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="font-semibold text-slate-950 dark:text-white">{script.title}</p>
-                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{script.bulletin || '-'} · {formatDateTime(script.updated_at)}</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{script.bulletin || '-'} - {formatDateTime(script.updated_at)}</p>
                                     </div>
                                     <StatusBadge tone="warning">{t('status.scriptPendingReview')}</StatusBadge>
                                 </div>
@@ -299,7 +298,7 @@ export default function Dashboard({
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('dashboard.table.provider')}</p>
-                                        <p className="mt-1 text-slate-700 dark:text-slate-300">{[run.provider, run.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
+                                        <p className="mt-1 text-slate-700 dark:text-slate-300">{[run.provider, run.model].filter(Boolean).join(' - ') || t('bulletinTypes.provider.missing')}</p>
                                     </div>
                                     <div className="min-w-0">
                                         <div className="mb-2 flex flex-wrap gap-1.5">
@@ -327,9 +326,9 @@ function CompactWorkItem({ item, t, formatDateTime }: { item: any; t: (key: stri
                 <div className="min-w-0">
                     <p className="font-semibold text-slate-950 dark:text-white">{item.bulletin || t(item.type_label)}</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {t(item.type_label)} · {formatDateTime(item.scheduled_for)}
+                        {t(item.type_label)} - {formatDateTime(item.scheduled_for)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.provider, item.model].filter(Boolean).join(' · ') || t('bulletinTypes.provider.missing')}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.provider, item.model].filter(Boolean).join(' - ') || t('bulletinTypes.provider.missing')}</p>
                 </div>
                 <StatusBadge tone={statusTone(item.status)}>{t(statusKey(item.status))}</StatusBadge>
             </div>
@@ -502,6 +501,31 @@ function scheduleActions(row: any, t: (key: string) => string): any[] {
         { key: 'runs', label: t('bulletinTypes.action.executions'), href: row.runs_url, variant: 'outline' },
         { key: 'schedule', label: t('dashboard.action.viewSchedule'), href: row.schedule_url, variant: 'outline' },
     ];
+}
+
+function dashboardScheduleSummary(row: any, t: (key: string) => string): string {
+    const summary = row.schedule_summary;
+
+    if (!summary?.total) {
+        return t('bulletinTypes.schedule.noActiveSchedules');
+    }
+
+    const times = summary.active_times?.length ? summary.active_times : summary.times ?? [];
+    const parts = [t(`frequency.${summary.frequency ?? row.frequency ?? 'daily'}`)];
+
+    if (['selected_days', 'weekly', 'custom'].includes(summary.frequency) && summary.days?.length) {
+        parts.push(summary.days.map((day: string) => t(`weekday.short.${day}`)).join('/'));
+    }
+
+    if (summary.frequency === 'monthly' && summary.month_day) {
+        parts.push(`${t('bulletinTypes.schedule.monthDayShort')} ${summary.month_day}`);
+    }
+
+    if (times.length) {
+        parts.push(times.join(' - '));
+    }
+
+    return parts.join(' - ');
 }
 
 function latestActions(run: any, t: (key: string) => string): any[] {

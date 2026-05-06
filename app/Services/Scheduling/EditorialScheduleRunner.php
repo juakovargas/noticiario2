@@ -136,16 +136,17 @@ class EditorialScheduleRunner
     {
         $timezone = $schedule->timezone ?: config('app.timezone');
         $fromLocal = ($from ?? now())->copy()->timezone($timezone);
-        $runTime = strlen((string) ($schedule->run_time ?: '08:00')) === 5 ? ($schedule->run_time.':00') : ($schedule->run_time ?: '08:00:00');
+        $configuredTime = $schedule->run_time ?: $schedule->scheduled_time ?: '08:00';
+        $runTime = strlen((string) $configuredTime) === 5 ? ($configuredTime.':00') : $configuredTime;
 
         return match ($schedule->run_frequency ?: 'daily') {
-            'once' => null,
+            'once' => $this->nextOnce($schedule, $fromLocal, $runTime)?->utc(),
             'weekly' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
             'weekdays' => $this->nextByWeekdays($fromLocal, $runTime, [1,2,3,4,5])->utc(),
             'weekends' => $this->nextByWeekdays($fromLocal, $runTime, [0,6])->utc(),
             'selected_days' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
             'monthly' => $this->nextMonthly($schedule, $fromLocal, $runTime)->utc(),
-            'custom' => $schedule->next_run_at,
+            'custom' => $this->nextWeekly($schedule, $fromLocal, $runTime)->utc(),
             default => $this->nextDaily($fromLocal, $runTime)->utc(),
         };
     }
@@ -167,6 +168,17 @@ class EditorialScheduleRunner
         $candidate = $fromLocal->copy()->setTimeFromTimeString($runTime);
 
         return $candidate->greaterThan($fromLocal) ? $candidate : $candidate->addDay();
+    }
+
+    private function nextOnce(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): ?Carbon
+    {
+        if (! $schedule->scheduled_date) {
+            return null;
+        }
+
+        $candidate = Carbon::parse($schedule->scheduled_date, $fromLocal->timezone)->setTimeFromTimeString($runTime);
+
+        return $candidate->greaterThan($fromLocal) ? $candidate : null;
     }
 
     private function nextWeekly(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): Carbon
@@ -208,10 +220,20 @@ class EditorialScheduleRunner
     private function nextMonthly(EditorialSchedule $schedule, Carbon $fromLocal, string $runTime): Carbon
     {
         $monthDay = (int) data_get($schedule->metadata, 'month_day', $schedule->next_run_at?->timezone($fromLocal->timezone)->day ?? 1);
-        $monthDay = max(1, min(28, $monthDay));
+        $monthDay = max(1, min(31, $monthDay));
 
-        $candidate = $fromLocal->copy()->day($monthDay)->setTimeFromTimeString($runTime);
+        $candidate = $this->monthlyCandidate($fromLocal, $monthDay, $runTime);
 
-        return $candidate->greaterThan($fromLocal) ? $candidate : $candidate->addMonthNoOverflow();
+        return $candidate->greaterThan($fromLocal)
+            ? $candidate
+            : $this->monthlyCandidate($fromLocal->copy()->addMonthNoOverflow()->startOfMonth(), $monthDay, $runTime);
+    }
+
+    private function monthlyCandidate(Carbon $month, int $monthDay, string $runTime): Carbon
+    {
+        return $month
+            ->copy()
+            ->day(min($monthDay, $month->daysInMonth))
+            ->setTimeFromTimeString($runTime);
     }
 }

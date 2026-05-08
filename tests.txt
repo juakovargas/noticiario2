@@ -296,3 +296,84 @@ Summary:
 - This matches the existing workspace limitation for the default `noticiario2_testing` database; the focused suite passes with SQLite in-memory.
 Next focus:
 - Repair or recreate the MySQL testing database outside this branch workflow, then re-run `php artisan test --env=testing`.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: composer require laravel/socialite
+Result: FAIL, then dependency files were updated
+Summary:
+- Composer updated `composer.json` and `composer.lock`, but the first install attempt timed out while fetching packages.
+- Exact error excerpt: `command timed out after 120819 milliseconds`.
+- Composer also reported: `Failed to clone https://github.com/thephpleague/oauth1-client.git via https, ssh protocols, aborting.`
+Next focus:
+- Retry package installation with a longer Composer process timeout.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: $env:COMPOSER_PROCESS_TIMEOUT='600'; composer install --prefer-dist --no-progress
+Result: PASS
+Summary:
+- Installed Laravel Socialite and dependencies from the lock file.
+- Package discovery completed.
+- Composer warning observed from existing codebase: `Class App\Http\Controllers\Editor\PlaceholderPageController located in D:/laragon86/www/noticiario2/app\Http\Controllers\Viewer\PublishedContentController.php does not comply with psr-4 autoloading standard. Skipping.`
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: php artisan test --filter=GoogleAuthTest
+Result: FAIL
+Summary:
+- The configured MySQL testing-environment run timed out before returning test details.
+- Exact error: `command timed out after 124039 milliseconds`.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: php artisan test tests\Feature\Auth\GoogleAuthTest.php --stop-on-failure --debug
+Result: FAIL on configured MySQL testing database
+Summary:
+- The first timed-out run left the local `noticiario2_testing` schema partially migrated.
+- Exact database errors included:
+  - `SQLSTATE[42S02]: Base table or view not found: 1146 Table 'noticiario2_testing.migrations' doesn't exist`
+  - `SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'migrations' already exists`
+  - `SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'users' already exists`
+- One pre-fix mocked-null-email assertion also failed with expected `http://localhost/login` and actual `http://localhost/dashboard`; the mock helper was corrected to preserve explicit null values.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: php artisan migrate:fresh --env=testing
+Result: FAIL
+Summary:
+- Attempted to reset only the configured testing database after the partial MySQL migration state.
+- Exact error: `command timed out after 184032 milliseconds`.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan test tests\Feature\Auth\GoogleAuthTest.php --stop-on-failure
+Result: PASS
+Summary:
+- 10 tests passed, 79 assertions.
+- Covered Google redirect, no Gmail scopes, login by existing `google_id`, linking by matching email, new viewer role assignment, no admin/editor role assignment, inactive user blocking, missing email error, login/register Google buttons, and admin user stats.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan test tests\Feature\Auth\AuthenticationTest.php tests\Feature\Auth\RegistrationTest.php --stop-on-failure
+Result: PASS
+Summary:
+- 6 tests passed, 12 assertions.
+- Covered existing email/password login, invalid-password rejection, logout, login screen render, registration screen render and email/password registration.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: php -l app\Http\Controllers\Auth\GoogleAuthController.php; php -l app\Http\Controllers\Admin\DashboardController.php; php -l app\Models\User.php; php -l app\Http\Middleware\HandleInertiaRequests.php; php -l database\migrations\2026_05_08_000000_add_google_oauth_fields_to_users_table.php; php -l routes\auth.php
+Result: PASS
+Summary:
+- No syntax errors detected in the new controller, updated dashboard controller, user model, Inertia middleware, migration or auth routes.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: php artisan route:list --name=auth.google
+Result: PASS
+Summary:
+- Confirmed `auth.google.redirect` and `auth.google.callback` routes are registered.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after adding Google OAuth UI/help/dashboard translations.
+
+[2026-05-08 Europe/Madrid] branch: feature/auth-google-socialite
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully.

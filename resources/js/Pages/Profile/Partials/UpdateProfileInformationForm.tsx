@@ -79,6 +79,11 @@ export default function UpdateProfileInformation({
                     <InputError className="mt-2" message={errors.email} />
                 </div>
 
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{t('Google login')}</p>
+                    <p className="mt-1 text-slate-600 dark:text-slate-300">{user.google_id ? t('Google account linked') : t('Google account not linked')}</p>
+                </div>
+
                 <div className="grid gap-4 md:grid-cols-2">
                     <div>
                         <InputLabel htmlFor="preferred_locale" value={t('Preferred locale')} />
@@ -148,13 +153,13 @@ export default function UpdateProfileInformation({
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="mt-2 text-sm text-gray-800">
-                            Your email address is unverified.
+                            {t('Your email address is unverified.')}
                             <Link href={route('verification.send')} method="post" as="button" className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                                Click here to re-send the verification email.
+                                {t('Click here to re-send the verification email.')}
                             </Link>
                         </p>
 
-                        {status === 'verification-link-sent' && <div className="mt-2 text-sm font-medium text-green-600">A new verification link has been sent to your email address.</div>}
+                        {status === 'verification-link-sent' && <div className="mt-2 text-sm font-medium text-green-600">{t('A new verification link has been sent to your email address.')}</div>}
                     </div>
                 )}
 

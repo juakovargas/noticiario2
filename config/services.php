@@ -54,6 +54,12 @@ return [
         'key' => env('DEEPSEEK_API_KEY'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
     'elevenlabs' => [
         'api_key' => env('ELEVENLABS_API_KEY'),
         'default_voice_id' => env('ELEVENLABS_DEFAULT_VOICE_ID', 'JBFqnCBsd6RMkjVDRZzb'),

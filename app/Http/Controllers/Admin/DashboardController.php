@@ -22,6 +22,17 @@ class DashboardController extends Controller
     {
         $today = now()->toDateString();
         $hasAiProviders = Schema::hasTable('ai_providers');
+        $hasUserStatus = Schema::hasColumn('users', 'is_active');
+        $hasGoogleUsers = Schema::hasColumn('users', 'google_id');
+
+        $userStats = [
+            'total' => User::query()->count(),
+            'active' => $hasUserStatus ? User::query()->where('is_active', true)->count() : null,
+            'inactive' => $hasUserStatus ? User::query()->where('is_active', false)->count() : null,
+            'google' => $hasGoogleUsers ? User::query()->whereNotNull('google_id')->count() : null,
+            'password' => $hasGoogleUsers ? User::query()->whereNull('google_id')->count() : null,
+            'newLastSevenDays' => User::query()->where('created_at', '>=', now()->subDays(7))->count(),
+        ];
 
         $aiOverview = null;
         if ($hasAiProviders) {
@@ -35,8 +46,8 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'users' => User::query()->count(),
-                'activeUsers' => Schema::hasColumn('users', 'is_active') ? User::query()->where('is_active', true)->count() : null,
+                'users' => $userStats['total'],
+                'activeUsers' => $userStats['active'],
                 'roles' => Role::query()->count(),
                 'permissions' => Permission::query()->count(),
                 'languages' => Schema::hasTable('languages') ? \App\Models\Language::query()->count() : 0,
@@ -54,6 +65,7 @@ class DashboardController extends Controller
                 'blockedAiRequests' => Schema::hasTable('ai_request_logs') ? AiRequestLog::query()->whereDate('created_at', $today)->where('limit_blocked', true)->count() : 0,
                 'missingEnvProviders' => Schema::hasTable('ai_providers') ? AiProvider::query()->get()->filter(fn (AiProvider $provider) => ! $provider->hasConfiguredApiKey())->count() : 0,
             ],
+            'userStats' => $userStats,
             'recentFailedRuns' => Schema::hasTable('editorial_schedule_runs')
                 ? EditorialScheduleRun::query()->with(['schedule:id,name'])->where('status', 'failed')->latest()->limit(8)->get()
                 : [],

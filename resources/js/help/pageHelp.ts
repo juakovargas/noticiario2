@@ -150,7 +150,31 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
         summaryKey: 'help.admin.dashboard.summary',
         sections: [
             { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.admin.dashboard.what' },
+            { titleKey: 'User access overview', contentKey: 'help.admin.dashboard.userStats' },
             { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.admin.dashboard.actions' },
+        ],
+    },
+    'profile.edit': {
+        titleKey: 'help.profile.edit.title',
+        summaryKey: 'help.profile.edit.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.profile.edit.what' },
+            { titleKey: 'Google login', contentKey: 'help.profile.edit.google' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.profile.edit.actions' },
+        ],
+    },
+    'auth.login': {
+        titleKey: 'help.auth.login.title',
+        summaryKey: 'help.auth.login.summary',
+        sections: [
+            { titleKey: 'Google login', contentKey: 'help.auth.google' },
+        ],
+    },
+    'auth.register': {
+        titleKey: 'help.auth.register.title',
+        summaryKey: 'help.auth.register.summary',
+        sections: [
+            { titleKey: 'Google login', contentKey: 'help.auth.google' },
         ],
     },
     'viewer.dashboard': {

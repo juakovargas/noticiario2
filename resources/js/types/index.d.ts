@@ -2,6 +2,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    google_id?: string | null;
     email_verified_at?: string;
     roles?: string[];
     permissions?: string[];
@@ -10,6 +11,7 @@ export interface User {
     date_format?: string | null;
     time_format?: string | null;
     appearance?: 'light' | 'dark' | 'system' | null;
+    avatar?: string | null;
     avatar_url?: string | null;
     avatarUrl?: string | null;
     initials?: string | null;

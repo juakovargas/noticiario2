@@ -8,15 +8,36 @@ import { useTranslations } from '@/i18n/useTranslations';
 
 type Props = {
     stats: Record<string, number | null>;
+    userStats: {
+        total: number;
+        active: number | null;
+        inactive: number | null;
+        google: number | null;
+        password: number | null;
+        newLastSevenDays: number;
+    };
     recentFailedRuns: Array<{ id: number; status: string; error_message: string | null; scheduled_for: string | null; schedule?: { name: string } }>;
     aiOverview: null | { total: number; active: number; defaultProvider: string | null };
     canOpenEditorRun: boolean;
     latestFailedAiRequestId: number | null;
 };
 
-export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpenEditorRun, latestFailedAiRequestId }: Props): JSX.Element {
+export default function Dashboard({ stats, userStats, recentFailedRuns, aiOverview, canOpenEditorRun, latestFailedAiRequestId }: Props): JSX.Element {
     const { formatDateTime } = useDateFormatter();
     const { t } = useTranslations();
+    const metricCards = [
+        ['Total users', userStats.total], ['Active users', userStats.active], ['Inactive users', userStats.inactive], ['New users', userStats.newLastSevenDays], ['Users registered with Google', userStats.google], ['Users registered with password', userStats.password],
+        ['Roles', stats.roles], ['Permissions', stats.permissions], ['Languages', stats.languages],
+        ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders], ['AI requests today', stats.aiRequestsToday], ['Failed AI requests', stats.failedAiRequests], ['Blocked requests', stats.blockedAiRequests], ['Daily estimated cost', stats.aiEstimatedCostToday], ['Monthly estimated cost', stats.aiEstimatedCostMonth], ['Providers with missing env keys', stats.missingEnvProviders],
+    ].filter(([, value]) => value !== null);
+    const userAccessRows = [
+        ['Total users', userStats.total],
+        ['Active users', userStats.active],
+        ['Inactive users', userStats.inactive],
+        ['Users registered with Google', userStats.google],
+        ['Users registered with password', userStats.password],
+        ['New users', userStats.newLastSevenDays],
+    ].filter(([, value]) => value !== null);
 
     return (
         <AdminLayout>
@@ -24,19 +45,17 @@ export default function Dashboard({ stats, recentFailedRuns, aiOverview, canOpen
             <AdminPageHeader helpKey="admin.dashboard" title={t('Administration Dashboard')} description={t('Technical/system overview and editorial health indicators.')} />
 
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                {[
-                    ['Total users', stats.users], ['Active users', stats.activeUsers], ['Roles', stats.roles], ['Permissions', stats.permissions], ['Languages', stats.languages],
-                    ['Active editorial schedules', stats.activeSchedules], ["Today's editorial runs", stats.todayRuns], ['Failed editorial runs', stats.failedRuns], ['AI providers', stats.aiProviders], ['Active AI providers', stats.activeAiProviders], ['AI requests today', stats.aiRequestsToday], ['Failed AI requests', stats.failedAiRequests], ['Blocked requests', stats.blockedAiRequests], ['Daily estimated cost', stats.aiEstimatedCostToday], ['Monthly estimated cost', stats.aiEstimatedCostMonth], ['Providers with missing env keys', stats.missingEnvProviders],
-                ].map(([label, value]) => (
+                {metricCards.map(([label, value]) => (
                     <Card key={String(label)}><CardHeader className="pb-2"><CardDescription>{t(String(label))}</CardDescription></CardHeader><CardContent><CardTitle>{value ?? '-'}</CardTitle></CardContent></Card>
                 ))}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
-                    <CardHeader><CardTitle>{t('System overview')}</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t('User access overview')}</CardTitle></CardHeader>
                     <CardContent className="space-y-1 text-sm text-slate-700">
-                        <p>{t('Users')}: {stats.users}</p><p>{t('Roles')}: {stats.roles}</p><p>{t('Permissions')}: {stats.permissions}</p><p>{t('Languages')}: {stats.languages}</p>
+                        {userAccessRows.map(([label, value]) => <p key={String(label)}>{t(String(label))}: {value}</p>)}
+                        <p>{t('Roles')}: {stats.roles}</p><p>{t('Permissions')}: {stats.permissions}</p><p>{t('Languages')}: {stats.languages}</p>
                     </CardContent>
                 </Card>
 

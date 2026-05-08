@@ -1155,3 +1155,79 @@ Next ideas:
 - Add intro music, outro beds and audio normalization.
 - Register generated audio as a reusable media asset.
 - Feed the completed MP3 into a final video rendering pipeline.
+
+## 24. GOOGLE OAUTH LOGIN WITH SOCIALITE (May 2026)
+
+What changed:
+- Added Google OAuth login and registration through Laravel Socialite while keeping email/password auth intact.
+- Added `google_id` and `avatar` fields to users for account linking and Google profile images.
+- Added public routes `auth.google.redirect` and `auth.google.callback`.
+- Existing users with the same email are linked to Google automatically after a successful OAuth callback.
+- New Google users receive the `viewer` role by default and are never granted admin/editor permissions automatically.
+- Inactive users remain blocked from Google login.
+- Login and registration pages now include Google buttons.
+- Profile shows whether a Google account is linked.
+- Admin dashboard now includes user access stats for total, active, inactive, Google, password and recent users.
+- Contextual help and translations were updated in English, Spanish and French.
+- `todo.txt` now documents local and production Google OAuth setup.
+
+Files touched:
+- `.env.example`
+- `composer.json`
+- `composer.lock`
+- `config/services.php`
+- `routes/auth.php`
+- `database/migrations/2026_05_08_000000_add_google_oauth_fields_to_users_table.php`
+- `app/Http/Controllers/Auth/GoogleAuthController.php`
+- `app/Http/Controllers/Admin/DashboardController.php`
+- `app/Http/Middleware/HandleInertiaRequests.php`
+- `app/Models/User.php`
+- `resources/js/Pages/Auth/Login.tsx`
+- `resources/js/Pages/Auth/Register.tsx`
+- `resources/js/Pages/Profile/Edit.tsx`
+- `resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx`
+- `resources/js/Pages/Admin/Dashboard.tsx`
+- `resources/js/help/pageHelp.ts`
+- `resources/js/i18n/translations.ts`
+- `resources/js/types/index.d.ts`
+- `tests/Feature/Auth/GoogleAuthTest.php`
+- `todo.txt`
+- `doc.txt`
+- `tests.txt`
+
+New env variables:
+- `GOOGLE_CLIENT_ID=`
+- `GOOGLE_CLIENT_SECRET=`
+- `GOOGLE_REDIRECT_URI=http://localhost/auth/google/callback`
+
+How to test it:
+1. Create Google OAuth credentials in Google Cloud Console.
+2. Configure OAuth consent screen.
+3. Add the authorized redirect URI matching the local app URL:
+   - `http://localhost/auth/google/callback`
+   - or `http://127.0.0.1:8000/auth/google/callback`
+   - or `http://noticiario.test/auth/google/callback`
+4. Copy Client ID and Client Secret into `.env`.
+5. Set `GOOGLE_REDIRECT_URI` to the exact same callback URL.
+6. Run:
+   - `php artisan config:clear`
+   - `php artisan route:clear`
+   - `php artisan migrate`
+   - `npm run build`
+   - `php artisan test`
+7. Open `/login`.
+8. Click `Continue with Google`.
+9. Complete Google login.
+10. Confirm the user is created or linked.
+11. Confirm the new user has viewer role only.
+12. Confirm the user lands on the viewer dashboard or the correct `AuthRedirect` target.
+13. Log in as admin.
+14. Open the admin dashboard.
+15. Confirm the user statistics are visible.
+
+Next ideas:
+- Add a safe unlink-Google flow that requires password confirmation or another verified login method.
+- Add an admin filter for Google-linked users.
+- Add audit events for Google account linking.
+- Add optional account-linking prompts for already-authenticated users.
+- Add OAuth provider health checks for missing env values.

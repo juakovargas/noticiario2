@@ -17,6 +17,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'google_id',
+        'avatar',
         'email_verified_at',
         'password',
         'is_active',
@@ -99,6 +101,10 @@ class User extends Authenticatable
             }
 
             return MediaFile::publicDiskUrl($this->avatar_path);
+        }
+
+        if (filled($this->avatar)) {
+            return (string) $this->avatar;
         }
 
         return null;

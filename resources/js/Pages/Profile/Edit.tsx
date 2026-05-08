@@ -1,3 +1,5 @@
+import PageHelp from '@/Components/Help/PageHelp';
+import { useTranslations } from '@/i18n/useTranslations';
 import ProfilePanelLayout from '@/Layouts/ProfilePanelLayout';
 import { PageProps } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -15,11 +17,21 @@ type Props = Record<string, unknown> & {
 }
 
 export default function Edit({ mustVerifyEmail, status, locales, dateFormatOptions, timeFormatOptions, panel }: PageProps<Props>) {
+    const { t } = useTranslations();
+
     return (
         <ProfilePanelLayout panel={panel}>
-            <Head title="Profile" />
+            <Head title={t('Profile')} />
 
             <div className="mx-auto max-w-4xl space-y-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('Profile')}</h1>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">{t('Manage your account settings and security preferences.')}</p>
+                    </div>
+                    <PageHelp helpKey="profile.edit" />
+                </div>
+
                 <div className="rounded-lg bg-white p-4 shadow dark:bg-slate-900 sm:p-8">
                     <UpdateProfileInformationForm
                         mustVerifyEmail={mustVerifyEmail}

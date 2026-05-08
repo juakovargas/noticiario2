@@ -1,0 +1,50 @@
+## Google OAuth setup for local and production
+
+1. Google Cloud Console:
+- Create or select a Google Cloud project.
+- Configure OAuth consent screen.
+- App name: Noticiario.
+- User support email: developer email.
+- Developer contact email: developer email.
+- User type: External unless using a private Google Workspace organization.
+- While testing, add allowed test users.
+
+2. Credentials:
+- Create OAuth Client ID.
+- Application type: Web application.
+- Name examples:
+  - Noticiario Local
+  - Noticiario Production
+
+3. Authorized redirect URIs for local:
+- http://localhost/auth/google/callback
+- http://127.0.0.1:8000/auth/google/callback
+- http://noticiario.test/auth/google/callback
+- Only the URI actually used by the local environment is required, but these are common local examples.
+
+4. Authorized redirect URI for production:
+- https://your-production-domain.com/auth/google/callback
+- The production domain must use HTTPS.
+
+5. .env local example:
+GOOGLE_CLIENT_ID=local_client_id
+GOOGLE_CLIENT_SECRET=local_client_secret
+GOOGLE_REDIRECT_URI=http://localhost/auth/google/callback
+
+6. .env production example:
+GOOGLE_CLIENT_ID=production_client_id
+GOOGLE_CLIENT_SECRET=production_client_secret
+GOOGLE_REDIRECT_URI=https://your-production-domain.com/auth/google/callback
+
+7. Required commands:
+php artisan config:clear
+php artisan route:clear
+php artisan migrate
+
+8. Notes:
+- Do not commit real credentials.
+- Google login does not require Gmail API.
+- Do not request Gmail scopes.
+- If redirect_uri_mismatch appears, the URI in Google Cloud must match GOOGLE_REDIRECT_URI exactly.
+- In production, update APP_URL to the real HTTPS domain.
+- New Google users enter as viewer.

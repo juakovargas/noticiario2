@@ -54,6 +54,13 @@ return [
         'key' => env('DEEPSEEK_API_KEY'),
     ],
 
+    'elevenlabs' => [
+        'api_key' => env('ELEVENLABS_API_KEY'),
+        'default_voice_id' => env('ELEVENLABS_DEFAULT_VOICE_ID', 'JBFqnCBsd6RMkjVDRZzb'),
+        'default_model_id' => env('ELEVENLABS_DEFAULT_MODEL_ID', 'eleven_multilingual_v2'),
+        'default_output_format' => env('ELEVENLABS_DEFAULT_OUTPUT_FORMAT', 'mp3_44100_128'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

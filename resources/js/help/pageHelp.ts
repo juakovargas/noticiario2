@@ -178,7 +178,16 @@ export const PAGE_HELP: Record<string, PageHelpDefinition> = {
     'editor.scripts.index': { titleKey: 'help.editor.scripts.title', summaryKey: 'help.editor.scripts.summary', sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scripts.what' }, { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scripts.actions' }, { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.scripts.next' }], tipsKeys: ['help.editor.scripts.warning1','help.editor.scripts.warning2'] },
     'editor.scripts.productionedit': FALLBACK,
     'editor.scripts.review': FALLBACK,
-    'editor.scripts.show': FALLBACK,
+    'editor.scripts.show': {
+        titleKey: 'help.editor.scriptShow.title',
+        summaryKey: 'help.editor.scriptShow.summary',
+        sections: [
+            { titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.scriptShow.what' },
+            { titleKey: 'Audio generation', contentKey: 'help.editor.scriptShow.audio' },
+            { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.scriptShow.actions' },
+            { titleKey: 'help.common.nextSteps', contentKey: 'help.editor.scriptShow.next' },
+        ],
+    },
     'editor.sourcereferences.index': { titleKey: 'help.editor.sources.title', summaryKey: 'help.editor.sources.summary', sections: [{ titleKey: 'help.common.whatIsThisPageFor', contentKey: 'help.editor.sources.what' }, { titleKey: 'help.common.whatCanIDoHere', contentKey: 'help.editor.sources.actions' }], nextStepsKeys: ['help.editor.sources.next'] },
     'editor.newssources.index': FALLBACK,
     'editor.newscategories.index': FALLBACK,

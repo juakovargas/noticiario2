@@ -250,3 +250,49 @@ Summary:
 - This matches the existing workspace limitation recorded earlier: the default MySQL testing database has been timing out or behaving as partially migrated/out of sync.
 Next focus:
 - Repair or recreate the MySQL testing database outside this branch workflow, then re-run the full suite.
+
+[2026-05-07 17:00 Europe/Madrid] branch: NOT-5
+Command: $env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan test --env=testing --filter=ScriptAudioRenderTest
+Result: PASS
+Summary:
+- 5 tests passed, 44 assertions.
+- Covered editor audio generation with faked ElevenLabs HTTP response, missing API key failure marking, empty script text without external call, completed MP3 download, and viewer/editor access protection.
+- Re-ran the same focused SQLite command after final controller flash-message polish; latest result also passed with 5 tests and 44 assertions.
+Next focus:
+- Run translation and frontend build checks.
+
+[2026-05-07 17:00 Europe/Madrid] branch: NOT-5
+Command: npm run check:translations
+Result: PASS
+Summary:
+- Translation duplicate-key check passed after adding ElevenLabs audio UI/help copy.
+Next focus:
+- Run PHP syntax checks and frontend production build.
+
+[2026-05-07 17:00 Europe/Madrid] branch: NOT-5
+Command: php -l app\Services\Audio\ElevenLabsTextToSpeechService.php; php -l app\Http\Controllers\Editor\ScriptAudioRenderController.php; php -l app\Models\ScriptAudioRender.php; php -l database\migrations\2026_05_07_000000_create_script_audio_renders_table.php; php -l app\Http\Controllers\Editor\ScriptController.php; php -l routes\web.php
+Result: PASS
+Summary:
+- No syntax errors detected in the new service, controller, model, migration, updated script controller or route file.
+- Re-ran `php -l app\Http\Controllers\Editor\ScriptAudioRenderController.php` after final flash-message polish; latest result also passed.
+Next focus:
+- Run frontend production build.
+
+[2026-05-07 17:01 Europe/Madrid] branch: NOT-5
+Command: npm run build
+Result: PASS
+Summary:
+- TypeScript compilation and Vite production build completed successfully after adding the script audio generation card.
+- Re-ran the same command after translating the failed-render detail with `t(...)`; latest result also passed.
+Next focus:
+- Check the configured MySQL testing environment behavior for the new focused test class.
+
+[2026-05-07 17:03 Europe/Madrid] branch: NOT-5
+Command: php artisan test --env=testing --filter=ScriptAudioRenderTest
+Result: FAIL
+Summary:
+- The configured MySQL testing-environment run timed out.
+- Exact error: `command timed out after 124042 milliseconds`.
+- This matches the existing workspace limitation for the default `noticiario2_testing` database; the focused suite passes with SQLite in-memory.
+Next focus:
+- Repair or recreate the MySQL testing database outside this branch workflow, then re-run `php artisan test --env=testing`.

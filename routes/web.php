@@ -34,6 +34,7 @@ use App\Http\Controllers\Editor\EditorialTemplateController;
 use App\Http\Controllers\Editor\EditorialWorkbenchController;
 use App\Http\Controllers\Editor\LocationController;
 use App\Http\Controllers\Editor\ScriptBuilderController;
+use App\Http\Controllers\Editor\ScriptAudioRenderController;
 use App\Http\Controllers\Editor\NewsCategoryController;
 use App\Http\Controllers\Editor\NewsItemController;
 use App\Http\Controllers\Editor\NewsSourceController;
@@ -231,6 +232,8 @@ Route::middleware(['auth', 'verified', 'permission:editor.access'])
         Route::resource('scripts', ScriptController::class);
         Route::post('/scripts/{script}/archive', [ScriptController::class, 'archive'])->name('scripts.archive');
         Route::post('/scripts/{script}/restore', [ScriptController::class, 'restore'])->name('scripts.restore');
+        Route::post('/scripts/{script}/audio-renders', [ScriptAudioRenderController::class, 'store'])->name('scripts.audio-renders.store');
+        Route::get('/scripts/{script}/audio-renders/{audioRender}/download', [ScriptAudioRenderController::class, 'download'])->name('scripts.audio-renders.download');
         Route::get('/scripts/{script}/production', [ScriptProductionMetadataController::class, 'edit'])->name('scripts.production.edit');
         Route::put('/scripts/{script}/production', [ScriptProductionMetadataController::class, 'update'])->name('scripts.production.update');
         Route::get('/source-references', [SourceReferenceController::class, 'index'])->name('source-references.index');

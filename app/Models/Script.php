@@ -111,6 +111,11 @@ class Script extends Model
         return $this->hasMany(SourceReference::class);
     }
 
+    public function audioRenders(): HasMany
+    {
+        return $this->hasMany(ScriptAudioRender::class);
+    }
+
     public function bulletinType(): BelongsTo
     {
         return $this->belongsTo(BulletinType::class);

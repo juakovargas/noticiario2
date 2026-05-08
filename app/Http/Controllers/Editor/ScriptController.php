@@ -8,12 +8,15 @@ use App\Http\Requests\Editor\UpdateScriptRequest;
 use App\Models\Edition;
 use App\Models\BulletinType;
 use App\Models\Language;
+use App\Models\MediaFile;
 use App\Models\Script;
+use App\Models\ScriptAudioRender;
 use App\Support\EditorialLanguage;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -212,8 +215,17 @@ class ScriptController extends Controller
         $hasHashtags = is_array($script->hashtags) && count($script->hashtags) > 0;
         $hasPlatforms = is_array($script->target_platforms) && count($script->target_platforms) > 0;
         $metadataComplete = $hasMetadataForProduction && $hasDescriptionForProduction && $hasHashtags && $hasPlatforms;
+        $audioRenders = $script->audioRenders()
+            ->latest('id')
+            ->take(5)
+            ->get();
+        $latestAudioRender = $audioRenders->first();
 
         return Inertia::render('Editor/Scripts/Show', [
+            'latestAudioRender' => $latestAudioRender ? $this->audioRenderPayload($script, $latestAudioRender) : null,
+            'audioRenders' => $audioRenders
+                ->map(fn (ScriptAudioRender $audioRender) => $this->audioRenderPayload($script, $audioRender))
+                ->values(),
             'script' => [
                 'id' => $script->id,
                 'title' => $script->title,
@@ -317,6 +329,38 @@ class ScriptController extends Controller
                 'metadata_ready' => $metadataComplete,
             ],
         ]);
+    }
+
+    private function audioRenderPayload(Script $script, ScriptAudioRender $audioRender): array
+    {
+        $hasCompletedAudio = $audioRender->status === 'completed' && filled($audioRender->audio_path);
+
+        return [
+            'id' => $audioRender->id,
+            'status' => $audioRender->status,
+            'provider' => $audioRender->provider,
+            'voice_id' => $audioRender->voice_id,
+            'model_id' => $audioRender->model_id,
+            'output_format' => $audioRender->output_format,
+            'audio_url' => $hasCompletedAudio ? $this->audioUrl($audioRender) : null,
+            'download_url' => $hasCompletedAudio ? route('editor.scripts.audio-renders.download', [$script, $audioRender]) : null,
+            'generated_at' => $audioRender->generated_at?->toDateTimeString(),
+            'character_count' => $audioRender->character_count,
+            'error_message' => $audioRender->error_message,
+        ];
+    }
+
+    private function audioUrl(ScriptAudioRender $audioRender): ?string
+    {
+        if (! $audioRender->audio_path) {
+            return null;
+        }
+
+        if ($audioRender->audio_disk === 'public') {
+            return MediaFile::publicDiskUrl($audioRender->audio_path);
+        }
+
+        return Storage::disk($audioRender->audio_disk)->url($audioRender->audio_path);
     }
 
     public function edit(Script $script): Response

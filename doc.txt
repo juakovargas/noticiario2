@@ -1098,3 +1098,60 @@ Dashboard/table cleanup:
 6. Add Edge TTS audio foundation.
 7. Add Remotion/FFmpeg video foundation.
 8. Add publishing foundation.
+
+## 23. ELEVENLABS TEXT-TO-SPEECH INTEGRATION (May 2026)
+
+What changed:
+- Added the first editor-facing ElevenLabs TTS flow for scripts.
+- Editors can generate an MP3 from an existing script's `intro`, `body` and `outro` text.
+- Generated MP3 files are stored on the Laravel `public` disk under `storage/app/public/scripts/{script_id}/audio/`.
+- Each generation is registered in the new `script_audio_renders` table with status, provider, voice, model, output format, source text, storage path, requester, character count, error message and generated timestamp.
+- The script detail page now shows an Audio generation section with provider, latest render status, generated date, voice/model/output format, character count, browser preview and download link.
+- Failed calls are marked as `failed` and return translated flash messages for missing API key, empty script text, missing audio file and generic generation failure.
+- The ElevenLabs backend call uses Laravel's HTTP client. No JavaScript SDK was added.
+- This first version runs synchronously; the controller method is kept small so the generation step can later move into a queued job.
+
+Files touched:
+- `.env.example`
+- `config/services.php`
+- `routes/web.php`
+- `database/migrations/2026_05_07_000000_create_script_audio_renders_table.php`
+- `app/Models/Script.php`
+- `app/Models/ScriptAudioRender.php`
+- `app/Services/Audio/ElevenLabsTextToSpeechService.php`
+- `app/Http/Controllers/Editor/ScriptController.php`
+- `app/Http/Controllers/Editor/ScriptAudioRenderController.php`
+- `resources/js/Pages/Editor/Scripts/Show.tsx`
+- `resources/js/help/pageHelp.ts`
+- `resources/js/i18n/translations.ts`
+- `tests/Feature/ScriptAudioRenderTest.php`
+- `doc.txt`
+- `tests.txt`
+
+New env variables:
+- `ELEVENLABS_API_KEY=`
+- `ELEVENLABS_DEFAULT_VOICE_ID=JBFqnCBsd6RMkjVDRZzb`
+- `ELEVENLABS_DEFAULT_MODEL_ID=eleven_multilingual_v2`
+- `ELEVENLABS_DEFAULT_OUTPUT_FORMAT=mp3_44100_128`
+
+How to test it manually:
+1. Add `ELEVENLABS_API_KEY` to `.env`.
+2. Add optional `ELEVENLABS_DEFAULT_VOICE_ID`, `ELEVENLABS_DEFAULT_MODEL_ID` and `ELEVENLABS_DEFAULT_OUTPUT_FORMAT`.
+3. Run `php artisan config:clear`.
+4. Run `php artisan migrate`.
+5. Log in as editor.
+6. Open an existing script with script text.
+7. Click `Generate audio`.
+8. Confirm the page shows completed status.
+9. Play the audio from the browser.
+10. Download the MP3.
+11. Confirm the file exists in `storage/app/public/scripts/{script_id}/audio/`.
+12. If the browser URL does not load public files, run `php artisan storage:link`.
+
+Next ideas:
+- Move generation into a queued job with progress polling.
+- Add explicit voice selection and per-script voice presets.
+- Support multiple voices or speaker roles inside one script.
+- Add intro music, outro beds and audio normalization.
+- Register generated audio as a reusable media asset.
+- Feed the completed MP3 into a final video rendering pipeline.
